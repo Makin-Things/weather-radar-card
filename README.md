@@ -23,33 +23,28 @@ This card uses map tiles of radar data provided by RainViewer. This allows for o
 
 All of the options below can be selected using the GUI config editor, there is no need to edit the yaml config directly.
 
-| Name                       | Type    | Requirement  | Description                                                  | Default                                      |
-| -------------------------- | ------- | ------------ | ------------------------------------------------------------ | -------------------------------------------- |
-| type                       | string  | **Required** |                                                              | must be `'custom:weather-radar-card'`        |
-| data_source                | string  | **Optional** | Specifies whcih set of radar tiles to use                    | `'BoM'` see section below for valid values   |
-| map_style                  | string  | **Optional** | Specifies the style for the map                              | `'light'` see section below for valid values |
-| zoom_level                 | number  | **Optional** | The initial zoom level, can be from 4 to 10                  | `4`                                          |
-| center_latitude            | number  | **Optional** | The initial center latitude of the map                       | `-27.85`                                     |
-| center_longitude           | number  | **Optional** | The initial center longitude of the map                      | `133.75`                                     |
-| marker_latitude            | number  | **Optional** | The latitude for the home icon if enabled                    | the same as center_latitude                  |
-| marker_longitude           | number  | **Optional** | The longitude for the home icon if enabled                   | the same as center_longitude                 |
-| frame_count                | number  | **Optional** | The number of frames to use in the loop                      | `10`                                         |
-| frame_delay                | number  | **Optional** | The number of milliseconds to show each frame                | `500`                                        |
-| restart_delay              | number  | **Optional** | The additional number of milliseconds to show the last frame | `1000`                                       |
-| static_map                 | boolean | **Optional** | Set to true to disable all panning and zooming               | `false`                                      |
-| show_zoom                  | boolean | **Optional** | Show the zoom controls in the top left corner                | `false`                                      |
-| square_map                 | boolean | **Optional** | Will keep the map square (not in panel mode)                 | `false`                                      |
-| show_marker                | boolean | **Optional** | Show the home icon at the marker position                    | `false`                                      |
-| show_playback              | boolean | **Optional** | Show the playback controls in the bottom right toolbar       | `false`                                      |
-| show_recenter              | boolean | **Optional** | Show the re-center control in the bottom right toolbar       | `false`                                      |
-| show_scale                 | boolean | **Optional** | Show a scale in the bottom left corner                       | `false`                                      |
-| show_range                 | boolean | **Optional** | Show range rings around marker position                      | `false`                                      |
-| extra_labels               | boolean | **Optional** | Show more town labels (labels become smaller)                | `false`                                      |
-| show_radar_location        | boolean | **Optional** | Show an cirlce at radar sites                                | `false`                                      |
-| show_radar_coverage        | boolean | **Optional** | Show an overlay of the radar coverage                        | `false`                                      |
-| radar_location_radius      | number  | **Optional** | Set the radius of the location circles                       | 2                                            |
-| radar_location_line_colour | string  | **Optional** | Set the colour of the outer line of the location circles     | `'#00FF00'` green                            |
-| radar_location_fill_colour | string  | **Optional** | Set the colour of the fill of the location circles           | `'#FF0000'` red                              |
+| Name             | Type    | Requirement  | Description                                                  | Default                                                    |
+| ---------------- | ------- | ------------ | ------------------------------------------------------------ | ---------------------------------------------------------- |
+| type             | string  | **Required** |                                                              | must be `'custom:weather-radar-card'`                      |
+| data_source      | string  | **Optional** | Specifies whcih set of radar tiles to use                    | `'RainViewer-Original'` see section below for valid values |
+| map_style        | string  | **Optional** | Specifies the style for the map                              | `'light'` see section below for valid values               |
+| zoom_level       | number  | **Optional** | The initial zoom level, can be from 4 to 10                  | `4`                                                        |
+| center_latitude  | number  | **Optional** | The initial center latitude of the map                       | `-27.85`                                                   |
+| center_longitude | number  | **Optional** | The initial center longitude of the map                      | `133.75`                                                   |
+| marker_latitude  | number  | **Optional** | The latitude for the home icon if enabled                    | the same as center_latitude                                |
+| marker_longitude | number  | **Optional** | The longitude for the home icon if enabled                   | the same as center_longitude                               |
+| frame_count      | number  | **Optional** | The number of frames to use in the loop                      | `10`                                                       |
+| frame_delay      | number  | **Optional** | The number of milliseconds to show each frame                | `500`                                                      |
+| restart_delay    | number  | **Optional** | The additional number of milliseconds to show the last frame | `1000`                                                     |
+| static_map       | boolean | **Optional** | Set to true to disable all panning and zooming               | `false`                                                    |
+| show_zoom        | boolean | **Optional** | Show the zoom controls in the top left corner                | `false`                                                    |
+| square_map       | boolean | **Optional** | Will keep the map square (not in panel mode)                 | `false`                                                    |
+| show_marker      | boolean | **Optional** | Show the home icon at the marker position                    | `false`                                                    |
+| show_playback    | boolean | **Optional** | Show the playback controls in the bottom right toolbar       | `false`                                                    |
+| show_recenter    | boolean | **Optional** | Show the re-center control in the bottom right toolbar       | `false`                                                    |
+| show_scale       | boolean | **Optional** | Show a scale in the bottom left corner                       | `false`                                                    |
+| show_range       | boolean | **Optional** | Show range rings around marker position                      | `false`                                                    |
+| extra_labels     | boolean | **Optional** | Show more town labels (labels become smaller)                | `false`                                                    |
 
 ### Data Source
 

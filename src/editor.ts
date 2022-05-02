@@ -75,7 +75,6 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
               ev.stopPropagation()}
             >
             <mwc-list-item></mwc-list-item>
-            <mwc-list-item value="BoM">Bureau of Meteorology</mwc-list-item>
             <mwc-list-item value="RainViewer-Original">RainViewer - Original</mwc-list-item>
             <mwc-list-item value="RainViewer-UniversalBlue">RainViewer - Universal Blue</mwc-list-item>
             <mwc-list-item value="RainViewer-TITAN">RainViewer - TITAN</mwc-list-item>
@@ -223,66 +222,6 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
             ></mwc-switch>
           </mwc-formfield>
         </div>
-        <div class="side-by-side">
-          <mwc-formfield .label=${"Show Radar Locations"}>
-            <mwc-switch
-              .checked=${config.show_radar_location === true}
-              .configValue=${'show_radar_location'}
-              @change=${this._valueChangedSwitch}
-            ></mwc-switch>
-          </mwc-formfield>
-          <mwc-formfield .label=${'Show Radar Coverage'}>
-            <mwc-switch
-              .checked=${config.show_radar_coverage === true}
-              .configValue=${'show_radar_coverage'}
-              @change=${this._valueChangedSwitch}
-            ></mwc-switch>
-          </mwc-formfield>
-          <div></div>
-        </div>
-        <div class="side-by-side">
-          <mwc-textfield
-              label="Radar Location Radius (optional)"
-              .value=${config.radar_location_radius ? config.radar_location_radius : ''}
-              .configValue=${'radar_location_radius'}
-              @input=${this._valueChangedNumber}
-          ></mwc-textfield>
-          <div></div>
-        </div>
-        <div class="side-by-side">
-          <mwc-textfield
-              label="Radar Line Colour (optional)"
-              .value=${config.radar_location_line_colour ? config.radar_location_line_colour : ''}
-              .configValue=${'radar_location_line_colour'}
-              @input=${this._valueChangedString}
-          ></mwc-textfield>
-          <mwc-textfield
-              label="Radar Fill Colour (optional)"
-              .value=${config.radar_location_fill_colour ? config.radar_location_fill_colour : ''}
-              .configValue=${'radar_location_fill_colour'}
-              @input=${this._valueChangedString}
-          ></mwc-textfield>
-        </div>
-        <mwc-formfield alignEnd .label=${"Opacity"} style="width: 100%;">
-          <mwc-slider
-              discrete
-              min="0"
-              max="100"
-              .value=${config.opacity ? config.opacity : 100}
-              .configValue=${'opacity'}
-              @input=${this._valueChangedNumber}
-              style="width: 100%;"
-          ></mwc-slider>
-        </mwc-formfield>
-        <mwc-slider
-            discrete
-            min="0"
-            max="100"
-            .value=${config.opacity ? config.opacity : 100}
-            .configValue=${'opacity'}
-            @input=${this._valueChangedNumber}
-            style="width: 200px;"
-        ></mwc-slider>
       </div>
     `;
   }

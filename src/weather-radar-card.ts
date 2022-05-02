@@ -143,68 +143,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               </div>
             </div>
             <script>
-              const radarLocations = [
-                [-29.971116, 146.813845, "Brewarrina"],
-                [-35.661387, 149.512229, "Canberra (Captain's Flat)"],
-                [-29.620633, 152.963328, "Grafton"],
-                [-33.552222, 145.528610, "Hillston"],
-                [-29.496994, 149.850825, "Moree"],
-                [-31.024219, 150.192037, "Namoi (BlackJack Mountain)"],
-                [-32.729802, 152.025422, "Newcastle"],
-                [-29.038524, 167.941679, "Norfolk Island"],
-                [-33.700764, 151.209470, "Sydney (Terry Hills)"],
-                [-35.158170, 147.456307, "Wagga Wagga"],
-                [-34.262389, 150.875099, "Wollongong (Appin)"],
-                [-37.855210, 144.755512, "Melbourne"],
-                [-34.287096, 141.598250, "Mildura"],
-                [-37.887532, 147.575475, "Bairnsdale"],
-                [-35.997652, 142.013441, "Rainbow"],
-                [-36.029663, 146.022772, "Yarrawonga"],
-                [-19.885737, 148.075693, "Bowen"],
-                [-27.717739, 153.240015, "Brisbane (Mt Stapylton)"],
-                [-16.818145, 145.662895, "Cairns"],
-                [-23.549558, 148.239166, "Emerald (Central Highlands)"],
-                [-23.855056, 151.262567, "Gladstone"],
-                [-18.995000, 144.995000, "Greenvale"],
-                [-25.957342, 152.576898, "Gympie (Mt Kanigan)"],
-                [-23.439783, 144.282270, "Longreach"],
-                [-21.117243, 149.217213, "Mackay"],
-                [-27.606344, 152.540084, "Marburg"],
-                [-16.670000, 139.170000, "Mornington Island"],
-                [-20.711204, 139.555281, "Mount Isa"],
-                [-25.696071, 149.898161, "Taroom"],
-                [-19.419800, 146.550974, "Townsville (Hervey Range)"],
-                [-26.440193, 147.349130, "Warrego"],
-                [-12.666413, 141.924640, "Weipa"],
-                [-16.287199, 149.964539, "Willis Island"],
-                [-34.617016, 138.468782, "Adelaide (Buckland Park)"],
-                [-35.329531, 138.502498, "Adelaide (Sellicks Hill)"],
-                [-32.129823, 133.696361, "Ceduna"],
-                [-37.747713, 140.774605, "Mt Gambier"],
-                [-31.155811, 136.804400, "Woomera"],
-                [-43.112593, 147.805241, "Hobart (Mt Koonya)"],
-                [-41.179147, 145.579986, "West Takone"],
-                [-23.795064, 133.888935, "Alice Springs"],
-                [-12.455933, 130.926599, "Darwin/Berrimah"],
-                [-12.274995, 136.819911, "Gove"],
-                [-14.510918, 132.447010, "Katherine/Tindal"],
-                [-11.648500, 133.379977, "Warruwi"],
-                [-34.941838, 117.816370, "Albany"],
-                [-17.948234, 122.235334, "Broome"],
-                [-24.887978, 113.669386, "Carnarvon"],
-                [-20.653613, 116.683144, "Dampier"],
-                [-31.777795, 117.952768, "South Doodlakine"],
-                [-33.830150, 121.891734, "Esperance"],
-                [-28.804648, 114.697349, "Geraldton"],
-                [-25.033225, 128.301756, "Giles"],
-                [-18.228916, 127.662836, "Halls Creek"],
-                [-30.784261, 121.454814, "Kalgoorlie-Boulder"],
-                [-22.103197, 113.999698, "Learmonth"],
-                [-33.096956, 119.008796, "Newdegate"],
-                [-32.391761, 115.866955, "Perth (Serpentine)"],
-                [-20.371845, 118.631670, "Port Hedland"],
-                [-30.358887, 116.305769, "Watheroo"],
-                [-15.451711, 128.120856, "Wyndham"]];
               const maxZoom = 10;
               const minZoom = 4;
               var radarOpacity = 1.0;
@@ -216,14 +154,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               var timeout = ${this._config.frame_delay !== undefined ? this._config.frame_delay : 500};
               var restartDelay = ${this._config.restart_delay !== undefined ? this._config.restart_delay : 1000};
               var frameCount = ${this._config.frame_count != undefined ? this._config.frame_count : 10};
-              var tileURL = '${this._config.data_source !== undefined ? this._config.data_source : 'BoM'}';
+              var tileURL = '${this._config.data_source !== undefined ? this._config.data_source : 'RainViewer-Original'}';
               switch (tileURL) {
-                case "BoM":
-                  var tileURL = 'https://radar-tiles.service.bom.gov.au/tiles/{time}/{z}/{x}/{y}.png';
-                  document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-bom.png";
-                  var framePeriod = 600000;
-                  var frameLag = 600000;
-                  break;
                 case "RainViewer-Original":
                   var tileURL = 'https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/1/1_0.png';
                   document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-original.png";
@@ -277,16 +209,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               var labelSize = ${this._config.extra_labels !== undefined ? (this._config.extra_labels ? 128 : 256) : 256
       };
               var labelZoom = ${this._config.extra_labels !== undefined ? (this._config.extra_labels ? 1 : 0) : 0};
-              var locationRadius = '${this._config.radar_location_radius !== undefined ? this._config.radar_location_radius : 2
-      }';
-              var locationLineColour = '${this._config.radar_location_line_colour !== undefined
-        ? this._config.radar_location_line_colour
-        : '#00FF00'
-      }';
-              var locationFillColour = '${this._config.radar_location_fill_colour !== undefined
-        ? this._config.radar_location_fill_colour
-        : '#FF0000'
-      }';
               var map_style = '${this._config.map_style !== undefined ? this._config.map_style.toLowerCase() : 'light'
       }';
               switch (map_style) {
@@ -341,11 +263,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                 attributionControl: false,
                 minZoom: minZoom,
                 maxZoom: maxZoom,
-                maxBounds: [
-                  [0, 101.25],
-                  [-55.77657, 168.75],
-                ],
-                maxBoundsViscosity: 1.0,
               }).setView([centerLat, centerLon], zoomLevel);
               var radarImage = [frameCount];
               var radarTime = [frameCount];
@@ -467,11 +384,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               ).addTo(radarMap);
 
               for (i = 0; i < frameCount; i++) {
-                if ((${this._config.data_source === undefined}) || (${this._config.data_source === "BoM"})) {
-                  t = getRadarTime(d.valueOf() + i * framePeriod);
-                } else {
-                  t = d.valueOf()/1000 + i * (framePeriod/1000);
-                }
+                t = d.valueOf()/1000 + i * (framePeriod/1000);
                 radarImage[i] = L.tileLayer(
                   tileURL,
                   {
@@ -525,28 +438,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         : ''
       }
 
-              ${this._config.show_radar_location === true
-        ? "radarMap.createPane('overlayRadarLocation'); \
-                     radarMap.getPane('overlayRadarLocation').style.zIndex = 401; \
-                     radarMap.getPane('overlayRadarLocation').style.pointerEvents = 'none'; \
-                     radarLocations.forEach(function (coords) { \
-                       L.circleMarker([coords[0], coords[1]], { radius: locationRadius, weight: locationRadius/2, color: locationLineColour, fillColor: locationFillColour, fillOpacity: 1.0, interactive: false, pane: 'overlayRadarLocation' }).addTo(radarMap); \
-                       L.circleMarker([coords[0], coords[1]], { radius: Math.max(10, locationRadius*1.5), stroke: false, fill: true, fillOpacity: 0.0, interactive: true, pane: 'overlayRadarLocation' }).addTo(radarMap).bindTooltip(coords[2]); \
-                      });"
-        : ''
-      }
-
-              ${this._config.show_radar_coverage === true
-        ? "radarMap.createPane('overlayRadarCoverage'); \
-                     radarMap.getPane('overlayRadarCoverage').style.opacity = 0.1; \
-                     radarMap.getPane('overlayRadarCoverage').style.zIndex = 400; \
-                     radarMap.getPane('overlayRadarCoverage').style.pointerEvents = 'none'; \
-                     radarLocations.forEach(function (coords) { \
-                       L.circle([coords[0], coords[1]], { radius: 250000, weight: 1, stroke: false, fill: true, fillOpacity: 1, interactive: false, pane: 'overlayRadarCoverage' }).addTo(radarMap); \
-                     });"
-        : ''
-      }
-
               setTimeout(function() {
                 nextFrame();
               }, timeout);
@@ -563,11 +454,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               }
 
               function updateRadar() {
-                if ((${this._config.data_source === undefined}) || (${this._config.data_source === "BoM"})) {
-                  t = getRadarTime(d.valueOf());
-                } else {
-                  t = d.valueOf()/1000;
-                }
+                t = d.valueOf()/1000;
                 newLayer = L.tileLayer(tileURL, {
                   time: t,
                   maxZoom: maxZoom,
