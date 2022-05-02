@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "github.vscode-pull-request-github",
+    "eamodio.gitlens",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bierner.lit-html",
+    "runem.lit-plugin",
+    "davidanson.vscode-markdownlint",
+    "redhat.vscode-yaml"
+  ]
+}

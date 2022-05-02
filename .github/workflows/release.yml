@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+
+      # Build
+      - name: Build the file
+        run: |
+          rm -rf /home/runner/work/weather-radar-card/weather-radar-card/node_modules
+          cd /home/runner/work/weather-radar-card/weather-radar-card
+          npm install
+          npm run build
+
+      # Upload build file to the release as an asset.
+      - name: Upload zip to release
+        uses: svenstaro/upload-release-action@v1-release
+
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: /home/runner/work/weather-radar-card/weather-radar-card/dist/*
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
