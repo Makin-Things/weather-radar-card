@@ -2,7 +2,7 @@
 
 A Home Assistant rain radar card using the tiled images from RainViewer
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)
 [![GitHub Release][releases-shield]][releases]
 [![License][license-shield]](LICENSE)
 ![Maintenance](https://img.shields.io/maintenance/yes/2022?style=for-the-badge)
