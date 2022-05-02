@@ -144,7 +144,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
             </div>
             <script>
               const maxZoom = 10;
-              const minZoom = 4;
+              const minZoom = 3;
               var radarOpacity = 1.0;
               var zoomLevel = ${this._config.zoom_level !== undefined ? this._config.zoom_level : 4};
               var centerLat = ${this._config.center_latitude !== undefined ? this._config.center_latitude : -27.85};
