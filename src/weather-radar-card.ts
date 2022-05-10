@@ -146,9 +146,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               const maxZoom = 10;
               const minZoom = 3;
               var radarOpacity = 1.0;
-              var zoomLevel = ${this._config.zoom_level !== undefined ? this._config.zoom_level : 4};
-              var centerLat = ${this._config.center_latitude !== undefined ? this._config.center_latitude : -27.85};
-              var centerLon = ${this._config.center_longitude !== undefined ? this._config.center_longitude : 133.75};
+              var zoomLevel = ${this._config.zoom_level !== undefined ? this._config.zoom_level : 7};
+              var centerLat = ${this._config.center_latitude !== undefined ? this._config.center_latitude : this.hass.config.latitude};
+              var centerLon = ${this._config.center_longitude !== undefined ? this._config.center_longitude : this.hass.config.longitude};
               var markerLat = (${this._config.marker_latitude}) ? ${this._config.marker_latitude} : centerLat;
               var markerLon = (${this._config.marker_longitude}) ? ${this._config.marker_longitude} : centerLon;
               var timeout = ${this._config.frame_delay !== undefined ? this._config.frame_delay : 500};

@@ -28,9 +28,9 @@ All of the options below can be selected using the GUI config editor, there is n
 | type             | string  | **Required** |                                                              | must be `'custom:weather-radar-card'`                      |
 | data_source      | string  | **Optional** | Specifies whcih set of radar tiles to use                    | `'RainViewer-Original'` see section below for valid values |
 | map_style        | string  | **Optional** | Specifies the style for the map                              | `'light'` see section below for valid values               |
-| zoom_level       | number  | **Optional** | The initial zoom level, can be from 4 to 10                  | `4`                                                        |
-| center_latitude  | number  | **Optional** | The initial center latitude of the map                       | `-27.85`                                                   |
-| center_longitude | number  | **Optional** | The initial center longitude of the map                      | `133.75`                                                   |
+| zoom_level       | number  | **Optional** | The initial zoom level, can be from 4 to 10                  | `7`                                                        |
+| center_latitude  | number  | **Optional** | The initial center latitude of the map                       | the location of your HA instance                           |
+| center_longitude | number  | **Optional** | The initial center longitude of the map                      | the location of your HA instance                           |
 | marker_latitude  | number  | **Optional** | The latitude for the home icon if enabled                    | the same as center_latitude                                |
 | marker_longitude | number  | **Optional** | The longitude for the home icon if enabled                   | the same as center_longitude                               |
 | frame_count      | number  | **Optional** | The number of frames to use in the loop                      | `10`                                                       |
