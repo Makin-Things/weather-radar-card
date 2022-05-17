@@ -70,6 +70,12 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
 
     return html`
       <div class="values">
+        <mwc-textfield
+            label="Card Title (optional)"
+            .value=${config.card_title ? config.card_title : ''}
+            .configValue=${'card_title'}
+            @input=${this._valueChangedString}
+        ></mwc-textfield>
         <mwc-select label="Data Source (optional)" .configValue=${'data_source'} .value=${config.data_source ?
               config.data_source : ''} @selected=${this._valueChangedString} @closed=${(ev)=>
               ev.stopPropagation()}

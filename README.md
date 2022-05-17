@@ -26,6 +26,7 @@ All of the options below can be selected using the GUI config editor, there is n
 | Name             | Type    | Requirement  | Description                                                  | Default                                                    |
 | ---------------- | ------- | ------------ | ------------------------------------------------------------ | ---------------------------------------------------------- |
 | type             | string  | **Required** |                                                              | must be `'custom:weather-radar-card'`                      |
+| card_title       | string  | **Optional** | The title to display on the card                             | no title displayed                                         |
 | data_source      | string  | **Optional** | Specifies whcih set of radar tiles to use                    | `'RainViewer-Original'` see section below for valid values |
 | map_style        | string  | **Optional** | Specifies the style for the map                              | `'light'` see section below for valid values               |
 | zoom_level       | number  | **Optional** | The initial zoom level, can be from 4 to 10                  | `7`                                                        |

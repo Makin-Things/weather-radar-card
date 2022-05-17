@@ -218,7 +218,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                   var label_url = 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png';
                   var label_style = 'dark_only_labels';
                   var svg_icon = 'home-circle-light.svg';
-                  var attribution = '<a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> | &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attribution" target="_blank">CARTO</a>';
+                  var attribution = '<a href="https://leafletjs.com" title="A JS library for interactive maps" target="_blank">Leaflet</a> | &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attribution" target="_blank">CARTO</a>';
                   break;
                 case "voyager":
                   var basemap_url = 'https://{s}.basemaps.cartocdn.com/{style}/{z}/{x}/{y}.png';
@@ -226,7 +226,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                   var label_url = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png';
                   var label_style = 'rastertiles/voyager_only_labels';
                   var svg_icon = 'home-circle-dark.svg';
-                  var attribution = '<a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> | &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attribution" target="_blank">CARTO</a>';
+                  var attribution = '<a href="https://leafletjs.com" title="A JS library for interactive maps" target="_blank">Leaflet</a> | &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attribution" target="_blank">CARTO</a>';
                   break;
                 case 'satellite':
                   var basemap_url = 'https://server.arcgisonline.com/ArcGIS/rest/services/{style}/MapServer/tile/{z}/{y}/{x}';
@@ -234,7 +234,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                   var label_url = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png';
                   var label_style = 'proton_labels_std';
                   var svg_icon = 'home-circle-dark.svg';
-                  var attribution = '<a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> | &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="http://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9" target="_blank">ESRI</a>';
+                  var attribution = '<a href="https://leafletjs.com" title="A JS library for interactive maps" target="_blank">Leaflet</a> | &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="http://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9" target="_blank">ESRI</a>';
                   break;
                 case "light":
                 default:
@@ -243,7 +243,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                   var label_url = 'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png';
                   var label_style = 'light_only_labels';
                   var svg_icon = 'home-circle-dark.svg';
-                  var attribution = '<a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> | &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attribution" target="_blank">CARTO</a>';
+                  var attribution = '<a href="https://leafletjs.com" title="A JS library for interactive maps" target="_blank">Leaflet</a> | &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attribution" target="_blank">CARTO</a>';
               }
 
               var idx = 0;
@@ -613,11 +613,14 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
           : `526px`
         : `526px`;
 
+    const cardTitle = this._config.card_title !== undefined ? html`<div id="card-title">${this._config.card_title}</div>` : ``;
+
     return html`
       <style>
         ${this.styles}
       </style>
       <ha-card class="type-iframe">
+        ${cardTitle}
         <div id="root" style="padding-top: ${padding}">
           <iframe srcdoc=${doc} scrolling="no"></iframe>
         </div>
@@ -669,6 +672,10 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         height: 100%;
         top: 0;
         left: 0;
+      }
+      #card-title {
+        margin: 8px 0px 4px 8px;
+        font-size: 1.5em;
       }
     `;
   }
