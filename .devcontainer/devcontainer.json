@@ -3,7 +3,7 @@
   "name": "Weather Radar Card Development",
   "image": "ludeeus/container:monster",
   "context": "..",
-  "appPort": ["5000:5000", "9123:8123"],
+  "appPort": ["5005:5000", "9124:8123"],
   "postCreateCommand": "npm install",
   "extensions": [
     "github.vscode-pull-request-github",
