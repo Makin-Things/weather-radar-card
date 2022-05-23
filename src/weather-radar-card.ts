@@ -353,8 +353,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               if (${this._config.show_scale === true}) {
                 L.control.scale({
                   position: 'bottomleft',
-                  metric: true,
-                  imperial: false,
+                  metric: ${this.hass.config.unit_system.length === 'km'},
+                  imperial: ${this.hass.config.unit_system.length === 'mi'},
                   maxWidth: 100,
                 }).addTo(radarMap);
 
@@ -434,158 +434,162 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       }
 
               ${this._config.show_range === true
-        ? 'L.circle([markerLat, markerLon], { radius: 50000, weight: 1, fill: false, opacity: 0.3, interactive: false }).addTo(radarMap); \
-                     L.circle([markerLat, markerLon], { radius: 100000, weight: 1, fill: false, opacity: 0.3, interactive: false }).addTo(radarMap); \
-                     L.circle([markerLat, markerLon], { radius: 200000, weight: 1, fill: false, opacity: 0.3, interactive: false }).addTo(radarMap);'
+        ? this.hass.config.unit_system.length === 'km' ?
+          'L.circle([markerLat, markerLon], { radius: 50000, weight: 1, fill: false, opacity: 0.3, interactive: false }).addTo(radarMap); \
+          L.circle([markerLat, markerLon], { radius: 100000, weight: 1, fill: false, opacity: 0.3, interactive: false }).addTo(radarMap); \
+          L.circle([markerLat, markerLon], { radius: 200000, weight: 1, fill: false, opacity: 0.3, interactive: false }).addTo(radarMap);':
+          'L.circle([markerLat, markerLon], { radius: 48280, weight: 1, fill: false, opacity: 0.3, interactive: false }).addTo(radarMap); \
+          L.circle([markerLat, markerLon], { radius: 96561, weight: 1, fill: false, opacity: 0.3, interactive: false }).addTo(radarMap); \
+          L.circle([markerLat, markerLon], { radius: 193121, weight: 1, fill: false, opacity: 0.3, interactive: false }).addTo(radarMap);'
         : ''
       }
 
-              setTimeout(function() {
-                nextFrame();
-              }, timeout);
-              setUpdateTimeout();
+        setTimeout(function() {
+          nextFrame();
+        }, timeout);
+        setUpdateTimeout();
 
-              function setUpdateTimeout() {
-                d.setTime(d.valueOf() + framePeriod);
-                x = new Date();
-                setTimeout(triggerRadarUpdate, d.valueOf() - x.valueOf() + frameLag);
-              }
+        function setUpdateTimeout() {
+          d.setTime(d.valueOf() + framePeriod);
+          x = new Date();
+          setTimeout(triggerRadarUpdate, d.valueOf() - x.valueOf() + frameLag);
+        }
 
-              function triggerRadarUpdate() {
-                doRadarUpdate = true;
-              }
+        function triggerRadarUpdate() {
+          doRadarUpdate = true;
+        }
 
-              function updateRadar() {
-                t = d.valueOf()/1000;
-                newLayer = L.tileLayer(tileURL, {
-                  time: t,
-                  maxZoom: maxZoom,
-                  tileSize: 256,
-                  zoomOffset: 0,
-                  opacity: 0,
-                });
-                newLayer.addTo(radarMap);
-                newTime = getRadarTimeString(d.valueOf());
+        function updateRadar() {
+          t = d.valueOf()/1000;
+          newLayer = L.tileLayer(tileURL, {
+            time: t,
+            maxZoom: maxZoom,
+            tileSize: 256,
+            zoomOffset: 0,
+            opacity: 0,
+          });
+          newLayer.addTo(radarMap);
+          newTime = getRadarTimeString(d.valueOf());
 
-                radarImage[0].remove();
-                for (i = 0; i < frameCount - 1; i++) {
-                  radarImage[i] = radarImage[i + 1];
-                  radarTime[i] = radarTime[i + 1];
-                }
-                radarImage[frameCount - 1] = newLayer;
-                radarTime[frameCount - 1] = newTime;
-                idx = 0;
-                doRadarUpdate = false;
+          radarImage[0].remove();
+          for (i = 0; i < frameCount - 1; i++) {
+            radarImage[i] = radarImage[i + 1];
+            radarTime[i] = radarTime[i + 1];
+          }
+          radarImage[frameCount - 1] = newLayer;
+          radarTime[frameCount - 1] = newTime;
+          idx = 0;
+          doRadarUpdate = false;
 
-                setUpdateTimeout();
-              }
+          setUpdateTimeout();
+        }
 
-              function getRadarTime(date) {
-                x = new Date(date);
-                return (
-                  x.getUTCFullYear().toString() +
-                  (x.getUTCMonth() + 1).toString().padStart(2, '0') +
-                  x
-                    .getUTCDate()
-                    .toString()
-                    .padStart(2, '0') +
-                  x
-                    .getUTCHours()
-                    .toString()
-                    .padStart(2, '0') +
-                  x
-                    .getUTCMinutes()
-                    .toString()
-                    .padStart(2, '0')
-                );
-              }
+        function getRadarTime(date) {
+          x = new Date(date);
+          return (
+            x.getUTCFullYear().toString() +
+            (x.getUTCMonth() + 1).toString().padStart(2, '0') +
+            x
+              .getUTCDate()
+              .toString()
+              .padStart(2, '0') +
+            x
+              .getUTCHours()
+              .toString()
+              .padStart(2, '0') +
+            x
+              .getUTCMinutes()
+              .toString()
+              .padStart(2, '0')
+          );
+        }
 
-              function getRadarTimeString(date) {
-                x = new Date(date);
-                return (
-                  weekday[x.getDay()] +
-                  ' ' +
-                  month[x.getMonth()] +
-                  ' ' +
-                  x
-                    .getDate()
-                    .toString()
-                    .padStart(2, '0') +
-                  ' ' +
-                  x
-                    .getHours()
-                    .toString()
-                    .padStart(2, '0') +
-                  ':' +
-                  x
-                    .getMinutes()
-                    .toString()
-                    .padStart(2, '0')
-                );
-              }
+        function getRadarTimeString(date) {
+          x = new Date(date);
+          return (
+            weekday[x.getDay()] +
+            ' ' +
+            month[x.getMonth()] +
+            ' ' +
+            x
+              .getDate()
+              .toString()
+              .padStart(2, '0') +
+            ' ' +
+            x
+              .getHours()
+              .toString()
+              .padStart(2, '0') +
+            ':' +
+            x
+              .getMinutes()
+              .toString()
+              .padStart(2, '0')
+          );
+        }
 
-              function nextFrame() {
-                if (run) {
-                  nextImage();
-                }
-                setTimeout(function() {
-                  nextFrame();
-                }, (idx == frameCount) ? restartDelay : timeout);
-              }
+        function nextFrame() {
+          if (run) {
+            nextImage();
+          }
+          setTimeout(function() {
+            nextFrame();
+          }, (idx == frameCount) ? restartDelay : timeout);
+        }
 
-              function skipNext() {
-                if (idx == frameCount-1) {
-                  idx += 1;
-                }
-                nextImage();
-              }
+        function skipNext() {
+          if (idx == frameCount-1) {
+            idx += 1;
+          }
+          nextImage();
+        }
 
-              function skipBack() {
-                if (idx == frameCount) {
-                  radarImage[frameCount - 1].setOpacity(0);
-                  idx -= 1;
-                } else if (idx < frameCount) {
-                  radarImage[idx].setOpacity(0);
-                }
-                idx -= 1;
-                if (doRadarUpdate && idx == 1) {
-                  updateRadar();
-                }
-                if (idx < 0) {
-                  idx = frameCount-1;
-                }
-                document.getElementById("progress-bar").style.width = (idx+1)*barSize+"px";
-                document.getElementById('timestamp').innerHTML = radarTime[idx];
-                radarImage[idx].setOpacity(radarOpacity);
-              }
+        function skipBack() {
+          if (idx == frameCount) {
+            radarImage[frameCount - 1].setOpacity(0);
+            idx -= 1;
+          } else if (idx < frameCount) {
+            radarImage[idx].setOpacity(0);
+          }
+          idx -= 1;
+          if (doRadarUpdate && idx == 1) {
+            updateRadar();
+          }
+          if (idx < 0) {
+            idx = frameCount-1;
+          }
+          document.getElementById("progress-bar").style.width = (idx+1)*barSize+"px";
+          document.getElementById('timestamp').innerHTML = radarTime[idx];
+          radarImage[idx].setOpacity(radarOpacity);
+        }
 
-              function nextImage() {
-                if (idx == frameCount) {
-                  radarImage[frameCount - 1].setOpacity(0);
-                } else if (idx < frameCount - 1) {
-                  radarImage[idx].setOpacity(0);
-                }
-                idx += 1;
-                if (doRadarUpdate && idx == 1) {
-                  updateRadar();
-                }
-                if (idx == frameCount + 1) {
-                  idx = 0;
-                }
-                if (idx != frameCount + 1) {
-                  document.getElementById("progress-bar").style.width = (idx+1)*barSize+"px";
-                }
-                if (idx < frameCount) {
-                  document.getElementById('timestamp').innerHTML = radarTime[idx];
-                  radarImage[idx].setOpacity(radarOpacity);
-                }
-              }
+        function nextImage() {
+          if (idx == frameCount) {
+            radarImage[frameCount - 1].setOpacity(0);
+          } else if (idx < frameCount - 1) {
+            radarImage[idx].setOpacity(0);
+          }
+          idx += 1;
+          if (doRadarUpdate && idx == 1) {
+            updateRadar();
+          }
+          if (idx == frameCount + 1) {
+            idx = 0;
+          }
+          if (idx != frameCount + 1) {
+            document.getElementById("progress-bar").style.width = (idx+1)*barSize+"px";
+          }
+          if (idx < frameCount) {
+            document.getElementById('timestamp').innerHTML = radarTime[idx];
+            radarImage[idx].setOpacity(radarOpacity);
+          }
+        }
 
-              function resizeWindow() {
-                this.document.getElementById("color-bar").width = this.frameElement.offsetWidth;
-                this.document.getElementById("img-color-bar").width = this.frameElement.offsetWidth;
-                this.document.getElementById("mapid").width = this.frameElement.offsetWidth;
-                this.document.getElementById("mapid").height = ${this.isPanel
+        function resizeWindow() {
+          this.document.getElementById("color-bar").width = this.frameElement.offsetWidth;
+          this.document.getElementById("img-color-bar").width = this.frameElement.offsetWidth;
+          this.document.getElementById("mapid").width = this.frameElement.offsetWidth;
+          this.document.getElementById("mapid").height = ${this.isPanel
         ? this.offsetParent
           ? this.offsetParent.clientHeight - 48 - (this.editMode === true ? 59 : 0)
           : 492
@@ -595,12 +599,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
             : 492
           : 492
       }
-                this.document.getElementById("div-progress-bar").width = this.frameElement.offsetWidth;
-                this.document.getElementById("bottom-container").width = this.frameElement.offsetWidth;
-                barSize = this.frameElement.offsetWidth/frameCount;
-              }
-            </script>
-          </span>
+          this.document.getElementById("div-progress-bar").width = this.frameElement.offsetWidth;
+          this.document.getElementById("bottom-container").width = this.frameElement.offsetWidth;
+          barSize = this.frameElement.offsetWidth/frameCount;
+        }
+        </script>
+            </span>
         </body>
       </html>
     `;
