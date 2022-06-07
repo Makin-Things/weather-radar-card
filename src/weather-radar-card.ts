@@ -211,7 +211,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               var labelSize = ${this._config.extra_labels !== undefined ? (this._config.extra_labels ? 128 : 256) : 256
       };
               var labelZoom = ${this._config.extra_labels !== undefined ? (this._config.extra_labels ? 1 : 0) : 0};
-              var map_style = '${this._config.map_style !== undefined ? this._config.map_style.toLowerCase() : 'light'
+              var map_style = '${this._config.map_style !== undefined && this._config.map_style !== null ? this._config.map_style.toLowerCase() : 'light'
       }';
               switch (map_style) {
                 case "dark":
