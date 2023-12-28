@@ -1,3 +1,7 @@
+# ***** NO LONGER MAINTAINED *****
+
+This card is no longer being maintained as I simply don't have time. I will leave it here, but I will not be fixing and bugs or providing any enhancements.
+
 # Weather Radar Card
 
 A Home Assistant rain radar card using the tiled images from RainViewer
