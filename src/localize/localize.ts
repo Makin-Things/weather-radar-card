@@ -1,9 +1,11 @@
 import * as en from './languages/en.json';
 import * as nb from './languages/nb.json';
+import * as sk from './languages/sk.json';
 
 const languages: any = {
   en: en,
   nb: nb,
+  sk: sk,
 };
 
 export function localize(string: string, search: string = '', replace = '') {
