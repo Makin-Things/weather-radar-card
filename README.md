@@ -1,6 +1,9 @@
-# ***** NO LONGER MAINTAINED *****
+# ***** New Maintainer *****
 
-This card is no longer being maintained as I simply don't have time. I will leave it here, but I will not be fixing and bugs or providing any enhancements.
+Update 2025-03-14: Simon has accepted my offer to take over maintenance of this card - [John Pettitt](https://github.com/jpettitt).  
+
+I plan to triage the open issues over the next few weeks and identify any needed fixes and desired enhancements.
+
 
 # Weather Radar Card
 
