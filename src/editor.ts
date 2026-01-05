@@ -59,6 +59,14 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
     return this._config?.show_error || false;
   }
 
+  get _height(): string {
+    return this._config?.height || '';
+  }
+
+  get _width(): string {
+    return this._config?.width || '';
+  }
+
   protected render(): TemplateResult | void {
     if (!this.hass || !this._helpers) {
       return html``;
@@ -75,6 +83,20 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
             .value=${config.card_title ? config.card_title : ''}
             .configValue=${'card_title'}
             @input=${this._valueChangedString}
+        ></mwc-textfield>
+        <mwc-textfield
+            label="Height (optional)"
+            .value=${config.height ? config.height : ''}
+            .configValue=${'height'}
+            @input=${this._valueChangedString}
+            helper="e.g., 400px, 50vh"
+        ></mwc-textfield>
+        <mwc-textfield
+            label="Width (optional)"
+            .value=${config.width ? config.width : ''}
+            .configValue=${'width'}
+            @input=${this._valueChangedString}
+            helper="e.g., 100%, 500px"
         ></mwc-textfield>
         <mwc-select label="Data Source (optional)" .configValue=${'data_source'} .value=${config.data_source ?
               config.data_source : ''} @selected=${this._valueChangedString} @closed=${(ev)=>

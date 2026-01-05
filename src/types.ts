@@ -10,6 +10,8 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   static_map: boolean;
   show_zoom: boolean;
   square_map: boolean;
+  height?: string;
+  width?: string;
   extra_labels: undefined;
   frame_count: undefined;
   frame_delay: undefined;

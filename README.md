@@ -47,6 +47,8 @@ All of the options below can be selected using the GUI config editor, there is n
 | static_map       | boolean | **Optional** | Set to true to disable all panning and zooming               | `false`                                                    |
 | show_zoom        | boolean | **Optional** | Show the zoom controls in the top left corner                | `false`                                                    |
 | square_map       | boolean | **Optional** | Will keep the map square (not in panel mode)                 | `false`                                                    |
+| height           | string  | **Optional** | **NEW** Custom card height using CSS units (e.g., '400px', '50vh'). Overrides panel mode and square_map calculations. | auto                                                       |
+| width            | string  | **Optional** | **NEW** Custom card width using CSS units (e.g., '500px', '80%')     | `'100%'`                                                   |
 | show_marker      | boolean | **Optional** | Show the home icon at the marker position                    | `false`                                                    |
 | show_playback    | boolean | **Optional** | Show the playback controls in the bottom right toolbar       | `false`                                                    |
 | show_recenter    | boolean | **Optional** | Show the re-center control in the bottom right toolbar       | `false`                                                    |
@@ -108,6 +110,17 @@ marker_latitude: -33.857058
 marker_longitude: 151.215179
 show_marker: true
 show_range: false
+```
+
+This example shows how to set custom dimensions for the card.
+
+```yaml
+type: 'custom:weather-radar-card'
+height: '400px'
+width: '600px'
+show_marker: true
+show_playback: true
+zoom_level: 7
 ```
 
 ## Install
