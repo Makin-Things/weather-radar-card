@@ -4,7 +4,7 @@ import { HomeAssistant, LovelaceCardEditor, LovelaceCard } from 'custom-card-hel
 
 import './editor';
 
-import { WeatherRadarCardConfig } from './types';
+import { WeatherRadarCardConfig, CoordinateConfig } from './types';
 import { CARD_VERSION } from './const';
 
 import { localize } from './localize/localize';
@@ -72,6 +72,16 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       );
     }
 
+    // Validate coordinate configurations
+    this._validateCoordinateConfig('center_latitude', config.center_latitude);
+    this._validateCoordinateConfig('center_longitude', config.center_longitude);
+    this._validateCoordinateConfig('marker_latitude', config.marker_latitude);
+    this._validateCoordinateConfig('marker_longitude', config.marker_longitude);
+    this._validateCoordinateConfig('mobile_center_latitude', config.mobile_center_latitude);
+    this._validateCoordinateConfig('mobile_center_longitude', config.mobile_center_longitude);
+    this._validateCoordinateConfig('mobile_marker_latitude', config.mobile_marker_latitude);
+    this._validateCoordinateConfig('mobile_marker_longitude', config.mobile_marker_longitude);
+
     this._config = config;
   }
 
@@ -86,6 +96,219 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   protected shouldUpdate(/*changedProps: PropertyValues*/): boolean {
     return true;
     //    return hasConfigOrEntityChanged(this, changedProps, false);
+  }
+
+  /**
+   * Validates coordinate configuration format
+   * Logs warnings for invalid configs but doesn't throw errors
+   */
+  private _validateCoordinateConfig(fieldName: string, value: CoordinateConfig | undefined): void {
+    if (value === undefined || value === null) {
+      return; // Optional field
+    }
+
+    // Number is always valid
+    if (typeof value === 'number') {
+      return;
+    }
+
+    // String should look like an entity ID
+    if (typeof value === 'string') {
+      if (!value.includes('.')) {
+        console.warn(
+          `Weather Radar Card: '${fieldName}' value '${value}' does not look like a valid entity ID. Expected format: 'domain.entity_name'`,
+        );
+      }
+      return;
+    }
+
+    // Object should have required fields
+    if (typeof value === 'object') {
+      if (!value.entity || typeof value.entity !== 'string') {
+        console.warn(
+          `Weather Radar Card: '${fieldName}' entity config missing required 'entity' field`,
+        );
+      }
+      if (value.latitude_attribute && typeof value.latitude_attribute !== 'string') {
+        console.warn(
+          `Weather Radar Card: '${fieldName}' latitude_attribute must be a string`,
+        );
+      }
+      if (value.longitude_attribute && typeof value.longitude_attribute !== 'string') {
+        console.warn(
+          `Weather Radar Card: '${fieldName}' longitude_attribute must be a string`,
+        );
+      }
+      return;
+    }
+
+    console.warn(
+      `Weather Radar Card: Invalid type for '${fieldName}'. Expected number, entity ID string, or entity config object.`,
+    );
+  }
+
+  /**
+   * Detects if the current device is mobile
+   * Checks Home Assistant Companion app, mobile user agents, and screen width
+   */
+  private _isMobileDevice(): boolean {
+    // Check 1: Home Assistant Companion app user agent
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isHAApp = userAgent.includes('home assistant');
+
+    // Check 2: Common mobile user agents
+    const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+
+    // Check 3: Screen width (mobile-sized)
+    const isMobileScreen = window.innerWidth <= 768;
+
+    // Device is mobile if it's the HA app OR (mobile UA AND mobile screen)
+    return isHAApp || (isMobileUA && isMobileScreen);
+  }
+
+  /**
+   * Returns appropriate coordinate config based on device type
+   * Mobile overrides take precedence when device is detected as mobile
+   */
+  private _getCoordinateConfig(
+    baseConfig: CoordinateConfig | undefined,
+    mobileConfig: CoordinateConfig | undefined,
+    isMobile: boolean,
+  ): CoordinateConfig | undefined {
+    // If mobile and mobile override exists, use it
+    if (isMobile && mobileConfig !== undefined) {
+      return mobileConfig;
+    }
+    // Otherwise use base config
+    return baseConfig;
+  }
+
+  /**
+   * Extracts coordinate from entity attributes with validation
+   */
+  private _getCoordinateFromEntity(
+    entityId: string,
+    coordType: 'latitude' | 'longitude',
+    attributeName: string,
+  ): number | null {
+    // Check if entity exists
+    const entityState = this.hass?.states[entityId];
+    if (!entityState) {
+      console.warn(
+        `Weather Radar Card: Entity '${entityId}' not found for ${coordType}. Using fallback.`,
+      );
+      return null;
+    }
+
+    // Extract attribute value
+    const value = entityState.attributes[attributeName];
+
+    if (value === undefined || value === null) {
+      console.warn(
+        `Weather Radar Card: Entity '${entityId}' has no attribute '${attributeName}' for ${coordType}. Using fallback.`,
+      );
+      return null;
+    }
+
+    // Validate numeric value
+    const numValue = typeof value === 'number' ? value : parseFloat(value);
+
+    if (isNaN(numValue)) {
+      console.warn(
+        `Weather Radar Card: Entity '${entityId}' attribute '${attributeName}' is not a valid number ('${value}'). Using fallback.`,
+      );
+      return null;
+    }
+
+    // Validate coordinate ranges
+    if (coordType === 'latitude' && (numValue < -90 || numValue > 90)) {
+      console.warn(
+        `Weather Radar Card: Invalid latitude value ${numValue} from entity '${entityId}'. Must be between -90 and 90. Using fallback.`,
+      );
+      return null;
+    }
+
+    if (coordType === 'longitude' && (numValue < -180 || numValue > 180)) {
+      console.warn(
+        `Weather Radar Card: Invalid longitude value ${numValue} from entity '${entityId}'. Must be between -180 and 180. Using fallback.`,
+      );
+      return null;
+    }
+
+    return numValue;
+  }
+
+  /**
+   * Resolves a coordinate configuration to a numeric value
+   * Supports: numbers, entity IDs as strings, or entity config objects
+   */
+  private _resolveCoordinate(
+    config: CoordinateConfig | undefined,
+    coordType: 'latitude' | 'longitude',
+    fallback: number,
+  ): number {
+    // Return fallback if no config
+    if (config === undefined || config === null) {
+      return fallback;
+    }
+
+    // Direct numeric value (backwards compatible)
+    if (typeof config === 'number') {
+      return config;
+    }
+
+    // String entity ID (simple format)
+    if (typeof config === 'string') {
+      return (
+        this._getCoordinateFromEntity(
+          config,
+          coordType,
+          coordType, // Use coordType as attribute name
+        ) ?? fallback
+      );
+    }
+
+    // Entity config object (advanced format)
+    if (typeof config === 'object' && 'entity' in config) {
+      const attrName =
+        coordType === 'latitude'
+          ? config.latitude_attribute || 'latitude'
+          : config.longitude_attribute || 'longitude';
+
+      return this._getCoordinateFromEntity(config.entity, coordType, attrName) ?? fallback;
+    }
+
+    return fallback;
+  }
+
+  /**
+   * Resolves a lat/lon pair from configs with intelligent fallback handling
+   * Special case: both are same entity string - extract both coordinates atomically
+   */
+  private _resolveCoordinatePair(
+    latConfig: CoordinateConfig | undefined,
+    lonConfig: CoordinateConfig | undefined,
+    fallbackLat: number,
+    fallbackLon: number,
+  ): { lat: number; lon: number } {
+    // Special case: both are string entity IDs and same entity
+    // Extract both coordinates from same entity for atomic resolution
+    if (typeof latConfig === 'string' && typeof lonConfig === 'string' && latConfig === lonConfig) {
+      const entityState = this.hass?.states[latConfig];
+      if (entityState?.attributes?.latitude && entityState?.attributes?.longitude) {
+        const lat = parseFloat(entityState.attributes.latitude);
+        const lon = parseFloat(entityState.attributes.longitude);
+        if (!isNaN(lat) && !isNaN(lon)) {
+          return { lat, lon };
+        }
+      }
+    }
+
+    // Standard resolution: resolve each coordinate independently
+    return {
+      lat: this._resolveCoordinate(latConfig, 'latitude', fallbackLat),
+      lon: this._resolveCoordinate(lonConfig, 'longitude', fallbackLon),
+    };
   }
 
   protected render(): TemplateResult | void {
@@ -158,10 +381,53 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               const minZoom = 3;
               var radarOpacity = 1.0;
               var zoomLevel = ${this._config.zoom_level !== undefined ? this._config.zoom_level : 7};
-              var centerLat = ${this._config.center_latitude !== undefined ? this._config.center_latitude : this.hass.config.latitude};
-              var centerLon = ${this._config.center_longitude !== undefined ? this._config.center_longitude : this.hass.config.longitude};
-              var markerLat = (${this._config.marker_latitude}) ? ${this._config.marker_latitude} : centerLat;
-              var markerLon = (${this._config.marker_longitude}) ? ${this._config.marker_longitude} : centerLon;
+              ${
+                (() => {
+                  // Detect device type and get appropriate configs
+                  const isMobile = this._isMobileDevice();
+                  const centerLatConfig = this._getCoordinateConfig(
+                    this._config.center_latitude,
+                    this._config.mobile_center_latitude,
+                    isMobile,
+                  );
+                  const centerLonConfig = this._getCoordinateConfig(
+                    this._config.center_longitude,
+                    this._config.mobile_center_longitude,
+                    isMobile,
+                  );
+                  const markerLatConfig = this._getCoordinateConfig(
+                    this._config.marker_latitude,
+                    this._config.mobile_marker_latitude,
+                    isMobile,
+                  );
+                  const markerLonConfig = this._getCoordinateConfig(
+                    this._config.marker_longitude,
+                    this._config.mobile_marker_longitude,
+                    isMobile,
+                  );
+
+                  // Resolve coordinates at render time
+                  const centerCoords = this._resolveCoordinatePair(
+                    centerLatConfig,
+                    centerLonConfig,
+                    this.hass.config.latitude,
+                    this.hass.config.longitude,
+                  );
+
+                  const markerCoords = this._resolveCoordinatePair(
+                    markerLatConfig,
+                    markerLonConfig,
+                    centerCoords.lat,
+                    centerCoords.lon,
+                  );
+
+                  // Return variables for injection into iframe
+                  return `var centerLat = ${centerCoords.lat};
+              var centerLon = ${centerCoords.lon};
+              var markerLat = ${markerCoords.lat};
+              var markerLon = ${markerCoords.lon};`;
+                })()
+              }
               var timeout = ${this._config.frame_delay !== undefined ? this._config.frame_delay : 500};
               var restartDelay = ${this._config.restart_delay !== undefined ? this._config.restart_delay : 1000};
               var frameCount = ${this._config.frame_count != undefined ? this._config.frame_count : 10};

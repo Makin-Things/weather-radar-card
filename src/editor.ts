@@ -3,7 +3,7 @@ import { LitElement, html, TemplateResult, css, CSSResultGroup } from 'lit';
 import { HomeAssistant, fireEvent, LovelaceCardEditor } from 'custom-card-helpers';
 
 import { ScopedRegistryHost } from '@lit-labs/scoped-registry-mixin';
-import { WeatherRadarCardConfig } from './types';
+import { WeatherRadarCardConfig, CoordinateConfig } from './types';
 import { customElement, property, state } from 'lit/decorators';
 import { formfieldDefinition } from '../elements/formfield';
 import { selectDefinition } from '../elements/select';
@@ -139,27 +139,63 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
         </div>
         <mwc-textfield
             label="Map Centre Latitude (optional)"
-            .value=${config.center_latitude ? config.center_latitude : ''}
+            .value=${this._formatCoordinateValue(config.center_latitude)}
             .configValue=${'center_latitude'}
-            @input=${this._valueChangedNumber}
+            @input=${this._valueChangedCoordinate}
+            helper="Number or entity ID (e.g., device_tracker.phone)"
         ></mwc-textfield>
         <mwc-textfield
             label="Map Centre Longitude (optional)"
-            .value=${config.center_longitude ? config.center_longitude : ''}
+            .value=${this._formatCoordinateValue(config.center_longitude)}
             .configValue=${'center_longitude'}
-            @input=${this._valueChangedNumber}
+            @input=${this._valueChangedCoordinate}
+            helper="Number or entity ID"
         ></mwc-textfield>
         <mwc-textfield
             label="Marker Latitude (optional)"
-            .value=${config.marker_latitude ? config.marker_latitude : ''}
+            .value=${this._formatCoordinateValue(config.marker_latitude)}
             .configValue=${'marker_latitude'}
-            @input=${this._valueChangedNumber}
+            @input=${this._valueChangedCoordinate}
+            helper="Number or entity ID"
         ></mwc-textfield>
         <mwc-textfield
             label="Marker Longitude (optional)"
-            .value=${config.marker_longitude ? config.marker_longitude : ''}
+            .value=${this._formatCoordinateValue(config.marker_longitude)}
             .configValue=${'marker_longitude'}
-            @input=${this._valueChangedNumber}
+            @input=${this._valueChangedCoordinate}
+            helper="Number or entity ID"
+        ></mwc-textfield>
+        <h3>Mobile Device Overrides</h3>
+        <p style="font-size: 0.9em; color: var(--secondary-text-color); margin: 0 0 10px 0;">
+          When accessed from a mobile device, these coordinates will override the base coordinates above.
+        </p>
+        <mwc-textfield
+            label="Mobile Centre Latitude (optional)"
+            .value=${this._formatCoordinateValue(config.mobile_center_latitude)}
+            .configValue=${'mobile_center_latitude'}
+            @input=${this._valueChangedCoordinate}
+            helper="Mobile override (e.g., device_tracker.phone)"
+        ></mwc-textfield>
+        <mwc-textfield
+            label="Mobile Centre Longitude (optional)"
+            .value=${this._formatCoordinateValue(config.mobile_center_longitude)}
+            .configValue=${'mobile_center_longitude'}
+            @input=${this._valueChangedCoordinate}
+            helper="Mobile override"
+        ></mwc-textfield>
+        <mwc-textfield
+            label="Mobile Marker Latitude (optional)"
+            .value=${this._formatCoordinateValue(config.mobile_marker_latitude)}
+            .configValue=${'mobile_marker_latitude'}
+            @input=${this._valueChangedCoordinate}
+            helper="Mobile override"
+        ></mwc-textfield>
+        <mwc-textfield
+            label="Mobile Marker Longitude (optional)"
+            .value=${this._formatCoordinateValue(config.mobile_marker_longitude)}
+            .configValue=${'mobile_marker_longitude'}
+            @input=${this._valueChangedCoordinate}
+            helper="Mobile override"
         ></mwc-textfield>
         <div class="side-by-side">
           <mwc-textfield
@@ -315,6 +351,72 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
           ...this._config,
           [target.configValue]: target.value,
         };
+      }
+    }
+    fireEvent(this, 'config-changed', { config: this._config });
+  }
+
+  /**
+   * Formats coordinate config for display in text field
+   * Handles numbers, strings, and entity objects
+   */
+  private _formatCoordinateValue(value: CoordinateConfig | undefined): string {
+    if (value === undefined || value === null) {
+      return '';
+    }
+    if (typeof value === 'number') {
+      return value.toString();
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (typeof value === 'object' && 'entity' in value) {
+      // For object format, just show the entity ID
+      return value.entity;
+    }
+    return '';
+  }
+
+  /**
+   * Handles coordinate field changes (accepts both numbers and entity IDs)
+   */
+  private _valueChangedCoordinate(ev): void {
+    if (!this._config || !this.hass) {
+      return;
+    }
+    const target = ev.target;
+    if (target.configValue) {
+      const value = target.value?.trim();
+
+      if (value === '' || value === null) {
+        // Remove config value
+        delete this._config[target.configValue];
+      } else {
+        // Check if it's a number or entity ID
+        const numValue = parseFloat(value);
+
+        if (!isNaN(numValue)) {
+          // Store as number (backwards compatible)
+          this._config = {
+            ...this._config,
+            [target.configValue]: numValue,
+          };
+        } else if (value.includes('.')) {
+          // Looks like an entity ID (has a dot)
+          this._config = {
+            ...this._config,
+            [target.configValue]: value,
+          };
+        } else {
+          // Invalid - show console warning but keep value
+          console.warn(
+            `Weather Radar Card Editor: '${value}' should be a number or entity ID (e.g., device_tracker.phone)`,
+          );
+          this._config = {
+            ...this._config,
+            [target.configValue]: value,
+          };
+        }
       }
     }
     fireEvent(this, 'config-changed', { config: this._config });

@@ -37,10 +37,14 @@ All of the options below can be selected using the GUI config editor, there is n
 | data_source      | string  | **Optional** | Specifies whcih set of radar tiles to use                    | `'RainViewer-Original'` see section below for valid values |
 | map_style        | string  | **Optional** | Specifies the style for the map                              | `'light'` see section below for valid values               |
 | zoom_level       | number  | **Optional** | The initial zoom level, can be from 4 to 10                  | `7`                                                        |
-| center_latitude  | number  | **Optional** | The initial center latitude of the map                       | the location of your HA instance                           |
-| center_longitude | number  | **Optional** | The initial center longitude of the map                      | the location of your HA instance                           |
-| marker_latitude  | number  | **Optional** | The latitude for the home icon if enabled                    | the same as center_latitude                                |
-| marker_longitude | number  | **Optional** | The longitude for the home icon if enabled                   | the same as center_longitude                               |
+| center_latitude  | number / string / object  | **Optional** | The initial center latitude of the map (see Location Coordinates below) | the location of your HA instance                           |
+| center_longitude | number / string / object  | **Optional** | The initial center longitude of the map (see Location Coordinates below) | the location of your HA instance                           |
+| marker_latitude  | number / string / object  | **Optional** | The latitude for the home icon if enabled (see Location Coordinates below) | the same as center_latitude                                |
+| marker_longitude | number / string / object  | **Optional** | The longitude for the home icon if enabled (see Location Coordinates below) | the same as center_longitude                               |
+| mobile_center_latitude  | number / string / object  | **Optional** | **NEW** Mobile override for center latitude (see Mobile Device Overrides below) | not set (uses center_latitude)                             |
+| mobile_center_longitude | number / string / object  | **Optional** | **NEW** Mobile override for center longitude (see Mobile Device Overrides below) | not set (uses center_longitude)                            |
+| mobile_marker_latitude  | number / string / object  | **Optional** | **NEW** Mobile override for marker latitude (see Mobile Device Overrides below) | not set (uses marker_latitude)                             |
+| mobile_marker_longitude | number / string / object  | **Optional** | **NEW** Mobile override for marker longitude (see Mobile Device Overrides below) | not set (uses marker_longitude)                            |
 | frame_count      | number  | **Optional** | The number of frames to use in the loop                      | `10`                                                       |
 | frame_delay      | number  | **Optional** | The number of milliseconds to show each frame                | `500`                                                      |
 | restart_delay    | number  | **Optional** | The additional number of milliseconds to show the last frame | `1000`                                                     |
@@ -80,6 +84,75 @@ Specifies the style of map to use. Valid values are:
 - satellite
 
 These are based off the Carto and ESRI map styles that are available.
+
+### Location Coordinates
+
+The card supports three ways to specify latitude and longitude values for both center and marker positions:
+
+#### 1. Static Numeric Values (Traditional)
+
+Use a fixed coordinate value:
+
+```yaml
+center_latitude: -25.567607
+center_longitude: 152.930597
+```
+
+This is the traditional method and maintains full backwards compatibility.
+
+#### 2. Entity Reference (Simple)
+
+Use an entity ID as a string. The card will automatically use the entity's `latitude` and `longitude` attributes:
+
+```yaml
+marker_latitude: "device_tracker.my_phone"
+marker_longitude: "device_tracker.my_phone"
+```
+
+This works with any entity that has `latitude` and `longitude` attributes, including:
+- `device_tracker.*` entities
+- `person.*` entities
+- `zone.*` entities
+- Any sensor with location attributes
+
+#### 3. Entity Reference with Custom Attributes (Advanced)
+
+For entities with non-standard attribute names:
+
+```yaml
+marker_latitude:
+  entity: sensor.custom_location
+  latitude_attribute: custom_lat
+marker_longitude:
+  entity: sensor.custom_location
+  longitude_attribute: custom_lon
+```
+
+IMPORTANT: Coordinates are resolved when the card renders. Live updates are not supported - reload the card or refresh the page to update entity-based coordinates.
+
+#### Error Handling
+
+If an entity doesn't exist or lacks the required attributes, the card will:
+- Log a warning to the browser console
+- Fall back to the Home Assistant instance location (or center coordinates for markers)
+- Continue to render normally
+
+### Mobile Device Overrides
+
+When accessed from a mobile device, you can use different coordinates than on desktop. This is useful for showing your home location on desktop while showing your current device location on mobile.
+
+The card detects mobile devices by checking:
+- Home Assistant Companion app user agent (most reliable)
+- Mobile user agent strings (Android, iPhone, etc.)
+- Screen width (mobile if 768px or narrower)
+
+Mobile override fields:
+- `mobile_center_latitude` - Override for center latitude on mobile
+- `mobile_center_longitude` - Override for center longitude on mobile
+- `mobile_marker_latitude` - Override for marker latitude on mobile
+- `mobile_marker_longitude` - Override for marker longitude on mobile
+
+If mobile overrides are not specified, the base coordinates are used on all devices.
 
 ## Samples
 
@@ -121,6 +194,47 @@ width: '600px'
 show_marker: true
 show_playback: true
 zoom_level: 7
+```
+
+This example shows how to use mobile device overrides - desktop shows your home location while mobile shows your device's current location.
+
+```yaml
+type: 'custom:weather-radar-card'
+center_latitude: -25.567607
+center_longitude: 152.930597
+mobile_center_latitude: "device_tracker.my_phone"
+mobile_center_longitude: "device_tracker.my_phone"
+show_marker: true
+show_range: true
+zoom_level: 8
+```
+
+This example tracks a person entity's location on all devices.
+
+```yaml
+type: 'custom:weather-radar-card'
+center_latitude: "person.john"
+center_longitude: "person.john"
+marker_latitude: "person.john"
+marker_longitude: "person.john"
+show_marker: true
+show_range: true
+show_recenter: true
+zoom_level: 9
+```
+
+This example uses entity references with custom attribute names.
+
+```yaml
+type: 'custom:weather-radar-card'
+marker_latitude:
+  entity: sensor.custom_location
+  latitude_attribute: custom_lat
+marker_longitude:
+  entity: sensor.custom_location
+  longitude_attribute: custom_lon
+show_marker: true
+zoom_level: 10
 ```
 
 ## Install
