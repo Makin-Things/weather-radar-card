@@ -1,6 +1,6 @@
 import { LitElement, html, css, CSSResult, TemplateResult, PropertyValues } from 'lit';
 import { property, customElement } from 'lit/decorators.js';
-import { HomeAssistant, LovelaceCardEditor, LovelaceCard, hasConfigOrEntityChanged } from 'custom-card-helpers';
+import { HomeAssistant, LovelaceCardEditor, LovelaceCard } from 'custom-card-helpers';
 
 import './editor';
 
@@ -94,7 +94,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   }
 
   protected shouldUpdate(changedProps: PropertyValues): boolean {
-    return hasConfigOrEntityChanged(this, changedProps, false);
+    // Don't try to update if we don't have a config yet
+    if (!this._config) {
+      return false;
+    }
+    // Check if config or hass changed (this card doesn't use entity tracking)
+    return changedProps.has('_config') || changedProps.has('hass');
   }
 
   /**
@@ -382,49 +387,60 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               var zoomLevel = ${JSON.stringify(this._config.zoom_level !== undefined ? this._config.zoom_level : 7)};
               ${
                 (() => {
-                  // Detect device type and get appropriate configs
-                  const isMobile = this._isMobileDevice();
-                  const centerLatConfig = this._getCoordinateConfig(
-                    this._config.center_latitude,
-                    this._config.mobile_center_latitude,
-                    isMobile,
-                  );
-                  const centerLonConfig = this._getCoordinateConfig(
-                    this._config.center_longitude,
-                    this._config.mobile_center_longitude,
-                    isMobile,
-                  );
-                  const markerLatConfig = this._getCoordinateConfig(
-                    this._config.marker_latitude,
-                    this._config.mobile_marker_latitude,
-                    isMobile,
-                  );
-                  const markerLonConfig = this._getCoordinateConfig(
-                    this._config.marker_longitude,
-                    this._config.mobile_marker_longitude,
-                    isMobile,
-                  );
+                  try {
+                    // Detect device type and get appropriate configs
+                    const isMobile = this._isMobileDevice();
+                    const centerLatConfig = this._getCoordinateConfig(
+                      this._config.center_latitude,
+                      this._config.mobile_center_latitude,
+                      isMobile,
+                    );
+                    const centerLonConfig = this._getCoordinateConfig(
+                      this._config.center_longitude,
+                      this._config.mobile_center_longitude,
+                      isMobile,
+                    );
+                    const markerLatConfig = this._getCoordinateConfig(
+                      this._config.marker_latitude,
+                      this._config.mobile_marker_latitude,
+                      isMobile,
+                    );
+                    const markerLonConfig = this._getCoordinateConfig(
+                      this._config.marker_longitude,
+                      this._config.mobile_marker_longitude,
+                      isMobile,
+                    );
 
-                  // Resolve coordinates at render time
-                  const centerCoords = this._resolveCoordinatePair(
-                    centerLatConfig,
-                    centerLonConfig,
-                    this.hass.config.latitude,
-                    this.hass.config.longitude,
-                  );
+                    // Resolve coordinates at render time
+                    const centerCoords = this._resolveCoordinatePair(
+                      centerLatConfig,
+                      centerLonConfig,
+                      this.hass?.config?.latitude ?? 0,
+                      this.hass?.config?.longitude ?? 0,
+                    );
 
-                  const markerCoords = this._resolveCoordinatePair(
-                    markerLatConfig,
-                    markerLonConfig,
-                    centerCoords.lat,
-                    centerCoords.lon,
-                  );
+                    const markerCoords = this._resolveCoordinatePair(
+                      markerLatConfig,
+                      markerLonConfig,
+                      centerCoords.lat,
+                      centerCoords.lon,
+                    );
 
-                  // Return variables for injection into iframe
-                  return `var centerLat = ${JSON.stringify(centerCoords.lat)};
+                    // Return variables for injection into iframe
+                    return `var centerLat = ${JSON.stringify(centerCoords.lat)};
               var centerLon = ${JSON.stringify(centerCoords.lon)};
               var markerLat = ${JSON.stringify(markerCoords.lat)};
               var markerLon = ${JSON.stringify(markerCoords.lon)};`;
+                  } catch (error) {
+                    console.error('Weather Radar Card: Error resolving coordinates:', error);
+                    // Fallback to default coordinates
+                    const fallbackLat = this.hass?.config?.latitude ?? 0;
+                    const fallbackLon = this.hass?.config?.longitude ?? 0;
+                    return `var centerLat = ${JSON.stringify(fallbackLat)};
+              var centerLon = ${JSON.stringify(fallbackLon)};
+              var markerLat = ${JSON.stringify(fallbackLat)};
+              var markerLon = ${JSON.stringify(fallbackLon)};`;
+                  }
                 })()
               }
               var timeout = ${JSON.stringify(this._config.frame_delay !== undefined ? this._config.frame_delay : 500)};
@@ -625,8 +641,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               if (${this._config.show_scale === true}) {
                 L.control.scale({
                   position: 'bottomleft',
-                  metric: ${this.hass.config.unit_system.length === 'km'},
-                  imperial: ${this.hass.config.unit_system.length === 'mi'},
+                  metric: ${(this.hass?.config?.unit_system?.length ?? 'km') === 'km'},
+                  imperial: ${(this.hass?.config?.unit_system?.length ?? 'km') === 'mi'},
                   maxWidth: 100,
                 }).addTo(radarMap);
 
@@ -706,7 +722,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       }
 
               ${this._config.show_range === true
-        ? this.hass.config.unit_system.length === 'km' ?
+        ? (this.hass?.config?.unit_system?.length ?? 'km') === 'km' ?
           'L.circle([markerLat, markerLon], { radius: 50000, weight: 1, fill: false, opacity: 0.3, interactive: false }).addTo(radarMap); \
           L.circle([markerLat, markerLon], { radius: 100000, weight: 1, fill: false, opacity: 0.3, interactive: false }).addTo(radarMap); \
           L.circle([markerLat, markerLon], { radius: 200000, weight: 1, fill: false, opacity: 0.3, interactive: false }).addTo(radarMap);':
