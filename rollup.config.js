@@ -1,14 +1,17 @@
+import { createRequire } from 'module';
 import typescript from 'rollup-plugin-typescript2';
-import commonjs from 'rollup-plugin-commonjs';
-import nodeResolve from 'rollup-plugin-node-resolve';
-import babel from 'rollup-plugin-babel';
-import { terser } from 'rollup-plugin-terser';
+import commonjs from '@rollup/plugin-commonjs';
+import nodeResolve from '@rollup/plugin-node-resolve';
+import babel from '@rollup/plugin-babel';
+import terser from '@rollup/plugin-terser';
 import serve from 'rollup-plugin-serve';
 import json from '@rollup/plugin-json';
-import ignore from './rollup-plugins/ignore';
-import { ignoreTextfieldFiles } from './elements/ignore/textfield';
-import { ignoreSelectFiles } from './elements/ignore/select';
-import { ignoreSwitchFiles } from './elements/ignore/switch';
+import ignore from './rollup-plugins/ignore.js';
+import { ignoreTextfieldFiles } from './elements/ignore/textfield.js';
+import { ignoreSelectFiles } from './elements/ignore/select.js';
+import { ignoreSwitchFiles } from './elements/ignore/switch.js';
+
+const require = createRequire(import.meta.url);
 const dev = process.env.ROLLUP_WATCH;
 
 const serveopts = {
@@ -22,12 +25,13 @@ const serveopts = {
 };
 
 const plugins = [
-  nodeResolve({}),
+  nodeResolve(),
   commonjs(),
   typescript(),
   json(),
   babel({
     exclude: 'node_modules/**',
+    babelHelpers: 'bundled',
   }),
   dev && serve(serveopts),
   !dev && terser(),

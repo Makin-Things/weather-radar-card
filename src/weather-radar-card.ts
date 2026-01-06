@@ -1,6 +1,6 @@
-import { LitElement, html, css, CSSResult, TemplateResult } from 'lit';
+import { LitElement, html, css, CSSResult, TemplateResult, PropertyValues } from 'lit';
 import { property, customElement } from 'lit/decorators.js';
-import { HomeAssistant, LovelaceCardEditor, LovelaceCard } from 'custom-card-helpers';
+import { HomeAssistant, LovelaceCardEditor, LovelaceCard, hasConfigOrEntityChanged } from 'custom-card-helpers';
 
 import './editor';
 
@@ -93,9 +93,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     return 10;
   }
 
-  protected shouldUpdate(/*changedProps: PropertyValues*/): boolean {
-    return true;
-    //    return hasConfigOrEntityChanged(this, changedProps, false);
+  protected shouldUpdate(changedProps: PropertyValues): boolean {
+    return hasConfigOrEntityChanged(this, changedProps, false);
   }
 
   /**
@@ -380,7 +379,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               const maxZoom = 10;
               const minZoom = 3;
               var radarOpacity = 1.0;
-              var zoomLevel = ${this._config.zoom_level !== undefined ? this._config.zoom_level : 7};
+              var zoomLevel = ${JSON.stringify(this._config.zoom_level !== undefined ? this._config.zoom_level : 7)};
               ${
                 (() => {
                   // Detect device type and get appropriate configs
@@ -422,16 +421,16 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                   );
 
                   // Return variables for injection into iframe
-                  return `var centerLat = ${centerCoords.lat};
-              var centerLon = ${centerCoords.lon};
-              var markerLat = ${markerCoords.lat};
-              var markerLon = ${markerCoords.lon};`;
+                  return `var centerLat = ${JSON.stringify(centerCoords.lat)};
+              var centerLon = ${JSON.stringify(centerCoords.lon)};
+              var markerLat = ${JSON.stringify(markerCoords.lat)};
+              var markerLon = ${JSON.stringify(markerCoords.lon)};`;
                 })()
               }
-              var timeout = ${this._config.frame_delay !== undefined ? this._config.frame_delay : 500};
-              var restartDelay = ${this._config.restart_delay !== undefined ? this._config.restart_delay : 1000};
-              var frameCount = ${this._config.frame_count != undefined ? this._config.frame_count : 10};
-              var tileURL = '${this._config.data_source !== undefined ? this._config.data_source : 'RainViewer-Original'}';
+              var timeout = ${JSON.stringify(this._config.frame_delay !== undefined ? this._config.frame_delay : 500)};
+              var restartDelay = ${JSON.stringify(this._config.restart_delay !== undefined ? this._config.restart_delay : 1000)};
+              var frameCount = ${JSON.stringify(this._config.frame_count != undefined ? this._config.frame_count : 10)};
+              var tileURL = ${JSON.stringify(this._config.data_source !== undefined ? this._config.data_source : 'RainViewer-Original')};
               switch (tileURL) {
                 case "RainViewer-Original":
                   var tileURL = 'https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/1/1_0.png';
@@ -483,11 +482,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                   break;
               }
               resizeWindow();
-              var labelSize = ${this._config.extra_labels !== undefined ? (this._config.extra_labels ? 128 : 256) : 256
-      };
-              var labelZoom = ${this._config.extra_labels !== undefined ? (this._config.extra_labels ? 1 : 0) : 0};
-              var map_style = '${this._config.map_style !== undefined && this._config.map_style !== null ? this._config.map_style.toLowerCase() : 'light'
-      }';
+              var labelSize = ${JSON.stringify(this._config.extra_labels !== undefined ? (this._config.extra_labels ? 128 : 256) : 256)};
+              var labelZoom = ${JSON.stringify(this._config.extra_labels !== undefined ? (this._config.extra_labels ? 1 : 0) : 0)};
+              var map_style = ${JSON.stringify(this._config.map_style !== undefined && this._config.map_style !== null ? this._config.map_style.toLowerCase() : 'light')};
               switch (map_style) {
                 case "dark":
                   var basemap_url = 'https://{s}.basemaps.cartocdn.com/{style}/{z}/{x}/{y}.png';
@@ -999,4 +996,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       }
     `;
   }
+}
+
+// Manual registration as fallback in case decorator doesn't work
+if (!customElements.get('weather-radar-card')) {
+  customElements.define('weather-radar-card', WeatherRadarCard);
 }

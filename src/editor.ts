@@ -4,7 +4,7 @@ import { HomeAssistant, fireEvent, LovelaceCardEditor } from 'custom-card-helper
 
 import { ScopedRegistryHost } from '@lit-labs/scoped-registry-mixin';
 import { WeatherRadarCardConfig, CoordinateConfig } from './types';
-import { customElement, property, state } from 'lit/decorators';
+import { customElement, property, state } from 'lit/decorators.js';
 import { formfieldDefinition } from '../elements/formfield';
 import { selectDefinition } from '../elements/select';
 import { switchDefinition } from '../elements/switch';

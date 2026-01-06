@@ -1,8 +1,8 @@
-# ***** New Maintainer *****
+# New Maintainer
 
-Update 2025-03-14: Simon has accepted my offer to take over maintenance of this card - [John Pettitt](https://github.com/jpettitt).  
+Update 2025-03-14: Simon has accepted my offer to take over maintenance of this card - [John Pettitt](https://github.com/jpettitt).
 
-I plan to triage the open issues over the next few weeks and identify any needed fixes and desired enhancements.
+I plan to triage the open issues and identify any needed fixes and desired enhancements.
 
 
 # Weather Radar Card
@@ -16,13 +16,13 @@ A Home Assistant rain radar card using the tiled images from RainViewer
 
 ## Support
 
-Hey dude! Help me out for a couple of :beers: or a :coffee:!
+Help support development with a donation!
 
 [![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/theOzzieRat)
 
 ## Description
 
-This card uses map tiles of radar data provided by RainViewer. This allows for one continous map that can be zoomed and panned seamlessly. This card allows this to be displayed within Home Assistant. The card allows you create radar loops of up to at least 24 hours.
+This card uses map tiles of radar data provided by RainViewer. This allows for one continuous map that can be zoomed and panned seamlessly. This card allows this to be displayed within Home Assistant. The card allows you create radar loops of up to at least 24 hours.
 
 ![Weather Radar card](https://raw.githubusercontent.com/makin-things/weather-radar-card/master/weather-radar-card.gif)
 
@@ -278,6 +278,10 @@ resources:
   - url: /local/community/weather-radar-card/weather-radar-card.js
     type: module
 ```
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a complete history of changes to this project.
 
 [license-shield]: https://img.shields.io/github/license/makin-things/weather-radar-card.svg?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/makin-things/weather-radar-card.svg?style=for-the-badge
