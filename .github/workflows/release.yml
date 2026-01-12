@@ -9,23 +9,21 @@ jobs:
     name: Prepare release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
 
-      # Build
-      - name: Build the file
-        run: |
-          rm -rf /home/runner/work/weather-radar-card/weather-radar-card/node_modules
-          cd /home/runner/work/weather-radar-card/weather-radar-card
-          npm install
-          npm run build
-
-      # Upload build file to the release as an asset.
-      - name: Upload zip to release
-        uses: svenstaro/upload-release-action@v1-release
-
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: /home/runner/work/weather-radar-card/weather-radar-card/dist/*
-          tag: ${{ github.ref }}
-          overwrite: true
-          file_glob: true
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build the file
+        run: npm run build
+
+      - name: Upload build artifacts to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*

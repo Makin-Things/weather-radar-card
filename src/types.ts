@@ -1,5 +1,15 @@
 import { LovelaceCardConfig } from 'custom-card-helpers';
 
+// Entity coordinate configuration for dynamic location from entity attributes
+export interface EntityCoordinate {
+  entity: string;
+  latitude_attribute?: string; // Default: 'latitude'
+  longitude_attribute?: string; // Default: 'longitude'
+}
+
+// Coordinate can be a number, entity ID string, or entity config object
+export type CoordinateConfig = number | string | EntityCoordinate;
+
 // TODO Add your configuration elements here for type-checking
 export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   show_range: boolean;
@@ -10,13 +20,21 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   static_map: boolean;
   show_zoom: boolean;
   square_map: boolean;
+  height?: string;
+  width?: string;
   extra_labels: undefined;
   frame_count: undefined;
   frame_delay: undefined;
-  marker_longitude: undefined;
-  marker_latitude: undefined;
-  center_longitude: undefined;
-  center_latitude: undefined;
+  // Base coordinates (used on all devices)
+  marker_longitude?: CoordinateConfig;
+  marker_latitude?: CoordinateConfig;
+  center_longitude?: CoordinateConfig;
+  center_latitude?: CoordinateConfig;
+  // Mobile-specific overrides (used when device detected as mobile)
+  mobile_marker_longitude?: CoordinateConfig;
+  mobile_marker_latitude?: CoordinateConfig;
+  mobile_center_longitude?: CoordinateConfig;
+  mobile_center_latitude?: CoordinateConfig;
   zoom_level: undefined;
   type: string;
   name?: string;
