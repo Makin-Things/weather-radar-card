@@ -1,8 +1,6 @@
-# New Maintainer
+# Beta Release
 
-Update 2025-03-14: Simon has accepted my offer to take over maintenance of this card - [John Pettitt](https://github.com/jpettitt).
-
-I plan to triage the open issues and identify any needed fixes and desired enhancements.
+Update 2026-01-12 new V2.2 beta release availabel in HACS
 
 
 # Weather Radar Card
