@@ -34,3 +34,6 @@ pnpm-debug.log*
 # Claude Code plans
 CLAUDE.md
 claude.md
+
+# PR documentation (local only)
+PR-DOCUMENTATION.md
