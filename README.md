@@ -1,7 +1,8 @@
-# Beta Release
+# New Beta Release V2.3
 
-Update 2026-01-12 new V2.2 beta release availabel in HACS
+Update 2026-02-09 new V2.3 beta release availabel in HACS
 
+V2.3 is a breaking change due to upstream API changes from Rain Viewer.  Color options have been removed and the zoom level limited.  There is upstream rate limiting so if you pan around you may exceed the rate limit and need to wait for it to work. Reducing you frame count will help.
 
 # Weather Radar Card
 
