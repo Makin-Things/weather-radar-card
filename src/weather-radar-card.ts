@@ -381,7 +381,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               </div>
             </div>
             <script>
-              const maxZoom = 10;
+              const maxZoom = 7;
               const minZoom = 3;
               var radarOpacity = 1.0;
               var zoomLevel = ${JSON.stringify(this._config.zoom_level !== undefined ? this._config.zoom_level : 7)};
@@ -445,58 +445,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               }
               var timeout = ${JSON.stringify(this._config.frame_delay !== undefined ? this._config.frame_delay : 500)};
               var restartDelay = ${JSON.stringify(this._config.restart_delay !== undefined ? this._config.restart_delay : 1000)};
-              var frameCount = ${JSON.stringify(this._config.frame_count != undefined ? this._config.frame_count : 10)};
-              var tileURL = ${JSON.stringify(this._config.data_source !== undefined ? this._config.data_source : 'RainViewer-Original')};
-              switch (tileURL) {
-                case "RainViewer-Original":
-                  var tileURL = 'https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/1/1_0.png';
-                  document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-original.png";
-                  var framePeriod = 300000;
-                  var frameLag = 60000;
-                  break;
-                case "RainViewer-UniversalBlue":
-                  var tileURL = 'https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/2/1_0.png';
-                  document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-universalblue.png";
-                  var framePeriod = 300000;
-                  var frameLag = 60000;
-                  break;
-                case "RainViewer-TITAN":
-                  var tileURL = 'https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/3/1_0.png';
-                  document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-titan.png";
-                  var framePeriod = 300000;
-                  var frameLag = 60000;
-                  break;
-                case "RainViewer-TWC":
-                  var tileURL = 'https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/4/1_0.png';
-                  document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-twc.png";
-                  var framePeriod = 300000;
-                  var frameLag = 60000;
-                  break;
-                case "RainViewer-Meteored":
-                  var tileURL = 'https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/5/1_0.png';
-                  document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-meteored.png";
-                  var framePeriod = 300000;
-                  var frameLag = 60000;
-                  break;
-                case "RainViewer-NEXRAD":
-                  var tileURL = 'https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/6/1_0.png';
-                  document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-nexrad.png";
-                  var framePeriod = 300000;
-                  var frameLag = 60000;
-                  break;
-                case "RainViewer-Rainbow":
-                  var tileURL = 'https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/7/1_0.png';
-                  document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-rainbow.png";
-                  var framePeriod = 300000;
-                  var frameLag = 60000;
-                  break;
-                case "RainViewer-DarkSky":
-                  var tileURL = 'https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/8/1_0.png';
-                  document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-darksky.png";
-                  var framePeriod = 300000;
-                  var frameLag = 60000;
-                  break;
-              }
+              var frameCount = ${JSON.stringify(this._config.frame_count != undefined ? this._config.frame_count : 5)}; 
+              var tileURL = 'https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/2/1_0.png';
+              document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-universalblue.png";
+              var framePeriod = 300000;
+              var frameLag = 60000;
+
               resizeWindow();
               var labelSize = ${JSON.stringify(this._config.extra_labels !== undefined ? (this._config.extra_labels ? 128 : 256) : 256)};
               var labelZoom = ${JSON.stringify(this._config.extra_labels !== undefined ? (this._config.extra_labels ? 1 : 0) : 0)};
