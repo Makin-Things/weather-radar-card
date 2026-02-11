@@ -247,6 +247,73 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
             ></mwc-switch>
           </mwc-formfield>
         </div>
+        ${
+          config.show_marker === true
+            ? html`
+                <h3>Marker Icon</h3>
+                <div class="side-by-side">
+                  <mwc-select
+                    label="Icon Type"
+                    .configValue=${'marker_icon'}
+                    .value=${config.marker_icon || 'default'}
+                    @selected=${this._valueChangedString}
+                    @closed=${(ev) => ev.stopPropagation()}
+                  >
+                    <mwc-list-item value="default">Default (Home)</mwc-list-item>
+                    <mwc-list-item value="entity_picture">Entity Picture</mwc-list-item>
+                    <mwc-list-item value="mdi:account">MDI: Account</mwc-list-item>
+                    <mwc-list-item value="mdi:account-circle">MDI: Account Circle</mwc-list-item>
+                    <mwc-list-item value="mdi:map-marker">MDI: Map Marker</mwc-list-item>
+                    <mwc-list-item value="mdi:home">MDI: Home</mwc-list-item>
+                    <mwc-list-item value="mdi:car">MDI: Car</mwc-list-item>
+                    <mwc-list-item value="mdi:cellphone">MDI: Cellphone</mwc-list-item>
+                  </mwc-select>
+                </div>
+                ${config.marker_icon === 'entity_picture'
+                  ? html`
+                      <mwc-textfield
+                        label="Icon Entity (optional)"
+                        .value=${config.marker_icon_entity || ''}
+                        .configValue=${'marker_icon_entity'}
+                        @input=${this._valueChangedString}
+                        helper="Entity with picture (auto-detects from marker entity if empty)"
+                      ></mwc-textfield>
+                    `
+                  : ''}
+                <h4>Mobile Icon Overrides</h4>
+                <div class="side-by-side">
+                  <mwc-select
+                    label="Mobile Icon Type (optional)"
+                    .configValue=${'mobile_marker_icon'}
+                    .value=${config.mobile_marker_icon || ''}
+                    @selected=${this._valueChangedString}
+                    @closed=${(ev) => ev.stopPropagation()}
+                  >
+                    <mwc-list-item></mwc-list-item>
+                    <mwc-list-item value="default">Default (Home)</mwc-list-item>
+                    <mwc-list-item value="entity_picture">Entity Picture</mwc-list-item>
+                    <mwc-list-item value="mdi:account">MDI: Account</mwc-list-item>
+                    <mwc-list-item value="mdi:account-circle">MDI: Account Circle</mwc-list-item>
+                    <mwc-list-item value="mdi:map-marker">MDI: Map Marker</mwc-list-item>
+                    <mwc-list-item value="mdi:home">MDI: Home</mwc-list-item>
+                    <mwc-list-item value="mdi:car">MDI: Car</mwc-list-item>
+                    <mwc-list-item value="mdi:cellphone">MDI: Cellphone</mwc-list-item>
+                  </mwc-select>
+                </div>
+                ${config.mobile_marker_icon === 'entity_picture'
+                  ? html`
+                      <mwc-textfield
+                        label="Mobile Icon Entity (optional)"
+                        .value=${config.mobile_marker_icon_entity || ''}
+                        .configValue=${'mobile_marker_icon_entity'}
+                        @input=${this._valueChangedString}
+                        helper="Mobile override for entity with picture"
+                      ></mwc-textfield>
+                    `
+                  : ''}
+              `
+            : ''
+        }
         <div class="side-by-side">
           <mwc-formfield .label=${"Show Scale"}>
             <mwc-switch
