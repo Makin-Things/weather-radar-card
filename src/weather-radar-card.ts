@@ -381,6 +381,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               </div>
             </div>
             <script>
+              const tileSize = 256;
               const maxZoom = 7;
               const minZoom = 3;
               var radarOpacity = 1.0;
@@ -446,7 +447,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               var timeout = ${JSON.stringify(this._config.frame_delay !== undefined ? this._config.frame_delay : 500)};
               var restartDelay = ${JSON.stringify(this._config.restart_delay !== undefined ? this._config.restart_delay : 1000)};
               var frameCount = ${JSON.stringify(this._config.frame_count != undefined ? this._config.frame_count : 5)}; 
-              var tileURL = 'https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/2/1_0.png';
+              var tileURL = 'https://tilecache.rainviewer.com/v2/radar/{time}/{tileSize}/{z}/{x}/{y}/2/1_0.png';
               document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-universalblue.png";
               var framePeriod = 300000;
               var frameLag = 60000;
@@ -621,8 +622,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                 {
                   style: basemap_style,
                   subdomains: 'abcd',
-                  detectRetina: true,
-                  tileSize: 256,
+                  detectRetina: false,
+                  tileSize: tileSize,
                   zoomOffset: 0,
                 },
               ).addTo(radarMap);
@@ -633,8 +634,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                   tileURL,
                   {
                     time: t,
-                    detectRetina: true,
-                    tileSize: 256,
+                    detectRetina: false,
+                    tileSize: tileSize,
                     zoomOffset: 0,
                     opacity: 0,
                     frame: i,
@@ -706,7 +707,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
           newLayer = L.tileLayer(tileURL, {
             time: t,
             maxZoom: maxZoom,
-            tileSize: 256,
+            tileSize: tileSize,
             zoomOffset: 0,
             opacity: 0,
           });
