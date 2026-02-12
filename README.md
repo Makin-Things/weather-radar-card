@@ -6,6 +6,7 @@ V2.3.2 is a breaking change due to upstream API changes from Rain Viewer.
 * Color options have been removed and the zoom level limited.
 * There is now an upstream rate limit for radar image tiles. If you pan around you may exceed the rate limit.
 * Retina display support has been removed, this reduces the tile count by a factor of 4 which helps mitaigate the rate limit.
+  
 The rate limit will reset after 1 minute. Reducing the frame count will help if you encounter a rate limit.
 
 # Weather Radar Card
