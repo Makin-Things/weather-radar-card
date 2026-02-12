@@ -1,8 +1,11 @@
-# New Beta Release V2.3
+# Breaking Changes V2.3.2
 
-Update 2026-02-09 new V2.3 beta release availabel in HACS
 
-V2.3 is a breaking change due to upstream API changes from Rain Viewer.  Color options have been removed and the zoom level limited.  There is upstream rate limiting so if you pan around you may exceed the rate limit and need to wait for it to work. Reducing you frame count will help.
+V2.3.2 is a breaking change due to upstream API changes from Rain Viewer.
+Color options have been removed and the zoom level limited.
+There is now an upstream rate limit for radar image tiles. If you pan around you may exceed the rate limit.
+Retina display support has been removed, this reduces the tile count by a factor of 4 which helps mitaigate the rate limit.
+The rate limit will reset after 1 minute. Reducing the frame count will help if you encounter a rate limit.
 
 # Weather Radar Card
 
