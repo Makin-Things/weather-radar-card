@@ -35,6 +35,11 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   mobile_marker_latitude?: CoordinateConfig;
   mobile_center_longitude?: CoordinateConfig;
   mobile_center_latitude?: CoordinateConfig;
+  // Marker icon configuration
+  marker_icon?: string; // "default" | "entity_picture" | "mdi:icon-name"
+  marker_icon_entity?: string; // Entity ID for entity_picture source
+  mobile_marker_icon?: string; // Mobile override for marker icon type
+  mobile_marker_icon_entity?: string; // Mobile override for icon entity
   zoom_level: undefined;
   type: string;
   name?: string;

@@ -166,22 +166,60 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     // Check 3: Screen width (mobile-sized)
     const isMobileScreen = window.innerWidth <= 768;
 
-    // Device is mobile if it's the HA app OR (mobile UA AND mobile screen)
-    return isHAApp || (isMobileUA && isMobileScreen);
+    // Device is mobile if: HA app, OR mobile screen size, OR mobile user agent
+    // Screen size is the primary indicator - handles responsive design mode and small windows
+    return isHAApp || isMobileScreen || isMobileUA;
+  }
+
+  /**
+   * Gets info about the currently logged-in user including their person entity and device tracker
+   * Returns null if user info cannot be determined
+   */
+  private _getCurrentUserInfo(): { personEntity: string; deviceTracker?: string } | null {
+    const userId = this.hass?.user?.id;
+    if (!userId) {
+      return null;
+    }
+
+    // Search for person entity with matching user_id
+    for (const [entityId, state] of Object.entries(this.hass?.states || {})) {
+      if (entityId.startsWith('person.') && state.attributes?.user_id === userId) {
+        // Found the person, get their primary device tracker
+        let deviceTracker: string | undefined;
+        const deviceTrackers = state.attributes?.device_trackers;
+
+        if (Array.isArray(deviceTrackers) && deviceTrackers.length > 0) {
+          deviceTracker = deviceTrackers[0];
+        } else if (typeof deviceTrackers === 'string' && deviceTrackers) {
+          // Could be comma-separated string
+          deviceTracker = deviceTrackers.split(',')[0].trim();
+        }
+
+        return { personEntity: entityId, deviceTracker };
+      }
+    }
+
+    return null;
   }
 
   /**
    * Returns appropriate coordinate config based on device type
    * Mobile overrides take precedence when device is detected as mobile
+   * Auto-detects from current user's device tracker if on mobile with no mobile config
    */
   private _getCoordinateConfig(
     baseConfig: CoordinateConfig | undefined,
     mobileConfig: CoordinateConfig | undefined,
     isMobile: boolean,
+    userDeviceTracker?: string,
   ): CoordinateConfig | undefined {
     // If mobile and mobile override exists, use it
     if (isMobile && mobileConfig !== undefined) {
       return mobileConfig;
+    }
+    // If mobile with no override, try auto-detect from user's device tracker
+    if (isMobile && userDeviceTracker) {
+      return userDeviceTracker;
     }
     // Otherwise use base config
     return baseConfig;
@@ -285,6 +323,147 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     return fallback;
   }
 
+  // Common MDI icon paths (embedded for offline reliability)
+  private static readonly MDI_PATHS: Record<string, string> = {
+    account:
+      'M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z',
+    'account-circle':
+      'M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z',
+    'map-marker':
+      'M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z',
+    home: 'M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z',
+    car: 'M5,11L6.5,6.5H17.5L19,11M17.5,16A1.5,1.5 0 0,1 16,14.5A1.5,1.5 0 0,1 17.5,13A1.5,1.5 0 0,1 19,14.5A1.5,1.5 0 0,1 17.5,16M6.5,16A1.5,1.5 0 0,1 5,14.5A1.5,1.5 0 0,1 6.5,13A1.5,1.5 0 0,1 8,14.5A1.5,1.5 0 0,1 6.5,16M18.92,6C18.72,5.42 18.16,5 17.5,5H6.5C5.84,5 5.28,5.42 5.08,6L3,12V20A1,1 0 0,0 4,21H5A1,1 0 0,0 6,20V19H18V20A1,1 0 0,0 19,21H20A1,1 0 0,0 21,20V12L18.92,6Z',
+    cellphone:
+      'M17,19H7V5H17M17,1H7C5.89,1 5,1.89 5,3V21A2,2 0 0,0 7,23H17A2,2 0 0,0 19,21V3C19,1.89 18.1,1 17,1Z',
+    'home-circle':
+      'M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M10,17V13H8L12,7L16,13H14V17H10Z',
+  };
+
+  /**
+   * Gets the marker icon configuration based on device type
+   * Handles mobile overrides and auto-detection from current user
+   * Mobile defaults to entity_picture (showing logged-in user's profile photo)
+   */
+  private _getMarkerIconConfig(isMobile: boolean, userInfo: { personEntity: string; deviceTracker?: string } | null): { type: string; entity?: string } {
+    let iconType: string;
+    if (isMobile) {
+      // Mobile defaults to entity_picture (user's profile photo)
+      iconType = this._config.mobile_marker_icon ?? 'entity_picture';
+    } else {
+      iconType = this._config.marker_icon || 'default';
+    }
+
+    // Resolve entity separately for mobile vs desktop to allow proper auto-detection
+    let iconEntity: string | undefined;
+    if (isMobile) {
+      // Mobile: use mobile-specific entity if set
+      iconEntity = this._config.mobile_marker_icon_entity;
+    } else {
+      // Desktop: use base entity
+      iconEntity = this._config.marker_icon_entity;
+    }
+
+    // Auto-detect entity for entity_picture mode without explicit entity
+    if (iconType === 'entity_picture' && !iconEntity) {
+      // First priority: use current user's person entity (has the profile picture)
+      if (userInfo?.personEntity) {
+        iconEntity = userInfo.personEntity;
+      } else {
+        // Fallback: try marker coordinate entity
+        const markerLatConfig = isMobile
+          ? this._config.mobile_marker_latitude ?? this._config.marker_latitude
+          : this._config.marker_latitude;
+
+        // If marker_latitude is a string (entity ID), use that entity
+        if (typeof markerLatConfig === 'string') {
+          iconEntity = markerLatConfig;
+        }
+      }
+    }
+
+    return { type: iconType, entity: iconEntity };
+  }
+
+  /**
+   * Resolves entity_picture URL from an entity
+   */
+  private _resolveEntityPicture(entityId: string | undefined): string | null {
+    if (!entityId) return null;
+    const entity = this.hass?.states[entityId];
+    if (!entity?.attributes?.entity_picture) return null;
+    return entity.attributes.entity_picture;
+  }
+
+  /**
+   * Generates the JavaScript code for creating the Leaflet marker icon
+   */
+  private _generateMarkerIconCode(isMobile: boolean, userInfo: { personEntity: string; deviceTracker?: string } | null): string {
+    const iconConfig = this._getMarkerIconConfig(isMobile, userInfo);
+    const mapStyle = (this._config.map_style || 'light').toLowerCase();
+
+    // Default icon (existing behavior)
+    if (!iconConfig.type || iconConfig.type === 'default') {
+      return `var myIcon = L.icon({
+        iconUrl: '/local/community/weather-radar-card/'+svg_icon,
+        iconSize: [16, 16],
+      });`;
+    }
+
+    // Entity picture icon (circular avatar)
+    if (iconConfig.type === 'entity_picture') {
+      const pictureUrl = this._resolveEntityPicture(iconConfig.entity);
+      if (!pictureUrl) {
+        console.warn(
+          `Weather Radar Card: Could not resolve entity_picture for '${iconConfig.entity}'. Using default icon.`,
+        );
+        return `var myIcon = L.icon({
+          iconUrl: '/local/community/weather-radar-card/'+svg_icon,
+          iconSize: [16, 16],
+        });`;
+      }
+      // Escape quotes in URL for safety
+      const safeUrl = pictureUrl.replace(/'/g, "\\'").replace(/"/g, '\\"');
+      return `var myIcon = L.icon({
+        iconUrl: '${safeUrl}',
+        iconSize: [32, 32],
+        className: 'marker-entity-picture'
+      });`;
+    }
+
+    // MDI icon
+    if (iconConfig.type.startsWith('mdi:')) {
+      const iconName = iconConfig.type.substring(4); // Remove "mdi:" prefix
+      const mdiPath = WeatherRadarCard.MDI_PATHS[iconName];
+
+      if (!mdiPath) {
+        console.warn(
+          `Weather Radar Card: MDI icon '${iconName}' not found in embedded icons. Using default. ` +
+            `Available icons: ${Object.keys(WeatherRadarCard.MDI_PATHS).join(', ')}`,
+        );
+        return `var myIcon = L.icon({
+          iconUrl: '/local/community/weather-radar-card/'+svg_icon,
+          iconSize: [16, 16],
+        });`;
+      }
+
+      // Auto-select color based on map style (light icons on dark maps, dark icons on light maps)
+      const mdiColor = mapStyle === 'dark' || mapStyle === 'satellite' ? '#EEEEEE' : '#333333';
+
+      return `var myIcon = L.divIcon({
+        html: '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="${mdiColor}" d="${mdiPath}"/></svg>',
+        iconSize: [24, 24],
+        className: 'marker-mdi-icon'
+      });`;
+    }
+
+    // Unknown icon type, fall back to default
+    console.warn(`Weather Radar Card: Unknown marker_icon type '${iconConfig.type}'. Using default.`);
+    return `var myIcon = L.icon({
+      iconUrl: '/local/community/weather-radar-card/'+svg_icon,
+      iconSize: [16, 16],
+    });`;
+  }
+
   /**
    * Resolves a lat/lon pair from configs with intelligent fallback handling
    * Special case: both are same entity string - extract both coordinates atomically
@@ -359,6 +538,16 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
             #color-bar {
               margin: 0px 0px;
             }
+            /* Custom marker icon styles */
+            .marker-entity-picture {
+              border-radius: 50%;
+              border: 2px solid white;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+            .marker-mdi-icon {
+              background: transparent;
+              border: none;
+            }
           </style>
         </head>
         <body onresize="resizeWindow()">
@@ -389,27 +578,34 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               ${
                 (() => {
                   try {
-                    // Detect device type and get appropriate configs
+                    // Detect device type and get current user info for auto-detection
                     const isMobile = this._isMobileDevice();
+                    const userInfo = this._getCurrentUserInfo();
+
+                    // Get coordinate configs - auto-detect from user's device tracker on mobile if no mobile config
                     const centerLatConfig = this._getCoordinateConfig(
                       this._config.center_latitude,
                       this._config.mobile_center_latitude,
                       isMobile,
+                      userInfo?.deviceTracker,
                     );
                     const centerLonConfig = this._getCoordinateConfig(
                       this._config.center_longitude,
                       this._config.mobile_center_longitude,
                       isMobile,
+                      userInfo?.deviceTracker,
                     );
                     const markerLatConfig = this._getCoordinateConfig(
                       this._config.marker_latitude,
                       this._config.mobile_marker_latitude,
                       isMobile,
+                      userInfo?.deviceTracker,
                     );
                     const markerLonConfig = this._getCoordinateConfig(
                       this._config.marker_longitude,
                       this._config.mobile_marker_longitude,
                       isMobile,
+                      userInfo?.deviceTracker,
                     );
 
                     // Resolve coordinates at render time
@@ -667,14 +863,17 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               ).addTo(radarMap);
               townLayer.setZIndex(2);
 
-              ${this._config.show_marker === true
-        ? "var myIcon = L.icon({ \
-                       iconUrl: '/local/community/weather-radar-card/'+svg_icon, \
-                       iconSize: [16, 16], \
-                     }); \
-                     L.marker([markerLat, markerLon], { icon: myIcon, interactive: false }).addTo(radarMap);"
-        : ''
-      }
+              ${
+                this._config.show_marker === true
+                  ? (() => {
+                      const isMobile = this._isMobileDevice();
+                      const userInfo = this._getCurrentUserInfo();
+                      const iconCode = this._generateMarkerIconCode(isMobile, userInfo);
+                      return `${iconCode}
+                     L.marker([markerLat, markerLon], { icon: myIcon, interactive: false }).addTo(radarMap);`;
+                    })()
+                  : ''
+              }
 
               ${this._config.show_range === true
         ? (this.hass?.config?.unit_system?.length ?? 'km') === 'km' ?
