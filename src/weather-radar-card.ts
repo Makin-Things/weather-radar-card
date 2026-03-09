@@ -206,7 +206,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   /**
    * Returns appropriate coordinate config based on device type
    * Mobile overrides take precedence when device is detected as mobile
-   * Auto-detects from current user's device tracker if on mobile with no mobile config
+   * Auto-detects from current user's device tracker only when no coordinates are configured at all
    */
   private _getCoordinateConfig(
     baseConfig: CoordinateConfig | undefined,
@@ -218,11 +218,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     if (isMobile && mobileConfig !== undefined) {
       return mobileConfig;
     }
-    // If mobile with no override, try auto-detect from user's device tracker
-    if (isMobile && userDeviceTracker) {
+    // If mobile with no override AND no base config, try auto-detect from user's device tracker.
+    // Do NOT auto-detect when a base config is explicitly set - static coordinates must be respected.
+    if (isMobile && !baseConfig && userDeviceTracker) {
       return userDeviceTracker;
     }
-    // Otherwise use base config
+    // Otherwise use base config (including on mobile when base config is set)
     return baseConfig;
   }
 
@@ -341,44 +342,82 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   };
 
   /**
-   * Gets the marker icon configuration based on device type
-   * Handles mobile overrides and auto-detection from current user
-   * Mobile defaults to entity_picture (showing logged-in user's profile photo)
+   * Finds the person entity that owns a given device tracker.
+   * Searches all person entities for one whose device_trackers attribute includes the tracker ID.
+   * Returns undefined if no matching person entity is found.
+   */
+  private _findPersonEntityForDeviceTracker(deviceTrackerId: string): string | undefined {
+    for (const [entityId, state] of Object.entries(this.hass?.states || {})) {
+      if (!entityId.startsWith('person.')) continue;
+      const trackers = state.attributes?.device_trackers;
+      if (Array.isArray(trackers) && trackers.includes(deviceTrackerId)) {
+        return entityId;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Resolves an entity ID to a person entity suitable for entity_picture lookup.
+   * If the entity is a device_tracker, finds its associated person entity.
+   * Otherwise returns the entity ID unchanged.
+   */
+  private _resolveToPersonEntity(entityId: string): string {
+    if (entityId.startsWith('device_tracker.')) {
+      return this._findPersonEntityForDeviceTracker(entityId) ?? entityId;
+    }
+    return entityId;
+  }
+
+  /**
+   * Gets the marker icon configuration based on device type.
+   * Handles mobile overrides and auto-detection from configured coordinates.
+   * Mobile defaults to entity_picture when no icon type is configured.
    */
   private _getMarkerIconConfig(isMobile: boolean, userInfo: { personEntity: string; deviceTracker?: string } | null): { type: string; entity?: string } {
     let iconType: string;
     if (isMobile) {
-      // Mobile defaults to entity_picture (user's profile photo)
+      // Mobile defaults to entity_picture when not explicitly configured
       iconType = this._config.mobile_marker_icon ?? 'entity_picture';
     } else {
       iconType = this._config.marker_icon || 'default';
     }
 
-    // Resolve entity separately for mobile vs desktop to allow proper auto-detection
+    // Use explicit icon entity if configured
     let iconEntity: string | undefined;
     if (isMobile) {
-      // Mobile: use mobile-specific entity if set
       iconEntity = this._config.mobile_marker_icon_entity;
     } else {
-      // Desktop: use base entity
       iconEntity = this._config.marker_icon_entity;
     }
 
-    // Auto-detect entity for entity_picture mode without explicit entity
+    // Auto-detect entity for entity_picture mode when no explicit entity is configured.
+    // Priority: marker coordinate entity -> center coordinate entity -> logged-in user's person entity.
+    // Device tracker entities are resolved to their associated person entity (which carries entity_picture).
     if (iconType === 'entity_picture' && !iconEntity) {
-      // First priority: use current user's person entity (has the profile picture)
-      if (userInfo?.personEntity) {
-        iconEntity = userInfo.personEntity;
-      } else {
-        // Fallback: try marker coordinate entity
-        const markerLatConfig = isMobile
-          ? this._config.mobile_marker_latitude ?? this._config.marker_latitude
-          : this._config.marker_latitude;
+      // Priority 1: entity referenced by marker_latitude (marker position entity)
+      const markerLatConfig = isMobile
+        ? this._config.mobile_marker_latitude ?? this._config.marker_latitude
+        : this._config.marker_latitude;
 
-        // If marker_latitude is a string (entity ID), use that entity
-        if (typeof markerLatConfig === 'string') {
-          iconEntity = markerLatConfig;
+      if (typeof markerLatConfig === 'string') {
+        iconEntity = this._resolveToPersonEntity(markerLatConfig);
+      }
+
+      // Priority 2: entity referenced by center_latitude (marker defaults to center when marker_latitude not set)
+      if (!iconEntity) {
+        const centerLatConfig = isMobile
+          ? this._config.mobile_center_latitude ?? this._config.center_latitude
+          : this._config.center_latitude;
+
+        if (typeof centerLatConfig === 'string') {
+          iconEntity = this._resolveToPersonEntity(centerLatConfig);
         }
+      }
+
+      // Priority 3: fall back to the logged-in user's person entity
+      if (!iconEntity && userInfo?.personEntity) {
+        iconEntity = userInfo.personEntity;
       }
     }
 
