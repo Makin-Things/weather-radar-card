@@ -1,6 +1,6 @@
 {
   "name": "weather-radar-card",
-  "version": "2.2.0",
+  "version": "2.4.1",
   "type": "module",
   "description": "A rain radar card using data from RainViewer",
   "keywords": [
@@ -17,15 +17,6 @@
   "license": "MIT",
   "dependencies": {
     "@lit-labs/scoped-registry-mixin": "^1.0.0",
-    "@material/mwc-formfield": "^0.25.3",
-    "@material/mwc-list": "^0.25.3",
-    "@material/mwc-menu": "^0.25.3",
-    "@material/mwc-notched-outline": "^0.25.3",
-    "@material/mwc-ripple": "^0.25.3",
-    "@material/mwc-select": "^0.25.3",
-    "@material/mwc-slider": "^0.25.3",
-    "@material/mwc-switch": "^0.25.3",
-    "@material/mwc-textfield": "^0.25.3",
     "custom-card-helpers": "^1.9.0",
     "home-assistant-js-websocket": "^9.4.0",
     "lit": "^3.3.2",
@@ -57,7 +48,7 @@
     "rollup-plugin-typescript2": "^0.36.0",
     "typescript": "^5.7.3"
   },
-  "resolutions": {
+  "overrides": {
     "lit": "^3.3.2",
     "lit-html": "^3.3.2",
     "lit-element": "^4.2.0",

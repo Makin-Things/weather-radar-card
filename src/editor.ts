@@ -2,17 +2,11 @@
 import { LitElement, html, TemplateResult, css, CSSResultGroup } from 'lit';
 import { HomeAssistant, fireEvent, LovelaceCardEditor } from 'custom-card-helpers';
 
-import { ScopedRegistryHost } from '@lit-labs/scoped-registry-mixin';
 import { WeatherRadarCardConfig, CoordinateConfig } from './types';
 import { customElement, property, state } from 'lit/decorators.js';
-import { formfieldDefinition } from '../elements/formfield';
-import { selectDefinition } from '../elements/select';
-import { switchDefinition } from '../elements/switch';
-import { textfieldDefinition } from '../elements/textfield';
-import { sliderDefinition } from '../elements/slider';
 
 @customElement('weather-radar-card-editor')
-export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) implements LovelaceCardEditor {
+export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEditor {
   @property({ attribute: false }) public hass?: HomeAssistant;
 
   @state() private _config?: WeatherRadarCardConfig;
@@ -20,14 +14,6 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
   @state() private _helpers?: any;
 
   private _initialized = false;
-
-  static elementDefinitions = {
-    ...textfieldDefinition,
-    ...selectDefinition,
-    ...switchDefinition,
-    ...formfieldDefinition,
-    ...sliderDefinition,
-  };
 
   public setConfig(config: WeatherRadarCardConfig): void {
     this._config = config;
@@ -78,264 +64,299 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
 
     return html`
       <div class="values">
-        <mwc-textfield
+        <ha-textfield
             label="Card Title (optional)"
             .value=${config.card_title ? config.card_title : ''}
             .configValue=${'card_title'}
             @input=${this._valueChangedString}
-        ></mwc-textfield>
-        <mwc-textfield
+        ></ha-textfield>
+        <ha-textfield
             label="Height (optional)"
             .value=${config.height ? config.height : ''}
             .configValue=${'height'}
             @input=${this._valueChangedString}
             helper="e.g., 400px, 50vh"
-        ></mwc-textfield>
-        <mwc-textfield
+        ></ha-textfield>
+        <ha-textfield
             label="Width (optional)"
             .value=${config.width ? config.width : ''}
             .configValue=${'width'}
             @input=${this._valueChangedString}
             helper="e.g., 100%, 500px"
-        ></mwc-textfield>
+        ></ha-textfield>
         
         <div class="side-by-side">
-          <mwc-select label="Map Style (optional)" .configValue=${'map_style'} .value=${config.map_style ?
-              config.map_style : ''} @selected=${this._valueChangedString} @closed=${(ev)=>
-              ev.stopPropagation()}
-            >
-            <mwc-list-item></mwc-list-item>
-            <mwc-list-item value="Light">Light</mwc-list-item>
-            <mwc-list-item value="Voyager">Voyager</mwc-list-item>
-            <mwc-list-item value="Satellite">Satellite</mwc-list-item>
-            <mwc-list-item value="Dark">Dark</mwc-list-item>
-          </mwc-select>
-          <mwc-select label="Zoom Level (optional)" .configValue=${'zoom_level'} .value=${config.zoom_level ?
-              config.zoom_level.toString() : null} @selected=${this._valueChangedNumber} @closed=${(ev)=>
-              ev.stopPropagation()}
-            >
-            <mwc-list-item></mwc-list-item>
-            <mwc-list-item value="4">4</mwc-list-item>
-            <mwc-list-item value="5">5</mwc-list-item>
-            <mwc-list-item value="6">6</mwc-list-item>
-            <mwc-list-item value="7">7</mwc-list-item>
-          </mwc-select>
+          <ha-selector
+            .hass=${this.hass}
+            .selector=${{
+              select: {
+                options: [
+                  { value: '', label: 'Default (Light)' },
+                  { value: 'Light', label: 'Light' },
+                  { value: 'Voyager', label: 'Voyager' },
+                  { value: 'Satellite', label: 'Satellite' },
+                  { value: 'Dark', label: 'Dark' },
+                ],
+              },
+            }}
+            .value=${config.map_style || ''}
+            .label=${'Map Style (optional)'}
+            .configValue=${'map_style'}
+            @value-changed=${this._handleSelectorChanged}
+          ></ha-selector>
+          <ha-selector
+            .hass=${this.hass}
+            .selector=${{
+              select: {
+                options: [
+                  { value: '', label: 'Default (5)' },
+                  { value: '4', label: '4' },
+                  { value: '5', label: '5' },
+                  { value: '6', label: '6' },
+                  { value: '7', label: '7' },
+                ],
+              },
+            }}
+            .value=${config.zoom_level?.toString() || ''}
+            .label=${'Zoom Level (optional)'}
+            .configValue=${'zoom_level'}
+            @value-changed=${this._handleSelectorNumberChanged}
+          ></ha-selector>
         </div>
-        <mwc-textfield
+        <ha-textfield
             label="Map Centre Latitude (optional)"
             .value=${this._formatCoordinateValue(config.center_latitude)}
             .configValue=${'center_latitude'}
             @input=${this._valueChangedCoordinate}
             helper="Number or entity ID (e.g., device_tracker.phone)"
-        ></mwc-textfield>
-        <mwc-textfield
+        ></ha-textfield>
+        <ha-textfield
             label="Map Centre Longitude (optional)"
             .value=${this._formatCoordinateValue(config.center_longitude)}
             .configValue=${'center_longitude'}
             @input=${this._valueChangedCoordinate}
             helper="Number or entity ID"
-        ></mwc-textfield>
-        <mwc-textfield
+        ></ha-textfield>
+        <ha-textfield
             label="Marker Latitude (optional)"
             .value=${this._formatCoordinateValue(config.marker_latitude)}
             .configValue=${'marker_latitude'}
             @input=${this._valueChangedCoordinate}
             helper="Number or entity ID"
-        ></mwc-textfield>
-        <mwc-textfield
+        ></ha-textfield>
+        <ha-textfield
             label="Marker Longitude (optional)"
             .value=${this._formatCoordinateValue(config.marker_longitude)}
             .configValue=${'marker_longitude'}
             @input=${this._valueChangedCoordinate}
             helper="Number or entity ID"
-        ></mwc-textfield>
+        ></ha-textfield>
         <h3>Mobile Device Overrides</h3>
         <p style="font-size: 0.9em; color: var(--secondary-text-color); margin: 0 0 10px 0;">
           When accessed from a mobile device, these coordinates will override the base coordinates above.
         </p>
-        <mwc-textfield
+        <ha-textfield
             label="Mobile Centre Latitude (optional)"
             .value=${this._formatCoordinateValue(config.mobile_center_latitude)}
             .configValue=${'mobile_center_latitude'}
             @input=${this._valueChangedCoordinate}
             helper="Mobile override (e.g., device_tracker.phone)"
-        ></mwc-textfield>
-        <mwc-textfield
+        ></ha-textfield>
+        <ha-textfield
             label="Mobile Centre Longitude (optional)"
             .value=${this._formatCoordinateValue(config.mobile_center_longitude)}
             .configValue=${'mobile_center_longitude'}
             @input=${this._valueChangedCoordinate}
             helper="Mobile override"
-        ></mwc-textfield>
-        <mwc-textfield
+        ></ha-textfield>
+        <ha-textfield
             label="Mobile Marker Latitude (optional)"
             .value=${this._formatCoordinateValue(config.mobile_marker_latitude)}
             .configValue=${'mobile_marker_latitude'}
             @input=${this._valueChangedCoordinate}
             helper="Mobile override"
-        ></mwc-textfield>
-        <mwc-textfield
+        ></ha-textfield>
+        <ha-textfield
             label="Mobile Marker Longitude (optional)"
             .value=${this._formatCoordinateValue(config.mobile_marker_longitude)}
             .configValue=${'mobile_marker_longitude'}
             @input=${this._valueChangedCoordinate}
             helper="Mobile override"
-        ></mwc-textfield>
+        ></ha-textfield>
         <div class="side-by-side">
-          <mwc-textfield
+          <ha-textfield
               label="Frame Count (optional)"
               .value=${config.frame_count ? config.frame_count : ''}
               .configValue=${'frame_count'}
               @input=${this._valueChangedNumber}
-          ></mwc-textfield>
-          <mwc-textfield
+          ></ha-textfield>
+          <ha-textfield
               label="Frame Delay(ms) (optional)"
               .value=${config.frame_delay ? config.frame_delay : ''}
               .configValue=${'frame_delay'}
               @input=${this._valueChangedNumber}
-          ></mwc-textfield>
-          <mwc-textfield
+          ></ha-textfield>
+          <ha-textfield
               label="Restart Delay(ms) (optional)"
               .value=${config.restart_delay ? config.restart_delay : ''}
               .configValue=${'restart_delay'}
               @input=${this._valueChangedNumber}
-          ></mwc-textfield>
+          ></ha-textfield>
         </div>
         <div class="side-by-side">
-          <mwc-formfield .label=${"Static Map"}>
-            <mwc-switch
+          <label>
+            Static Map
+            <ha-switch
               .checked=${config.static_map === true}
               .configValue=${'static_map'}
               @change=${this._valueChangedSwitch}
-            ></mwc-switch>
-          </mwc-formfield>
-          <mwc-formfield .label=${'Show Zoom'}>
-            <mwc-switch
+            ></ha-switch>
+          </label>
+          <label>
+            Show Zoom
+            <ha-switch
               .checked=${config.show_zoom === true}
               .configValue=${'show_zoom'}
               @change=${this._valueChangedSwitch}
-            ></mwc-switch>
-          </mwc-formfield>
-          <mwc-formfield .label=${'Square Map'}>
-            <mwc-switch
+            ></ha-switch>
+          </label>
+          <label>
+            Square Map
+            <ha-switch
               .checked=${config.square_map === true}
               .configValue=${'square_map'}
               @change=${this._valueChangedSwitch}
-            ></mwc-switch>
-          </mwc-formfield>
+            ></ha-switch>
+          </label>
         </div>
         <div class="side-by-side">
-          <mwc-formfield .label=${"Show Marker"}>
-            <mwc-switch
+          <label>
+            Show Marker
+            <ha-switch
               .checked=${config.show_marker === true}
               .configValue=${'show_marker'}
               @change=${this._valueChangedSwitch}
-            ></mwc-switch>
-          </mwc-formfield>
-          <mwc-formfield .label=${'Show Playback'}>
-            <mwc-switch
+            ></ha-switch>
+          </label>
+          <label>
+            Show Playback
+            <ha-switch
               .checked=${config.show_playback === true}
               .configValue=${'show_playback'}
               @change=${this._valueChangedSwitch}
-            ></mwc-switch>
-          </mwc-formfield>
-          <mwc-formfield .label=${'Show Recenter'}>
-            <mwc-switch
+            ></ha-switch>
+          </label>
+          <label>
+            Show Recenter
+            <ha-switch
               .checked=${config.show_recenter === true}
               .configValue=${'show_recenter'}
               @change=${this._valueChangedSwitch}
-            ></mwc-switch>
-          </mwc-formfield>
+            ></ha-switch>
+          </label>
         </div>
         ${
           config.show_marker === true
             ? html`
                 <h3>Marker Icon</h3>
                 <div class="side-by-side">
-                  <mwc-select
-                    label="Icon Type"
-                    .configValue=${'marker_icon'}
+                  <ha-selector
+                    .hass=${this.hass}
+                    .selector=${{
+                      select: {
+                        options: [
+                          { value: 'default', label: 'Default (Home)' },
+                          { value: 'entity_picture', label: 'Entity Picture' },
+                          { value: 'mdi:account', label: 'MDI: Account' },
+                          { value: 'mdi:account-circle', label: 'MDI: Account Circle' },
+                          { value: 'mdi:map-marker', label: 'MDI: Map Marker' },
+                          { value: 'mdi:home', label: 'MDI: Home' },
+                          { value: 'mdi:car', label: 'MDI: Car' },
+                          { value: 'mdi:cellphone', label: 'MDI: Cellphone' },
+                        ],
+                      },
+                    }}
                     .value=${config.marker_icon || 'default'}
-                    @selected=${this._valueChangedString}
-                    @closed=${(ev) => ev.stopPropagation()}
-                  >
-                    <mwc-list-item value="default">Default (Home)</mwc-list-item>
-                    <mwc-list-item value="entity_picture">Entity Picture</mwc-list-item>
-                    <mwc-list-item value="mdi:account">MDI: Account</mwc-list-item>
-                    <mwc-list-item value="mdi:account-circle">MDI: Account Circle</mwc-list-item>
-                    <mwc-list-item value="mdi:map-marker">MDI: Map Marker</mwc-list-item>
-                    <mwc-list-item value="mdi:home">MDI: Home</mwc-list-item>
-                    <mwc-list-item value="mdi:car">MDI: Car</mwc-list-item>
-                    <mwc-list-item value="mdi:cellphone">MDI: Cellphone</mwc-list-item>
-                  </mwc-select>
+                    .label=${'Icon Type'}
+                    .configValue=${'marker_icon'}
+                    @value-changed=${this._handleSelectorChanged}
+                  ></ha-selector>
                 </div>
                 ${config.marker_icon === 'entity_picture'
                   ? html`
-                      <mwc-textfield
+                      <ha-textfield
                         label="Icon Entity (optional)"
                         .value=${config.marker_icon_entity || ''}
                         .configValue=${'marker_icon_entity'}
                         @input=${this._valueChangedString}
                         helper="Entity with picture (auto-detects from marker entity if empty)"
-                      ></mwc-textfield>
+                      ></ha-textfield>
                     `
                   : ''}
                 <h4>Mobile Icon Overrides</h4>
                 <div class="side-by-side">
-                  <mwc-select
-                    label="Mobile Icon Type (optional)"
-                    .configValue=${'mobile_marker_icon'}
+                  <ha-selector
+                    .hass=${this.hass}
+                    .selector=${{
+                      select: {
+                        options: [
+                          { value: '', label: 'None' },
+                          { value: 'default', label: 'Default (Home)' },
+                          { value: 'entity_picture', label: 'Entity Picture' },
+                          { value: 'mdi:account', label: 'MDI: Account' },
+                          { value: 'mdi:account-circle', label: 'MDI: Account Circle' },
+                          { value: 'mdi:map-marker', label: 'MDI: Map Marker' },
+                          { value: 'mdi:home', label: 'MDI: Home' },
+                          { value: 'mdi:car', label: 'MDI: Car' },
+                          { value: 'mdi:cellphone', label: 'MDI: Cellphone' },
+                        ],
+                      },
+                    }}
                     .value=${config.mobile_marker_icon || ''}
-                    @selected=${this._valueChangedString}
-                    @closed=${(ev) => ev.stopPropagation()}
-                  >
-                    <mwc-list-item></mwc-list-item>
-                    <mwc-list-item value="default">Default (Home)</mwc-list-item>
-                    <mwc-list-item value="entity_picture">Entity Picture</mwc-list-item>
-                    <mwc-list-item value="mdi:account">MDI: Account</mwc-list-item>
-                    <mwc-list-item value="mdi:account-circle">MDI: Account Circle</mwc-list-item>
-                    <mwc-list-item value="mdi:map-marker">MDI: Map Marker</mwc-list-item>
-                    <mwc-list-item value="mdi:home">MDI: Home</mwc-list-item>
-                    <mwc-list-item value="mdi:car">MDI: Car</mwc-list-item>
-                    <mwc-list-item value="mdi:cellphone">MDI: Cellphone</mwc-list-item>
-                  </mwc-select>
+                    .label=${'Mobile Icon Type (optional)'}
+                    .configValue=${'mobile_marker_icon'}
+                    @value-changed=${this._handleSelectorChanged}
+                  ></ha-selector>
                 </div>
                 ${config.mobile_marker_icon === 'entity_picture'
                   ? html`
-                      <mwc-textfield
+                      <ha-textfield
                         label="Mobile Icon Entity (optional)"
                         .value=${config.mobile_marker_icon_entity || ''}
                         .configValue=${'mobile_marker_icon_entity'}
                         @input=${this._valueChangedString}
                         helper="Mobile override for entity with picture"
-                      ></mwc-textfield>
+                      ></ha-textfield>
                     `
                   : ''}
               `
             : ''
         }
         <div class="side-by-side">
-          <mwc-formfield .label=${"Show Scale"}>
-            <mwc-switch
+          <label>
+            Show Scale
+            <ha-switch
               .checked=${config.show_scale === true}
               .configValue=${'show_scale'}
               @change=${this._valueChangedSwitch}
-            ></mwc-switch>
-          </mwc-formfield>
-          <mwc-formfield .label=${'Show Range'}>
-            <mwc-switch
+            ></ha-switch>
+          </label>
+          <label>
+            Show Range
+            <ha-switch
               .checked=${config.show_range === true}
               .configValue=${'show_range'}
               @change=${this._valueChangedSwitch}
-            ></mwc-switch>
-          </mwc-formfield>
-          <mwc-formfield .label=${'Show Extra Labels'}>
-            <mwc-switch
+            ></ha-switch>
+          </label>
+          <label>
+            Show Extra Labels
+            <ha-switch
               .checked=${config.extra_labels === true}
               .configValue=${'extra_labels'}
               @change=${this._valueChangedSwitch}
-            ></mwc-switch>
-          </mwc-formfield>
+            ></ha-switch>
+          </label>
         </div>
       </div>
     `;
@@ -350,6 +371,48 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
 
   private async loadCardHelpers(): Promise<void> {
     this._helpers = await (window as any).loadCardHelpers();
+  }
+
+  private _handleSelectorChanged(ev: CustomEvent): void {
+    const configValue = (ev.target as any).configValue;
+    const value = ev.detail.value;
+
+    if (!this._config || !configValue) return;
+    if (this._config[configValue] === value) return;
+
+    if (value === '' || value === null) {
+      const newConfig = { ...this._config };
+      delete newConfig[configValue];
+      this._config = newConfig;
+    } else {
+      this._config = {
+        ...this._config,
+        [configValue]: value,
+      };
+    }
+    fireEvent(this, 'config-changed', { config: this._config });
+  }
+
+  private _handleSelectorNumberChanged(ev: CustomEvent): void {
+    const configValue = (ev.target as any).configValue;
+    const value = ev.detail.value;
+
+    if (!this._config || !configValue) return;
+
+    const numValue = value === '' || value === null ? null : Number(value);
+    if (this._config[configValue] === numValue) return;
+
+    if (numValue === null) {
+      const newConfig = { ...this._config };
+      delete newConfig[configValue];
+      this._config = newConfig;
+    } else {
+      this._config = {
+        ...this._config,
+        [configValue]: numValue,
+      };
+    }
+    fireEvent(this, 'config-changed', { config: this._config });
   }
 
   private _valueChangedSwitch(ev): void {
@@ -370,16 +433,19 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
       return;
     }
     const target = ev.target;
-    if (this[`_${target.configValue}`] === target.value) {
+    const configValue = target.configValue;
+    const value = target.value;
+    if (this._config[configValue] === Number(value)) {
       return;
     }
-    if (target.configValue) {
-      if (target.value === '' || target.value === null) {
-        delete this._config[target.configValue];
+
+    if (configValue) {
+      if (value === '' || value === null) {
+        delete this._config[configValue];
       } else {
         this._config = {
           ...this._config,
-          [target.configValue]: Number(target.value),
+          [configValue]: Number(value),
         };
       }
     }
@@ -391,16 +457,19 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
       return;
     }
     const target = ev.target;
-    if (this[`_${target.configValue}`] === target.value) {
+    const configValue = target.configValue;
+    const value = target.value;
+    if (this._config[configValue] === value) {
       return;
     }
-    if (target.configValue) {
-      if (target.value === '') {
-        delete this._config[target.configValue];
+
+    if (configValue) {
+      if (value === '') {
+        delete this._config[configValue];
       } else {
         this._config = {
           ...this._config,
-          [target.configValue]: target.value,
+          [configValue]: value,
         };
       }
     }
@@ -474,39 +543,17 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
   }
 
   static styles: CSSResultGroup = css`
-    mwc-select,
-    mwc-textfield {
+    ha-select,
+    ha-selector,
+    ha-textfield {
       margin-bottom: 16px;
       display: block;
     }
-    mwc-formfield {
-      padding-bottom: 8px;
-    }
-    mwc-switch {
-      --mdc-theme-secondary: var(--switch-checked-color);
-    }
-    .option {
-      padding: 4px 0px;
-      cursor: pointer;
-    }
-    .row {
+    label {
       display: flex;
-      margin-bottom: -14px;
-      pointer-events: none;
-    }
-    .title {
-      padding-left: 16px;
-      margin-top: -6px;
-      pointer-events: none;
-    }
-    .secondary {
-      padding-left: 40px;
-      color: var(--secondary-text-color);
-      pointer-events: none;
-    }
-    .values {
-      padding-left: 16px;
-      background: var(--secondary-background-color);
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
     }
     ha-switch {
       padding: 16px 6px;
@@ -517,6 +564,10 @@ export class WeatherRadarCardEditor extends ScopedRegistryHost(LitElement) imple
     .side-by-side > * {
       flex: 1;
       padding-right: 4px;
+    }
+    .values {
+      padding-left: 16px;
+      background: var(--secondary-background-color);
     }
   `;
 }
