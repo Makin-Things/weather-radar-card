@@ -644,7 +644,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               var timeout = ${JSON.stringify(this._config.frame_delay !== undefined ? this._config.frame_delay : 500)};
               var restartDelay = ${JSON.stringify(this._config.restart_delay !== undefined ? this._config.restart_delay : 1000)};
               var frameCount = ${JSON.stringify(this._config.frame_count != undefined ? this._config.frame_count : 5)}; 
-              var tileURL = 'https://tilecache.rainviewer.com/v2/radar/{time}/{tileSize}/{z}/{x}/{y}/2/1_0.png';
+              var tileURL = 'https://tilecache.rainviewer.com{path}/{tileSize}/{z}/{x}/{y}/2/1_0.png';
+              var radarAPIURL = 'https://api.rainviewer.com/public/weather-maps.json';
+              var radarPaths = [];
               document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-universalblue.png";
               var framePeriod = 300000;
               var frameLag = 60000;
@@ -825,33 +827,44 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                 },
               ).addTo(radarMap);
 
-              for (i = 0; i < frameCount; i++) {
-                t = d.valueOf()/1000 + i * (framePeriod/1000);
-                radarImage[i] = L.tileLayer(
-                  tileURL,
-                  {
-                    time: t,
-                    detectRetina: false,
-                    tileSize: tileSize,
-                    zoomOffset: 0,
-                    opacity: 0,
-                    frame: i,
-                  },
-                );
-                radarTime[i] = getRadarTimeString(d.valueOf() + i * framePeriod);
+              async function fetchRadarPaths() {
+                var response = await fetch(radarAPIURL);
+                var data = await response.json();
+                return data.radar.past;
               }
 
-              for (i = 0; i < (frameCount - 1); i++) {
-                radarImage[i].on('load', function(e) {
-                  radarImage[e.target.options.frame + 1].addTo(radarMap);
-                });
+              async function initRadar() {
+                var pastFrames = await fetchRadarPaths();
+                radarPaths = pastFrames.slice(-frameCount);
+
+                for (i = 0; i < radarPaths.length; i++) {
+                  radarImage[i] = L.tileLayer(
+                    tileURL,
+                    {
+                      path: radarPaths[i].path,
+                      detectRetina: false,
+                      tileSize: tileSize,
+                      zoomOffset: 0,
+                      opacity: 0,
+                      frame: i,
+                    },
+                  );
+                  radarTime[i] = getRadarTimeString(radarPaths[i].time * 1000);
+                }
+
+                for (i = 0; i < (radarPaths.length - 1); i++) {
+                  radarImage[i].on('load', function(e) {
+                    radarImage[e.target.options.frame + 1].addTo(radarMap);
+                  });
+                }
+
+                radarImage[0].addTo(radarMap);
+
+                radarImage[idx].setOpacity(radarOpacity);
+                document.getElementById('timestamp').innerHTML = radarTime[idx];
               }
 
-              radarImage[0].addTo(radarMap);
-
-              radarImage[idx].setOpacity(radarOpacity);
-              document.getElementById('timestamp').innerHTML = radarTime[idx];
-              d.setTime(d.valueOf() + (frameCount - 1) * framePeriod);
+              initRadar();
 
               townLayer = L.tileLayer(
                 label_url,
@@ -893,26 +906,26 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         setUpdateTimeout();
 
         function setUpdateTimeout() {
-          d.setTime(d.valueOf() + framePeriod);
-          x = new Date();
-          setTimeout(triggerRadarUpdate, d.valueOf() - x.valueOf() + frameLag);
+          setTimeout(triggerRadarUpdate, framePeriod + frameLag);
         }
 
         function triggerRadarUpdate() {
           doRadarUpdate = true;
         }
 
-        function updateRadar() {
-          t = d.valueOf()/1000;
+        async function updateRadar() {
+          var pastFrames = await fetchRadarPaths();
+          var latestFrame = pastFrames[pastFrames.length - 1];
+
           newLayer = L.tileLayer(tileURL, {
-            time: t,
+            path: latestFrame.path,
             maxZoom: maxZoom,
             tileSize: tileSize,
             zoomOffset: 0,
             opacity: 0,
           });
           newLayer.addTo(radarMap);
-          newTime = getRadarTimeString(d.valueOf());
+          newTime = getRadarTimeString(latestFrame.time * 1000);
 
           radarImage[0].remove();
           for (i = 0; i < frameCount - 1; i++) {
