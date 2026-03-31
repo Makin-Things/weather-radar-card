@@ -836,8 +836,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               async function initRadar() {
                 var pastFrames = await fetchRadarPaths();
                 radarPaths = pastFrames.slice(-frameCount);
+                frameCount = radarPaths.length;
 
-                for (i = 0; i < radarPaths.length; i++) {
+                for (i = 0; i < frameCount; i++) {
                   radarImage[i] = L.tileLayer(
                     tileURL,
                     {
@@ -852,7 +853,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                   radarTime[i] = getRadarTimeString(radarPaths[i].time * 1000);
                 }
 
-                for (i = 0; i < (radarPaths.length - 1); i++) {
+                for (i = 0; i < (frameCount - 1); i++) {
                   radarImage[i].on('load', function(e) {
                     radarImage[e.target.options.frame + 1].addTo(radarMap);
                   });
@@ -862,6 +863,14 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
                 radarImage[idx].setOpacity(radarOpacity);
                 document.getElementById('timestamp').innerHTML = radarTime[idx];
+
+                barSize = document.getElementById("div-progress-bar").offsetWidth / frameCount;
+                document.getElementById("progress-bar").style.width = barSize + "px";
+
+                setTimeout(function() {
+                  nextFrame();
+                }, timeout);
+                setUpdateTimeout();
               }
 
               initRadar();
@@ -899,11 +908,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
           L.circle([markerLat, markerLon], { radius: 193121, weight: 1, fill: false, opacity: 0.3, interactive: false }).addTo(radarMap);'
         : ''
       }
-
-        setTimeout(function() {
-          nextFrame();
-        }, timeout);
-        setUpdateTimeout();
 
         function setUpdateTimeout() {
           setTimeout(triggerRadarUpdate, framePeriod + frameLag);
