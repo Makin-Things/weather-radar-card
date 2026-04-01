@@ -862,8 +862,10 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
                 radarImage[idx].setOpacity(radarOpacity);
                 document.getElementById('timestamp').innerHTML = radarTime[idx];
+                radarReady = true;
               }
 
+              var radarReady = false;
               initRadar();
 
               townLayer = L.tileLayer(
@@ -900,13 +902,40 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         : ''
       }
 
-        setTimeout(function() {
+        // Use a Web Worker for timing to avoid Chromium iframe timer throttling
+        var workerBlob = new Blob([
+          'var timers = {};' +
+          'var nextId = 1;' +
+          'self.onmessage = function(e) {' +
+          '  if (e.data.cmd === "set") {' +
+          '    var id = nextId++;' +
+          '    timers[id] = setTimeout(function() { self.postMessage({id: id, tag: e.data.tag}); delete timers[id]; }, e.data.ms);' +
+          '    self.postMessage({id: id, tag: "ack"});' +
+          '  } else if (e.data.cmd === "clear") {' +
+          '    clearTimeout(timers[e.data.id]);' +
+          '    delete timers[e.data.id];' +
+          '  }' +
+          '};'
+        ], { type: 'application/javascript' });
+        var timerWorker = new Worker(URL.createObjectURL(workerBlob));
+        var workerCallbacks = {};
+        timerWorker.onmessage = function(e) {
+          if (e.data.tag && e.data.tag !== "ack" && workerCallbacks[e.data.tag]) {
+            workerCallbacks[e.data.tag]();
+          }
+        };
+        function workerTimeout(callback, ms, tag) {
+          workerCallbacks[tag] = callback;
+          timerWorker.postMessage({ cmd: "set", ms: ms, tag: tag });
+        }
+
+        workerTimeout(function() {
           nextFrame();
-        }, timeout);
+        }, timeout, "frame");
         setUpdateTimeout();
 
         function setUpdateTimeout() {
-          setTimeout(triggerRadarUpdate, framePeriod + frameLag);
+          workerTimeout(triggerRadarUpdate, framePeriod + frameLag, "update");
         }
 
         function triggerRadarUpdate() {
@@ -985,12 +1014,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         }
 
         function nextFrame() {
-          if (run) {
-            nextImage();
+          if (run && radarReady) {
+            try { nextImage(); } catch(e) { console.warn('Weather Radar Card: frame error', e); }
           }
-          setTimeout(function() {
+          workerTimeout(function() {
             nextFrame();
-          }, (idx == frameCount) ? restartDelay : timeout);
+          }, (idx == frameCount) ? restartDelay : timeout, "frame");
         }
 
         function skipNext() {
