@@ -836,8 +836,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               async function initRadar() {
                 var pastFrames = await fetchRadarPaths();
                 radarPaths = pastFrames.slice(-frameCount);
+                frameCount = radarPaths.length;
 
-                for (i = 0; i < radarPaths.length; i++) {
+                for (i = 0; i < frameCount; i++) {
                   radarImage[i] = L.tileLayer(
                     tileURL,
                     {
@@ -852,7 +853,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                   radarTime[i] = getRadarTimeString(radarPaths[i].time * 1000);
                 }
 
-                for (i = 0; i < (radarPaths.length - 1); i++) {
+                for (i = 0; i < (frameCount - 1); i++) {
                   radarImage[i].on('load', function(e) {
                     radarImage[e.target.options.frame + 1].addTo(radarMap);
                   });
@@ -862,7 +863,15 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
                 radarImage[idx].setOpacity(radarOpacity);
                 document.getElementById('timestamp').innerHTML = radarTime[idx];
+
+                barSize = document.getElementById("div-progress-bar").offsetWidth / frameCount;
+                document.getElementById("progress-bar").style.width = barSize + "px";
+
                 radarReady = true;
+                workerTimeout(function() {
+                  nextFrame();
+                }, timeout, "frame");
+                setUpdateTimeout();
               }
 
               var radarReady = false;
@@ -929,10 +938,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
           timerWorker.postMessage({ cmd: "set", ms: ms, tag: tag });
         }
 
-        workerTimeout(function() {
-          nextFrame();
-        }, timeout, "frame");
-        setUpdateTimeout();
 
         function setUpdateTimeout() {
           workerTimeout(triggerRadarUpdate, framePeriod + frameLag, "update");
