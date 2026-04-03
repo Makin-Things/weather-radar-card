@@ -24,6 +24,9 @@ jobs:
       - name: Build
         run: npm run rollup
 
+      - name: Compress dist
+        run: gzip -kf dist/weather-radar-card.js
+
       - name: HACS validation
         uses: 'hacs/action@main'
         with:

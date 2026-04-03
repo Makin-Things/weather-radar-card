@@ -52,6 +52,9 @@ jobs:
       - name: Build
         run: npm run rollup
 
+      - name: Compress dist
+        run: gzip -kf dist/weather-radar-card.js
+
       - name: Commit dist files
         run: |
           git config user.name "github-actions[bot]"
