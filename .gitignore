@@ -1,6 +1,10 @@
 /node_modules/
 /.rpt2_cache/
 
+# Generated dist files (built by CI and auto-committed to master)
+dist/weather-radar-card.js
+dist/weather-radar-card.js.gz
+
 # OS files
 .DS_Store
 .DS_Store?
