@@ -85,17 +85,33 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             helper="e.g., 100%, 500px"
         ></ha-textfield>
         
+        <ha-selector
+          .hass=${this.hass}
+          .selector=${{
+            select: {
+              options: [
+                { value: 'RainViewer', label: 'RainViewer (Global)' },
+                { value: 'NOAA', label: 'NOAA/NWS (US Only - Experimental)' },
+              ],
+            },
+          }}
+          .value=${config.data_source || 'RainViewer'}
+          .label=${'Radar Source'}
+          .configValue=${'data_source'}
+          @value-changed=${this._handleSelectorChanged}
+        ></ha-selector>
         <div class="side-by-side">
           <ha-selector
             .hass=${this.hass}
             .selector=${{
               select: {
                 options: [
-                  { value: '', label: 'Default (Light)' },
-                  { value: 'Light', label: 'Light' },
-                  { value: 'Voyager', label: 'Voyager' },
-                  { value: 'Satellite', label: 'Satellite' },
-                  { value: 'Dark', label: 'Dark' },
+                  { value: '', label: 'Default (CARTO Light - English only)' },
+                  { value: 'Light', label: 'CARTO Light (English only)' },
+                  { value: 'Voyager', label: 'CARTO Voyager (English only)' },
+                  { value: 'Satellite', label: 'Satellite (English only)' },
+                  { value: 'Dark', label: 'CARTO Dark (English only)' },
+                  { value: 'OSM', label: 'OpenStreetMap (Localized)' },
                 ],
               },
             }}
@@ -114,6 +130,9 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
                   { value: '5', label: '5' },
                   { value: '6', label: '6' },
                   { value: '7', label: '7' },
+                  { value: '8', label: '8' },
+                  { value: '9', label: '9' },
+                  { value: '10', label: '10' },
                 ],
               },
             }}
@@ -202,6 +221,25 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
               .configValue=${'restart_delay'}
               @input=${this._valueChangedNumber}
           ></ha-textfield>
+        </div>
+        <div class="side-by-side">
+          <label>
+            Animated Transitions
+            <ha-switch
+              .checked=${config.animated_transitions !== false}
+              .configValue=${'animated_transitions'}
+              @change=${this._valueChangedSwitch}
+            ></ha-switch>
+          </label>
+          ${config.animated_transitions !== false ? html`
+          <ha-textfield
+              label="Transition Time (ms)"
+              .value=${config.transition_time !== undefined ? config.transition_time : ''}
+              .configValue=${'transition_time'}
+              @input=${this._valueChangedNumber}
+              helper="Default: 40% of frame delay, max: frame delay"
+          ></ha-textfield>
+          ` : ''}
         </div>
         <div class="side-by-side">
           <label>
