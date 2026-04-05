@@ -1,28 +1,11 @@
-# Discontinuing Support
-
-I'm going to stop supporting this version in the next couple of months, once the new version with updated data sources is ready.  For the very brave who want to play with the new one it's here https://github.com/jpettitt/Weather-Map-Card - note that not everyting works.  However it does have Radar, Precipitation, Temperature and Wind maps as well as up to 8 hours lookback and 48 hours forecast. It supports all zoom levels and both Mercator and Globe projections.  You will need a free MapTiler API key to use it.  
-
-*Expect it to be buggy and not yet feature complete*.
-
-# Breaking Changes V2.3.2
-
-
-V2.3.2 is a breaking change due to upstream API changes from Rain Viewer.
-
-* Color options have been removed and the zoom level limited.
-* There is now an upstream rate limit for radar image tiles. If you pan around you may exceed the rate limit.
-* Retina display support has been removed, this reduces the tile count by a factor of 4 which helps mitaigate the rate limit.
-  
-The rate limit will reset after 1 minute. Reducing the frame count will help if you encounter a rate limit.
-
 # Weather Radar Card
 
-A Home Assistant rain radar card using the tiled images from RainViewer
+A Home Assistant rain radar card using tiled radar imagery from RainViewer and NOAA/NWS.
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)
 [![GitHub Release][releases-shield]][releases]
 [![License][license-shield]](LICENSE)
-![Maintenance](https://img.shields.io/maintenance/yes/2025?style=for-the-badge)
+![Maintenance](https://img.shields.io/maintenance/yes/2026?style=for-the-badge)
 
 ## Support
 
@@ -32,102 +15,114 @@ Help support development with a donation!
 
 ## Description
 
-This card uses map tiles of radar data provided by RainViewer. This allows for one continuous map that can be zoomed and panned seamlessly. This card allows this to be displayed within Home Assistant. The card allows you create radar loops of up to at least 24 hours.
+This card displays animated weather radar loops within Home Assistant. It supports multiple radar data sources and map styles, and can be zoomed and panned seamlessly. The animation is driven entirely by CSS keyframes for smooth, efficient transitions.
 
 ![Weather Radar card](https://raw.githubusercontent.com/makin-things/weather-radar-card/master/weather-radar-card.gif)
 
 ## Options
 
-All of the options below can be selected using the GUI config editor, there is no need to edit the yaml config directly.
+All options can be configured using the GUI editor — there is no need to edit YAML directly.
 
-| Name             | Type    | Requirement  | Description                                                  | Default                                                    |
-| ---------------- | ------- | ------------ | ------------------------------------------------------------ | ---------------------------------------------------------- |
-| type             | string  | **Required** |                                                              | must be `'custom:weather-radar-card'`                      |
-| card_title       | string  | **Optional** | The title to display on the card                             | no title displayed                                         |
-| data_source      | string  | **Optional** | Specifies whcih set of radar tiles to use                    | `'RainViewer-Original'` see section below for valid values |
-| map_style        | string  | **Optional** | Specifies the style for the map                              | `'light'` see section below for valid values               |
-| zoom_level       | number  | **Optional** | The initial zoom level, can be from 4 to 10                  | `7`                                                        |
-| center_latitude  | number / string / object  | **Optional** | The initial center latitude of the map (see Location Coordinates below) | the location of your HA instance                           |
-| center_longitude | number / string / object  | **Optional** | The initial center longitude of the map (see Location Coordinates below) | the location of your HA instance                           |
-| marker_latitude  | number / string / object  | **Optional** | The latitude for the home icon if enabled (see Location Coordinates below) | the same as center_latitude                                |
-| marker_longitude | number / string / object  | **Optional** | The longitude for the home icon if enabled (see Location Coordinates below) | the same as center_longitude                               |
-| mobile_center_latitude  | number / string / object  | **Optional** | **NEW** Mobile override for center latitude (see Mobile Device Overrides below) | not set (uses center_latitude)                             |
-| mobile_center_longitude | number / string / object  | **Optional** | **NEW** Mobile override for center longitude (see Mobile Device Overrides below) | not set (uses center_longitude)                            |
-| mobile_marker_latitude  | number / string / object  | **Optional** | **NEW** Mobile override for marker latitude (see Mobile Device Overrides below) | not set (uses marker_latitude)                             |
-| mobile_marker_longitude | number / string / object  | **Optional** | **NEW** Mobile override for marker longitude (see Mobile Device Overrides below) | not set (uses marker_longitude)                            |
-| frame_count      | number  | **Optional** | The number of frames to use in the loop                      | `10`                                                       |
-| frame_delay      | number  | **Optional** | The number of milliseconds to show each frame                | `500`                                                      |
-| restart_delay    | number  | **Optional** | The additional number of milliseconds to show the last frame | `1000`                                                     |
-| static_map       | boolean | **Optional** | Set to true to disable all panning and zooming               | `false`                                                    |
-| show_zoom        | boolean | **Optional** | Show the zoom controls in the top left corner                | `false`                                                    |
-| square_map       | boolean | **Optional** | Will keep the map square (not in panel mode)                 | `false`                                                    |
-| height           | string  | **Optional** | **NEW** Custom card height using CSS units (e.g., '400px', '50vh'). Overrides panel mode and square_map calculations. | auto                                                       |
-| width            | string  | **Optional** | **NEW** Custom card width using CSS units (e.g., '500px', '80%')     | `'100%'`                                                   |
-| show_marker      | boolean | **Optional** | Show the home icon at the marker position                    | `false`                                                    |
-| show_playback    | boolean | **Optional** | Show the playback controls in the bottom right toolbar       | `false`                                                    |
-| show_recenter    | boolean | **Optional** | Show the re-center control in the bottom right toolbar       | `false`                                                    |
-| show_scale       | boolean | **Optional** | Show a scale in the bottom left corner                       | `false`                                                    |
-| show_range       | boolean | **Optional** | Show range rings around marker position                      | `false`                                                    |
-| extra_labels     | boolean | **Optional** | Show more town labels (labels become smaller)                | `false`                                                    |
+| Name | Type | Requirement | Description | Default |
+| ---- | ---- | ----------- | ----------- | ------- |
+| type | string | **Required** | | must be `'custom:weather-radar-card'` |
+| card_title | string | **Optional** | Title displayed on the card | no title |
+| data_source | string | **Optional** | Radar tile source (see [Data Source](#data-source)) | `'RainViewer'` |
+| map_style | string | **Optional** | Map style (see [Map Style](#map-style)) | `'Light'` |
+| zoom_level | number | **Optional** | Initial zoom level, 3–10 | `7` |
+| center_latitude | number / string / object | **Optional** | Initial map center latitude (see [Location Coordinates](#location-coordinates)) | HA instance location |
+| center_longitude | number / string / object | **Optional** | Initial map center longitude | HA instance location |
+| marker_latitude | number / string / object | **Optional** | Latitude for the home marker (see [Location Coordinates](#location-coordinates)) | same as center_latitude |
+| marker_longitude | number / string / object | **Optional** | Longitude for the home marker | same as center_longitude |
+| mobile_center_latitude | number / string / object | **Optional** | Mobile override for center latitude (see [Mobile Device Overrides](#mobile-device-overrides)) | not set |
+| mobile_center_longitude | number / string / object | **Optional** | Mobile override for center longitude | not set |
+| mobile_marker_latitude | number / string / object | **Optional** | Mobile override for marker latitude | not set |
+| mobile_marker_longitude | number / string / object | **Optional** | Mobile override for marker longitude | not set |
+| frame_count | number | **Optional** | Number of frames in the loop | `5` |
+| frame_delay | number | **Optional** | Milliseconds to display each frame | `500` |
+| restart_delay | number | **Optional** | Extra milliseconds to hold the last frame before looping | `1000` |
+| animated_transitions | boolean | **Optional** | Enable crossfade transitions between frames | `true` |
+| transition_time | number | **Optional** | Total crossfade duration in ms (max: frame_delay). Default is 40% of frame_delay | auto |
+| static_map | boolean | **Optional** | Disable all panning and zooming | `false` |
+| show_zoom | boolean | **Optional** | Show zoom controls | `false` |
+| square_map | boolean | **Optional** | Keep the map square (not in panel mode) | `false` |
+| height | string | **Optional** | Custom card height using CSS units e.g. `'400px'`, `'50vh'` | auto |
+| width | string | **Optional** | Custom card width using CSS units e.g. `'500px'`, `'80%'` | `'100%'` |
+| show_marker | boolean | **Optional** | Show the home marker | `false` |
+| show_playback | boolean | **Optional** | Show playback controls toolbar | `false` |
+| show_recenter | boolean | **Optional** | Show re-center button in toolbar | `false` |
+| show_scale | boolean | **Optional** | Show scale bar | `false` |
+| show_range | boolean | **Optional** | Show range rings around marker | `false` |
+| extra_labels | boolean | **Optional** | Show more place labels (labels become smaller) | `false` |
 
 ### Data Source
 
-The RainViewer tiles are updated every 5 minutes with a lag of just one minute (ie. the most recent image is between 1 and 6 minutes old).
-The valid values for this field are:
+Selects where radar tile data comes from.
 
-- RainViewer-Original
-- RainViewer-UniversalBlue
-- RainViewer-TITAN
-- RainViewer-TWC
-- RainViewer-Meteored
-- RainViewer-NEXRAD
-- RainViewer-Rainbow
-- RainViewer-DarkSky
+| Value | Coverage | Notes |
+| ----- | -------- | ----- |
+| `RainViewer` | Global | Default. Updated every 5 minutes, ~1–6 minute lag. No API key required. Personal/educational use only per RainViewer terms. |
+| `NOAA` | US only | Experimental. Uses NOAA/NWS MRMS base reflectivity composite via `mapservices.weather.noaa.gov`. Government data — free, no API key. 15-minute lag, 5-minute frame steps. |
 
-### Map style
+> **NOAA note:** This is an experimental feature using a public government service with no documented rate limits. It is US-only. The map is allowed to zoom to level 10 when NOAA is selected, but radar tiles are fetched at a maximum of zoom 7 (the native 1 km MRMS resolution) and upscaled for display.
 
-Specifies the style of map to use. Valid values are:
+### Map Style
 
-- light
-- dark
-- voyager
-- satellite
+Specifies the base map style. All CARTO-based styles render labels in English only. Use OpenStreetMap for localized labels.
 
-These are based off the Carto and ESRI map styles that are available.
+| Value | Description |
+| ----- | ----------- |
+| `Light` | CARTO Light (default) — English only |
+| `Dark` | CARTO Dark — English only |
+| `Voyager` | CARTO Voyager — English only |
+| `Satellite` | ESRI World Imagery — English only |
+| `OSM` | OpenStreetMap — labels rendered in local language |
+
+> **OpenStreetMap note:** OSM tiles are provided by the OpenStreetMap community. For high-traffic deployments please consider the [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
+
+### Animation
+
+The card uses CSS `@keyframes` animation for smooth, efficient frame transitions. The animation is generated once from your config settings and runs entirely in CSS — no JavaScript runs on each frame.
+
+**Crossfade behaviour (animated_transitions: true):**
+
+- The incoming frame fades in over half the transition time
+- At the midpoint both frames are fully visible simultaneously
+- The outgoing frame fades out over the second half
+- The last frame holds fully visible through the restart delay, then the loop cuts back to frame 1 instantly
+
+**Hard cut (animated_transitions: false):**
+
+- Frames switch instantly with no fade — uses CSS `step-end` timing for true hard cuts
+
+**Automatic pause:**
+
+- Animation pauses while the card is scrolled out of view or the browser tab is hidden, resuming when it becomes visible again
+- Animation also pauses while navigating (panning/zooming). During navigation only the latest single frame is loaded to reduce tile requests. Full frame history is restored 5 seconds after navigation settles
 
 ### Location Coordinates
 
-The card supports three ways to specify latitude and longitude values for both center and marker positions:
+The card supports three ways to specify latitude and longitude for center and marker positions.
 
-#### 1. Static Numeric Values (Traditional)
-
-Use a fixed coordinate value:
+#### 1. Static Numeric Values
 
 ```yaml
 center_latitude: -25.567607
 center_longitude: 152.930597
 ```
 
-This is the traditional method and maintains full backwards compatibility.
+#### 2. Entity Reference
 
-#### 2. Entity Reference (Simple)
-
-Use an entity ID as a string. The card will automatically use the entity's `latitude` and `longitude` attributes:
+Use an entity ID. The card uses the entity's `latitude` and `longitude` attributes:
 
 ```yaml
 marker_latitude: "device_tracker.my_phone"
 marker_longitude: "device_tracker.my_phone"
 ```
 
-This works with any entity that has `latitude` and `longitude` attributes, including:
-- `device_tracker.*` entities
-- `person.*` entities
-- `zone.*` entities
-- Any sensor with location attributes
+Works with `device_tracker.*`, `person.*`, `zone.*`, or any entity with location attributes.
 
-#### 3. Entity Reference with Custom Attributes (Advanced)
-
-For entities with non-standard attribute names:
+#### 3. Entity Reference with Custom Attributes
 
 ```yaml
 marker_latitude:
@@ -138,35 +133,25 @@ marker_longitude:
   longitude_attribute: custom_lon
 ```
 
-IMPORTANT: Coordinates are resolved when the card renders. Live updates are not supported - reload the card or refresh the page to update entity-based coordinates.
-
-#### Error Handling
-
-If an entity doesn't exist or lacks the required attributes, the card will:
-- Log a warning to the browser console
-- Fall back to the Home Assistant instance location (or center coordinates for markers)
-- Continue to render normally
+> Coordinates are resolved when the card renders. Reload the card to update entity-based coordinates.
 
 ### Mobile Device Overrides
 
-When accessed from a mobile device, you can use different coordinates than on desktop. This is useful for showing your home location on desktop while showing your current device location on mobile.
+Different coordinates can be shown on mobile vs desktop. Useful for showing your home on desktop while showing your device's current location on mobile.
 
-The card detects mobile devices by checking:
-- Home Assistant Companion app user agent (most reliable)
-- Mobile user agent strings (Android, iPhone, etc.)
-- Screen width (mobile if 768px or narrower)
+Mobile is detected via:
 
-Mobile override fields:
-- `mobile_center_latitude` - Override for center latitude on mobile
-- `mobile_center_longitude` - Override for center longitude on mobile
-- `mobile_marker_latitude` - Override for marker latitude on mobile
-- `mobile_marker_longitude` - Override for marker longitude on mobile
+- Home Assistant Companion app user agent
+- Mobile user agent strings
+- Screen width ≤ 768px
 
-If mobile overrides are not specified, the base coordinates are used on all devices.
+Fields: `mobile_center_latitude`, `mobile_center_longitude`, `mobile_marker_latitude`, `mobile_marker_longitude`
+
+If not set, base coordinates are used on all devices.
 
 ## Samples
 
-This is the configuration used to generate the radar loop on this page.
+Basic radar loop centred on a location:
 
 ```yaml
 type: 'custom:weather-radar-card'
@@ -183,7 +168,7 @@ show_playback: true
 zoom_level: 8
 ```
 
-This will display a radar for the whole of Australia showing the previous 24 hours of radar images with a 100mSec delay between frames.
+Dense loop showing 24 hours of radar:
 
 ```yaml
 type: 'custom:weather-radar-card'
@@ -195,7 +180,7 @@ show_marker: true
 show_range: false
 ```
 
-This example shows how to set custom dimensions for the card.
+Custom card dimensions:
 
 ```yaml
 type: 'custom:weather-radar-card'
@@ -206,7 +191,30 @@ show_playback: true
 zoom_level: 7
 ```
 
-This example shows how to use mobile device overrides - desktop shows your home location while mobile shows your device's current location.
+US NOAA radar with slow crossfade:
+
+```yaml
+type: 'custom:weather-radar-card'
+data_source: NOAA
+map_style: Light
+zoom_level: 8
+frame_count: 6
+frame_delay: 600
+transition_time: 300
+show_playback: true
+show_recenter: true
+```
+
+Localized map labels using OpenStreetMap:
+
+```yaml
+type: 'custom:weather-radar-card'
+map_style: OSM
+zoom_level: 7
+show_marker: true
+```
+
+Mobile device overrides — desktop shows home, mobile shows current location:
 
 ```yaml
 type: 'custom:weather-radar-card'
@@ -219,7 +227,7 @@ show_range: true
 zoom_level: 8
 ```
 
-This example tracks a person entity's location on all devices.
+Tracking a person entity on all devices:
 
 ```yaml
 type: 'custom:weather-radar-card'
@@ -233,55 +241,33 @@ show_recenter: true
 zoom_level: 9
 ```
 
-This example uses entity references with custom attribute names.
-
-```yaml
-type: 'custom:weather-radar-card'
-marker_latitude:
-  entity: sensor.custom_location
-  latitude_attribute: custom_lat
-marker_longitude:
-  entity: sensor.custom_location
-  longitude_attribute: custom_lon
-show_marker: true
-zoom_level: 10
-```
-
 ## Install
 
-If you use HACS, the card is now part of the default HACS store.
+If you use HACS, the card is part of the default HACS store.
 
-If you don't use HACS (seriously you should as it makes life so much easier), you can download the required files from [latest releases](https://github.com/makin-things/weather-radar-card/releases). Drop all of the files in `www/community/weather-radar-card` folder in your `config` directory. It should look like this:
+If you don't use HACS, download the files from the [latest release](https://github.com/makin-things/weather-radar-card/releases) and place them in `www/community/weather-radar-card` in your `config` directory:
 
 ```
-    └── ...
-    └── configuration.yaml
-    └── www
-        └── community
-            └── weather-radar-card
-                └── weather-radar-card.js
-                └── home-circle-dark.svg
-                └── home-circle-light.svg
-                └── leaflet.css
-                └── leaflet.js
-                └── leaflet.toolbar.min.css
-                └── leaflet.toolbar.min.js
-                └── pause.png
-                └── play.png
-                └── radar-colour-bar-darksky.png
-                └── radar-colour-bar-meteored.png
-                └── radar-colour-bar-nexrad.png
-                └── radar-colour-bar-original.png
-                └── radar-colour-bar-rainbow.png
-                └── radar-colour-bar-titan.png
-                └── radar-colour-bar-twc.png
-                └── radar-colour-bar-universalblue.png
-                └── recenter.png
-                └── skip-back.png
-                └── skip-next.png
+└── configuration.yaml
+└── www
+    └── community
+        └── weather-radar-card
+            └── weather-radar-card.js
+            └── home-circle-dark.svg
+            └── home-circle-light.svg
+            └── leaflet.css
+            └── leaflet.js
+            └── leaflet.toolbar.min.css
+            └── leaflet.toolbar.min.js
+            └── pause.png
+            └── play.png
+            └── radar-colour-bar-universalblue.png
+            └── recenter.png
+            └── skip-back.png
+            └── skip-next.png
 ```
 
-Next add the following entry in lovelace configuration:
+Then add the following to your Lovelace resources:
 
 ```yaml
 resources:
@@ -291,7 +277,7 @@ resources:
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for a complete history of changes to this project.
+See [CHANGELOG.md](CHANGELOG.md) for a complete history of changes.
 
 [license-shield]: https://img.shields.io/github/license/makin-things/weather-radar-card.svg?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/makin-things/weather-radar-card.svg?style=for-the-badge
