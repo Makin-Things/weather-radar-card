@@ -588,6 +588,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               background: transparent;
               border: none;
             }
+          ${this._buildRadarKeyframesCSS()}
           </style>
         </head>
         <body onresize="resizeWindow()">
@@ -595,6 +596,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
             <div id="color-bar" style="height: 8px;">
               <img id="img-color-bar" height="8" style="vertical-align: top" />
             </div>
+            <div id="nav-banner" style="display:none; position:absolute; top:8px; left:50%; transform:translateX(-50%); z-index:1000; background:rgba(0,0,0,0.65); color:#fff; padding:4px 12px; border-radius:4px; font:12px/1.5 'Helvetica Neue',Arial,sans-serif; pointer-events:none; white-space:nowrap;">Paused while Navigating</div>
             <div id="mapid" style="height: ${this._calculateHeight()};"></div>
             <div id="div-progress-bar" style="height: 8px; background-color: white;">
               <div id="progress-bar" style="height:8px;width:0; background-color: #ccf2ff;"></div>
@@ -611,7 +613,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
             </div>
             <script>
               const tileSize = 256;
-              const maxZoom = 7;
+              const maxZoom = 10;
               const minZoom = 3;
               var radarOpacity = 1.0;
               var zoomLevel = ${JSON.stringify(this._config.zoom_level !== undefined ? this._config.zoom_level : 7)};
@@ -681,19 +683,32 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                 })()
               }
               var timeout = ${JSON.stringify(this._config.frame_delay !== undefined ? this._config.frame_delay : 500)};
+              var fadeMs = ${(() => {
+                if (this._config.animated_transitions === false) return 0;
+                if (this._config.transition_time !== undefined) return this._config.transition_time;
+                return 'Math.floor(timeout * 0.4)';
+              })()};
               var restartDelay = ${JSON.stringify(this._config.restart_delay !== undefined ? this._config.restart_delay : 1000)};
               var frameCount = ${JSON.stringify(this._config.frame_count != undefined ? this._config.frame_count : 5)}; 
               var tileURL = 'https://tilecache.rainviewer.com{path}/{tileSize}/{z}/{x}/{y}/2/1_0.png';
               var radarAPIURL = 'https://api.rainviewer.com/public/weather-maps.json';
+              var noaaWmsURL = 'https://mapservices.weather.noaa.gov/eventdriven/services/radar/radar_base_reflectivity_time/ImageServer/WMSServer';
+              var noaaWmsLayer = 'radar_base_reflectivity_time';
+              var dataSource = ${JSON.stringify(this._config.data_source || 'RainViewer')};
               var radarPaths = [];
-              document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-universalblue.png";
+              if (dataSource === 'NOAA') {
+                document.getElementById("color-bar").style.display = 'none';
+              } else {
+                document.getElementById("img-color-bar").src = "/local/community/weather-radar-card/radar-colour-bar-universalblue.png";
+              }
               var framePeriod = 300000;
-              var frameLag = 60000;
+              var frameLag = dataSource === 'NOAA' ? 0 : 60000;
 
               resizeWindow();
               var labelSize = ${JSON.stringify(this._config.extra_labels !== undefined ? (this._config.extra_labels ? 128 : 256) : 256)};
               var labelZoom = ${JSON.stringify(this._config.extra_labels !== undefined ? (this._config.extra_labels ? 1 : 0) : 0)};
               var map_style = ${JSON.stringify(this._config.map_style !== undefined && this._config.map_style !== null ? this._config.map_style.toLowerCase() : 'light')};
+              var osmLabels = false;
               switch (map_style) {
                 case "dark":
                   var basemap_url = 'https://{s}.basemaps.cartocdn.com/{style}/{z}/{x}/{y}.png';
@@ -719,6 +734,15 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                   var svg_icon = 'home-circle-dark.svg';
                   var attribution = '<a href="https://leafletjs.com" title="A JS library for interactive maps" target="_blank">Leaflet</a> | &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="http://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9" target="_blank">ESRI</a><br>Radar data by <a href="https://rainviewer.com" target="_blank">RainViewer</a>';
                   break;
+                case "osm":
+                  osmLabels = true;
+                  var basemap_url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                  var basemap_style = '';
+                  var label_url = '';
+                  var label_style = '';
+                  var svg_icon = 'home-circle-dark.svg';
+                  var attribution = '<a href="https://leafletjs.com" title="A JS library for interactive maps" target="_blank">Leaflet</a> | &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors<br>Radar data by <a href="https://rainviewer.com" target="_blank">RainViewer</a>';
+                  break;
                 case "light":
                 default:
                   var basemap_url = 'https://{s}.basemaps.cartocdn.com/{style}/{z}/{x}/{y}.png';
@@ -727,6 +751,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                   var label_style = 'light_only_labels';
                   var svg_icon = 'home-circle-dark.svg';
                   var attribution = '<a href="https://leafletjs.com" title="A JS library for interactive maps" target="_blank">Leaflet</a> | &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attribution" target="_blank">CARTO</a><br>Radar data by <a href="https://rainviewer.com" target="_blank">RainViewer</a>';
+              }
+              if (dataSource === 'NOAA') {
+                attribution = attribution.replace('Radar data by <a href="https://rainviewer.com" target="_blank">RainViewer</a>', 'Radar data by <a href="https://www.weather.gov" target="_blank">NOAA/NWS</a>');
               }
 
               var idx = 0;
@@ -747,6 +774,59 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                 minZoom: minZoom,
                 maxZoom: maxZoom,
               }).setView([centerLat, centerLon], zoomLevel);
+
+              var configFrameCount = frameCount;
+              var navReloadTimer = null;
+              var navRestoreTimer = null;
+              var navPaused = false;
+
+              var frameGeneration = 0;
+
+              function clearRadarLayers() {
+                frameGeneration++;
+                radarReady = false;
+                for (var fi = 0; fi < radarImage.length; fi++) {
+                  if (radarImage[fi] && radarImage[fi].remove) radarImage[fi].remove();
+                }
+                radarImage = [];
+                radarTime = [];
+                idx = 0;
+              }
+
+              function loadSingleFrame() {
+                clearRadarLayers();
+                frameCount = 1;
+                initRadar();
+              }
+
+              function onNavStart() {
+                if (navReloadTimer) clearTimeout(navReloadTimer);
+                if (navRestoreTimer) clearTimeout(navRestoreTimer);
+                if (!navPaused) {
+                  navPaused = true;
+                  document.getElementById('nav-banner').style.display = 'block';
+                  pauseAnimations();
+                }
+              }
+              function onNavEnd() {
+                if (navReloadTimer) clearTimeout(navReloadTimer);
+                if (navRestoreTimer) clearTimeout(navRestoreTimer);
+                // 250ms settle: reload single latest frame for current view
+                navReloadTimer = setTimeout(function() {
+                  loadSingleFrame();
+                  // 5s after that: restore full history
+                  navRestoreTimer = setTimeout(function() {
+                    navPaused = false;
+                    document.getElementById('nav-banner').style.display = 'none';
+                    clearRadarLayers();
+                    frameCount = configFrameCount;
+                    initRadar();
+                  }, 5000);
+                }, 250);
+              }
+              radarMap.on('movestart zoomstart', onNavStart);
+              radarMap.on('moveend zoomend', onNavEnd);
+
               var radarImage = [frameCount];
               var radarTime = [frameCount];
               var weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -787,9 +867,11 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                   addHooks: function () {
                     run = !run;
                     if (run) {
-                      document.getElementById("playButton").src = "/local/community/weather-radar-card/pause.png"
+                      document.getElementById("playButton").src = "/local/community/weather-radar-card/pause.png";
+                      resumeAnimations();
                     } else {
-                      document.getElementById("playButton").src = "/local/community/weather-radar-card/play.png"
+                      document.getElementById("playButton").src = "/local/community/weather-radar-card/play.png";
+                      pauseAnimations();
                     }
                   }
                 });
@@ -867,9 +949,128 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               ).addTo(radarMap);
 
               async function fetchRadarPaths() {
+                if (dataSource === 'NOAA') {
+                  var frames = [];
+                  var now = Date.now();
+                  // Snap to 5-minute boundaries, lag 10 minutes to ensure data availability
+                  var stepMs = 300000;
+                  var lagMs = 900000;
+                  var baseTime = Math.floor((now - lagMs) / stepMs) * stepMs;
+                  for (var fi = frameCount - 1; fi >= 0; fi--) {
+                    frames.push({ time: (baseTime - fi * stepMs) / 1000 });
+                  }
+                  return frames;
+                }
                 var response = await fetch(radarAPIURL);
                 var data = await response.json();
                 return data.radar.past;
+              }
+
+              function setLayerZIndex(layer, zIdx) {
+                var el = layer.getContainer && layer.getContainer();
+                if (el) el.style.zIndex = zIdx;
+              }
+
+              var animStartWallTime = null;
+              var animPauseStartTime = null;
+              var animAccPauseMs = 0;
+
+              function getAnimElapsed() {
+                var now = performance.now();
+                var pendingPause = animPauseStartTime ? (now - animPauseStartTime) : 0;
+                return now - animStartWallTime - animAccPauseMs - pendingPause;
+              }
+
+              function applyAnimations() {
+                var totalMs = frameCount * timeout + restartDelay;
+                animStartWallTime = performance.now();
+                animAccPauseMs = 0;
+                animPauseStartTime = null;
+                for (var fi = 0; fi < frameCount; fi++) {
+                  var el = radarImage[fi].getContainer && radarImage[fi].getContainer();
+                  if (el) {
+                    el.style.opacity = '0';
+                    el.style.animation = 'radar-frame-' + fi + ' ' + totalMs + 'ms ' + (fadeMs === 0 ? 'step-end' : 'linear') + ' infinite';
+                  }
+                }
+              }
+
+              function setAnimPlayState(state) {
+                for (var fi = 0; fi < radarImage.length; fi++) {
+                  var el = radarImage[fi] && radarImage[fi].getContainer && radarImage[fi].getContainer();
+                  if (el) el.style.animationPlayState = state;
+                }
+              }
+
+              function pauseAnimations() {
+                if (animPauseStartTime) return;
+                animPauseStartTime = performance.now();
+                setAnimPlayState('paused');
+              }
+
+              function resumeAnimations() {
+                if (animPauseStartTime) {
+                  animAccPauseMs += performance.now() - animPauseStartTime;
+                  animPauseStartTime = null;
+                }
+                setAnimPlayState('running');
+              }
+
+              function seekToFrame(targetFi) {
+                var totalMs = frameCount * timeout + restartDelay;
+                var seekMs = targetFi * timeout;
+                animStartWallTime = performance.now() - seekMs;
+                animAccPauseMs = 0;
+                animPauseStartTime = null;
+                for (var fi = 0; fi < frameCount; fi++) {
+                  var el = radarImage[fi].getContainer && radarImage[fi].getContainer();
+                  if (el) {
+                    el.style.animation = 'none';
+                    el.offsetHeight;
+                    el.style.animation = 'radar-frame-' + fi + ' ' + totalMs + 'ms ' + (fadeMs === 0 ? 'step-end' : 'linear') + ' -' + seekMs + 'ms infinite';
+                  }
+                }
+              }
+
+              function startUIUpdater(gen) {
+                function scheduleNext() {
+                  if (gen !== frameGeneration) return;
+                  var totalMs = frameCount * timeout + restartDelay;
+                  var elapsed = getAnimElapsed() % totalMs;
+                  var fi = Math.min(Math.floor(elapsed / timeout), frameCount - 1);
+                  if (fi >= 0) {
+                    document.getElementById('timestamp').innerHTML = radarTime[fi];
+                    document.getElementById('progress-bar').style.width = (fi + 1) * barSize + 'px';
+                  }
+                  // Schedule next update at the start of the next frame slot
+                  var msIntoSlot = elapsed % timeout;
+                  var msUntilNext = timeout - msIntoSlot + 10; // +10ms to land just after the boundary
+                  setTimeout(scheduleNext, msUntilNext);
+                }
+                scheduleNext();
+              }
+
+              function createRadarLayer(frameData) {
+                if (dataSource === 'NOAA') {
+                  var isoTime = new Date(frameData.time * 1000).toISOString().split('.')[0] + 'Z';
+                  return L.tileLayer.wms(noaaWmsURL, {
+                    layers: noaaWmsLayer,
+                    format: 'image/png',
+                    transparent: true,
+                    version: '1.3.0',
+                    TIME: isoTime,
+                    opacity: 0,
+                    maxNativeZoom: 7,
+                  });
+                }
+                return L.tileLayer(tileURL, {
+                  path: frameData.path,
+                  detectRetina: false,
+                  tileSize: tileSize,
+                  zoomOffset: 0,
+                  opacity: 0,
+                  maxNativeZoom: 7,
+                });
               }
 
               async function initRadar() {
@@ -877,55 +1078,52 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                 radarPaths = pastFrames.slice(-frameCount);
                 frameCount = radarPaths.length;
 
+                var myGen = frameGeneration;
+                var loadedCount = 0;
+
                 for (i = 0; i < frameCount; i++) {
-                  radarImage[i] = L.tileLayer(
-                    tileURL,
-                    {
-                      path: radarPaths[i].path,
-                      detectRetina: false,
-                      tileSize: tileSize,
-                      zoomOffset: 0,
-                      opacity: 0,
-                      frame: i,
-                    },
-                  );
+                  radarImage[i] = createRadarLayer(radarPaths[i]);
                   radarTime[i] = getRadarTimeString(radarPaths[i].time * 1000);
+                  radarImage[i].addTo(radarMap);
+                  setLayerZIndex(radarImage[i], i + 1);
+                  var el = radarImage[i].getContainer && radarImage[i].getContainer();
+                  if (el) el.style.opacity = '0';
                 }
-
-                for (i = 0; i < (frameCount - 1); i++) {
-                  radarImage[i].on('load', function(e) {
-                    radarImage[e.target.options.frame + 1].addTo(radarMap);
-                  });
-                }
-
-                radarImage[0].addTo(radarMap);
-
-                radarImage[idx].setOpacity(radarOpacity);
-                document.getElementById('timestamp').innerHTML = radarTime[idx];
 
                 barSize = document.getElementById("div-progress-bar").offsetWidth / frameCount;
                 document.getElementById("progress-bar").style.width = barSize + "px";
 
-                radarReady = true;
-                workerTimeout(function() {
-                  nextFrame();
-                }, timeout, "frame");
-                setUpdateTimeout();
+                function onFrameLoad() {
+                  if (myGen !== frameGeneration) return;
+                  loadedCount++;
+                  if (loadedCount === frameCount) {
+                    radarReady = true;
+                    applyAnimations();
+                    startUIUpdater(myGen);
+                    setUpdateTimeout();
+                  }
+                }
+
+                for (i = 0; i < frameCount; i++) {
+                  radarImage[i].once('load', onFrameLoad);
+                }
               }
 
               var radarReady = false;
               initRadar();
 
-              townLayer = L.tileLayer(
-                label_url,
-                {
-                  subdomains: 'abcd',
-                  detectRetina: false,
-                  tileSize: labelSize,
-                  zoomOffset: labelZoom,
-                },
-              ).addTo(radarMap);
-              townLayer.setZIndex(2);
+              if (!osmLabels) {
+                townLayer = L.tileLayer(
+                  label_url,
+                  {
+                    subdomains: 'abcd',
+                    detectRetina: false,
+                    tileSize: labelSize,
+                    zoomOffset: labelZoom,
+                  },
+                ).addTo(radarMap);
+                townLayer.setZIndex(2);
+              }
 
               ${
                 this._config.show_marker === true
@@ -979,24 +1177,60 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
 
         function setUpdateTimeout() {
-          workerTimeout(triggerRadarUpdate, framePeriod + frameLag, "update");
+          workerTimeout(function() {
+            if (radarReady && !navPaused && !viewPaused) {
+              updateRadar();
+            } else {
+              doRadarUpdate = true;
+            }
+          }, framePeriod + frameLag, "update");
         }
 
-        function triggerRadarUpdate() {
-          doRadarUpdate = true;
+        // Pause animation when card is scrolled out of view or tab is hidden
+        var viewPaused = false;
+
+        function onBecameVisible() {
+          if (!viewPaused) return;
+          viewPaused = false;
+          if (doRadarUpdate && radarReady) {
+            doRadarUpdate = false;
+            updateRadar();
+          } else {
+            resumeAnimations();
+          }
         }
+
+        function onBecameHidden() {
+          viewPaused = true;
+          pauseAnimations();
+        }
+
+        // Intersection observer on the iframe element in the parent document
+        if (window.frameElement) {
+          var visObserver = new IntersectionObserver(function(entries) {
+            if (entries[0].isIntersecting) {
+              onBecameVisible();
+            } else {
+              onBecameHidden();
+            }
+          }, { threshold: 0.1 });
+          visObserver.observe(window.frameElement);
+        }
+
+        // Also handle tab visibility changes
+        document.addEventListener('visibilitychange', function() {
+          if (document.hidden) {
+            onBecameHidden();
+          } else {
+            onBecameVisible();
+          }
+        });
 
         async function updateRadar() {
           var pastFrames = await fetchRadarPaths();
           var latestFrame = pastFrames[pastFrames.length - 1];
 
-          newLayer = L.tileLayer(tileURL, {
-            path: latestFrame.path,
-            maxZoom: maxZoom,
-            tileSize: tileSize,
-            zoomOffset: 0,
-            opacity: 0,
-          });
+          newLayer = createRadarLayer(latestFrame);
           newLayer.addTo(radarMap);
           newTime = getRadarTimeString(latestFrame.time * 1000);
 
@@ -1007,9 +1241,14 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
           }
           radarImage[frameCount - 1] = newLayer;
           radarTime[frameCount - 1] = newTime;
-          idx = 0;
-          doRadarUpdate = false;
 
+          // Re-apply animations with updated frame data
+          newLayer.once('load', function() {
+            for (i = 0; i < frameCount; i++) setLayerZIndex(radarImage[i], i + 1);
+            applyAnimations();
+          });
+
+          doRadarUpdate = false;
           setUpdateTimeout();
         }
 
@@ -1057,61 +1296,20 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
           );
         }
 
-        function nextFrame() {
-          if (run && radarReady) {
-            try { nextImage(); } catch(e) { console.warn('Weather Radar Card: frame error', e); }
-          }
-          workerTimeout(function() {
-            nextFrame();
-          }, (idx == frameCount) ? restartDelay : timeout, "frame");
-        }
-
         function skipNext() {
-          if (idx == frameCount-1) {
-            idx += 1;
-          }
-          nextImage();
+          if (!radarReady) return;
+          var totalMs = frameCount * timeout + restartDelay;
+          var elapsed = getAnimElapsed() % totalMs;
+          var fi = Math.min(Math.floor(elapsed / timeout), frameCount - 1);
+          seekToFrame((fi + 1) % frameCount);
         }
 
         function skipBack() {
-          if (idx == frameCount) {
-            radarImage[frameCount - 1].setOpacity(0);
-            idx -= 1;
-          } else if (idx < frameCount) {
-            radarImage[idx].setOpacity(0);
-          }
-          idx -= 1;
-          if (doRadarUpdate && idx == 1) {
-            updateRadar();
-          }
-          if (idx < 0) {
-            idx = frameCount-1;
-          }
-          document.getElementById("progress-bar").style.width = (idx+1)*barSize+"px";
-          document.getElementById('timestamp').innerHTML = radarTime[idx];
-          radarImage[idx].setOpacity(radarOpacity);
-        }
-
-        function nextImage() {
-          if (idx == frameCount) {
-            radarImage[frameCount - 1].setOpacity(0);
-          } else if (idx < frameCount - 1) {
-            radarImage[idx].setOpacity(0);
-          }
-          idx += 1;
-          if (doRadarUpdate && idx == 1) {
-            updateRadar();
-          }
-          if (idx == frameCount + 1) {
-            idx = 0;
-          }
-          if (idx != frameCount + 1) {
-            document.getElementById("progress-bar").style.width = (idx+1)*barSize+"px";
-          }
-          if (idx < frameCount) {
-            document.getElementById('timestamp').innerHTML = radarTime[idx];
-            radarImage[idx].setOpacity(radarOpacity);
-          }
+          if (!radarReady) return;
+          var totalMs = frameCount * timeout + restartDelay;
+          var elapsed = getAnimElapsed() % totalMs;
+          var fi = Math.min(Math.floor(elapsed / timeout), frameCount - 1);
+          seekToFrame((fi - 1 + frameCount) % frameCount);
         }
 
         function resizeWindow() {
@@ -1161,6 +1359,76 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         </div>
       </ha-card>
     `;
+  }
+
+  private _buildRadarKeyframesCSS(): string {
+    const frameCount = this._config.frame_count ?? 5;
+    const timeout = this._config.frame_delay ?? 500;
+    const restartDelay = this._config.restart_delay ?? 1000;
+    const radarOpacity = 1.0;
+    const animated = this._config.animated_transitions !== false;
+    const fadeMs = animated
+      ? (this._config.transition_time !== undefined ? this._config.transition_time : Math.floor(timeout * 0.4))
+      : 0;
+    const halfFade = Math.floor(fadeMs / 2);
+    const totalMs = frameCount * timeout + restartDelay;
+
+    const pct = (ms: number) => ((ms / totalMs) * 100).toFixed(4) + '%';
+
+    // Each frame fi:
+    //   - fades IN  from (fi*timeout - halfFade) to (fi*timeout)       — new frame reaches 1
+    //   - holds     from (fi*timeout)             to ((fi+1)*timeout)  — both at 1 at transition point
+    //   - fades OUT from ((fi+1)*timeout)          to ((fi+1)*timeout + halfFade) — old drops to 0
+    let css = '';
+    for (let fi = 0; fi < frameCount; fi++) {
+      const slotStart = fi * timeout;
+      const slotEnd = (fi + 1) * timeout;
+
+      css += `@keyframes radar-frame-${fi} {`;
+
+      if (halfFade === 0) {
+        if (fi === 0) {
+          css += `0% { opacity: ${radarOpacity}; } `;
+        } else {
+          css += `0% { opacity: 0; } `;
+          css += `${pct(slotStart)} { opacity: ${radarOpacity}; } `;
+        }
+        if (fi === frameCount - 1) {
+          css += `99.9999% { opacity: ${radarOpacity}; } `;
+          css += `100% { opacity: 0; } `;
+        } else {
+          css += `${pct(slotEnd)} { opacity: 0; } `;
+          css += `100% { opacity: 0; } `;
+        }
+      } else {
+        const fadeInEnd    = slotStart;
+        const fadeInStart  = fadeInEnd - halfFade;
+        const fadeOutStart = slotEnd;
+        const fadeOutEnd   = fadeOutStart + halfFade;
+
+        if (fi === 0) {
+          css += `0% { opacity: ${radarOpacity}; } `;
+        } else {
+          if (fadeInStart > 0) css += `${pct(fadeInStart)} { opacity: 0; } `;
+          else css += `0% { opacity: 0; } `;
+          css += `${pct(fadeInEnd)} { opacity: ${radarOpacity}; } `;
+        }
+
+        if (fi === frameCount - 1) {
+          // Hold last frame through restart delay, drop instantly at loop
+          css += `${pct(fadeOutStart)} { opacity: ${radarOpacity}; } `;
+          css += `99.9999% { opacity: ${radarOpacity}; } `;
+          css += `100% { opacity: 0; } `;
+        } else {
+          css += `${pct(fadeOutStart)} { opacity: ${radarOpacity}; } `;
+          css += `${pct(Math.min(fadeOutEnd, totalMs))} { opacity: 0; } `;
+          css += `100% { opacity: 0; } `;
+        }
+      }
+
+      css += `} `;
+    }
+    return css;
   }
 
   private showWarning(warning: string): TemplateResult {

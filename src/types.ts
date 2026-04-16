@@ -25,6 +25,8 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   extra_labels: undefined;
   frame_count: undefined;
   frame_delay: undefined;
+  animated_transitions?: boolean;
+  transition_time?: number;
   // Base coordinates (used on all devices)
   marker_longitude?: CoordinateConfig;
   marker_latitude?: CoordinateConfig;
@@ -44,6 +46,7 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   type: string;
   name?: string;
   map_style?: string;
+  data_source?: string;
   show_warning?: boolean;
   show_error?: boolean;
   test_gui?: boolean;
