@@ -17,8 +17,10 @@
   "license": "MIT",
   "dependencies": {
     "@lit-labs/scoped-registry-mixin": "^1.0.0",
+    "@types/leaflet": "^1.9.21",
     "custom-card-helpers": "^1.9.0",
     "home-assistant-js-websocket": "^9.4.0",
+    "leaflet": "^1.9.4",
     "lit": "^3.3.2",
     "randombytes": "^2.1.0",
     "safe-buffer": "^5.2.1",
@@ -45,6 +47,7 @@
     "prettier": "^3.4.2",
     "rollup": "^4.31.0",
     "rollup-plugin-serve": "^1.1.0",
+    "rollup-plugin-string": "^3.0.0",
     "rollup-plugin-typescript2": "^0.36.0",
     "typescript": "^5.7.3"
   },
