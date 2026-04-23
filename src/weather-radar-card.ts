@@ -547,6 +547,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
           <title>Weather Radar Card</title>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <meta name="referrer" content="no-referrer-when-downgrade" />
           <link rel="stylesheet" href="/local/community/weather-radar-card/leaflet.css"/>
           <link rel="stylesheet" href="/local/community/weather-radar-card/leaflet.toolbar.min.css"/>
           <script src="/local/community/weather-radar-card/leaflet.js"></script>
