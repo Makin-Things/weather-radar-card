@@ -64,34 +64,16 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
 
     return html`
       <div class="values">
-        <ha-textfield
-            label="Card Title (optional)"
-            .value=${config.card_title ? config.card_title : ''}
-            .configValue=${'card_title'}
-            @input=${this._valueChangedString}
-        ></ha-textfield>
-        <ha-textfield
-            label="Height (optional)"
-            .value=${config.height ? config.height : ''}
-            .configValue=${'height'}
-            @input=${this._valueChangedString}
-            helper="e.g., 400px, 50vh"
-        ></ha-textfield>
-        <ha-textfield
-            label="Width (optional)"
-            .value=${config.width ? config.width : ''}
-            .configValue=${'width'}
-            @input=${this._valueChangedString}
-            helper="e.g., 100%, 500px"
-        ></ha-textfield>
-        
+
+        <!-- MAP -->
+        <h3 class="section-header">Map</h3>
         <ha-selector
           .hass=${this.hass}
           .selector=${{
             select: {
               options: [
                 { value: 'RainViewer', label: 'RainViewer (Global)' },
-                { value: 'NOAA', label: 'NOAA/NWS (US Only - Experimental)' },
+                { value: 'NOAA', label: 'NOAA/NWS (US Only — Experimental)' },
               ],
             },
           }}
@@ -106,17 +88,17 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             .selector=${{
               select: {
                 options: [
-                  { value: '', label: 'Default (CARTO Light - English only)' },
-                  { value: 'Light', label: 'CARTO Light (English only)' },
-                  { value: 'Voyager', label: 'CARTO Voyager (English only)' },
-                  { value: 'Satellite', label: 'Satellite (English only)' },
-                  { value: 'Dark', label: 'CARTO Dark (English only)' },
+                  { value: '', label: 'Default (CARTO Light)' },
+                  { value: 'Light', label: 'CARTO Light' },
+                  { value: 'Voyager', label: 'CARTO Voyager' },
+                  { value: 'Dark', label: 'CARTO Dark' },
+                  { value: 'Satellite', label: 'Satellite' },
                   { value: 'OSM', label: 'OpenStreetMap (Localized)' },
                 ],
               },
             }}
             .value=${config.map_style || ''}
-            .label=${'Map Style (optional)'}
+            .label=${'Map Style'}
             .configValue=${'map_style'}
             @value-changed=${this._handleSelectorChanged}
           ></ha-selector>
@@ -137,265 +119,255 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
               },
             }}
             .value=${config.zoom_level?.toString() || ''}
-            .label=${'Zoom Level (optional)'}
+            .label=${'Zoom Level'}
             .configValue=${'zoom_level'}
             @value-changed=${this._handleSelectorNumberChanged}
           ></ha-selector>
         </div>
-        <ha-textfield
-            label="Map Centre Latitude (optional)"
+
+        <!-- LOCATION -->
+        <h3 class="section-header">Location</h3>
+        <div class="side-by-side">
+          <ha-textfield
+            label="Centre Latitude"
             .value=${this._formatCoordinateValue(config.center_latitude)}
             .configValue=${'center_latitude'}
             @input=${this._valueChangedCoordinate}
-            helper="Number or entity ID (e.g., device_tracker.phone)"
-        ></ha-textfield>
-        <ha-textfield
-            label="Map Centre Longitude (optional)"
+            helper="Number or entity ID"
+          ></ha-textfield>
+          <ha-textfield
+            label="Centre Longitude"
             .value=${this._formatCoordinateValue(config.center_longitude)}
             .configValue=${'center_longitude'}
             @input=${this._valueChangedCoordinate}
             helper="Number or entity ID"
-        ></ha-textfield>
-        <ha-textfield
-            label="Marker Latitude (optional)"
+          ></ha-textfield>
+        </div>
+        <div class="side-by-side">
+          <ha-textfield
+            label="Marker Latitude"
             .value=${this._formatCoordinateValue(config.marker_latitude)}
             .configValue=${'marker_latitude'}
             @input=${this._valueChangedCoordinate}
             helper="Number or entity ID"
-        ></ha-textfield>
-        <ha-textfield
-            label="Marker Longitude (optional)"
+          ></ha-textfield>
+          <ha-textfield
+            label="Marker Longitude"
             .value=${this._formatCoordinateValue(config.marker_longitude)}
             .configValue=${'marker_longitude'}
             @input=${this._valueChangedCoordinate}
             helper="Number or entity ID"
-        ></ha-textfield>
-        <h3>Mobile Device Overrides</h3>
-        <p style="font-size: 0.9em; color: var(--secondary-text-color); margin: 0 0 10px 0;">
-          When accessed from a mobile device, these coordinates will override the base coordinates above.
+          ></ha-textfield>
+        </div>
+
+        <!-- DISPLAY -->
+        <h3 class="section-header">Display</h3>
+        <div class="side-by-side">
+          <label>Show Zoom
+            <ha-switch .checked=${config.show_zoom === true} .configValue=${'show_zoom'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+          <label>Show Playback
+            <ha-switch .checked=${config.show_playback === true} .configValue=${'show_playback'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+          <label>Show Recenter
+            <ha-switch .checked=${config.show_recenter === true} .configValue=${'show_recenter'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+        </div>
+        <div class="side-by-side">
+          <label>Show Scale
+            <ha-switch .checked=${config.show_scale === true} .configValue=${'show_scale'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+          <label>Show Range
+            <ha-switch .checked=${config.show_range === true} .configValue=${'show_range'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+          <label>Extra Labels
+            <ha-switch .checked=${config.extra_labels === true} .configValue=${'extra_labels'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+        </div>
+        <div class="side-by-side">
+          <label>Static Map
+            <ha-switch .checked=${config.static_map === true} .configValue=${'static_map'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+          <label>Square Map
+            <ha-switch .checked=${config.square_map === true} .configValue=${'square_map'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+          <label>Show Marker
+            <ha-switch .checked=${config.show_marker === true} .configValue=${'show_marker'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+        </div>
+        ${config.show_marker === true ? html`
+          <div class="subsection">
+            <ha-selector
+              .hass=${this.hass}
+              .selector=${{
+                select: {
+                  options: [
+                    { value: 'default', label: 'Home (default)' },
+                    { value: 'entity_picture', label: 'Entity Picture' },
+                    { value: 'mdi:account', label: 'MDI: Account' },
+                    { value: 'mdi:account-circle', label: 'MDI: Account Circle' },
+                    { value: 'mdi:map-marker', label: 'MDI: Map Marker' },
+                    { value: 'mdi:home', label: 'MDI: Home' },
+                    { value: 'mdi:car', label: 'MDI: Car' },
+                    { value: 'mdi:cellphone', label: 'MDI: Cellphone' },
+                  ],
+                },
+              }}
+              .value=${config.marker_icon || 'default'}
+              .label=${'Marker Icon'}
+              .configValue=${'marker_icon'}
+              @value-changed=${this._handleSelectorChanged}
+            ></ha-selector>
+            ${config.marker_icon === 'entity_picture' ? html`
+              <ha-textfield
+                label="Icon Entity"
+                .value=${config.marker_icon_entity || ''}
+                .configValue=${'marker_icon_entity'}
+                @input=${this._valueChangedString}
+                helper="Auto-detected from marker entity if empty"
+              ></ha-textfield>
+            ` : ''}
+          </div>
+        ` : ''}
+
+        <!-- ANIMATION -->
+        <h3 class="section-header">Animation</h3>
+        <div class="side-by-side">
+          <ha-textfield
+            label="Frame Count"
+            .value=${config.frame_count ? config.frame_count : ''}
+            .configValue=${'frame_count'}
+            @input=${this._valueChangedNumber}
+            helper="Default: 5"
+          ></ha-textfield>
+          <ha-textfield
+            label="Frame Delay (ms)"
+            .value=${config.frame_delay ? config.frame_delay : ''}
+            .configValue=${'frame_delay'}
+            @input=${this._valueChangedNumber}
+            helper="Default: 500"
+          ></ha-textfield>
+          <ha-textfield
+            label="Restart Delay (ms)"
+            .value=${config.restart_delay ? config.restart_delay : ''}
+            .configValue=${'restart_delay'}
+            @input=${this._valueChangedNumber}
+            helper="Default: 1000"
+          ></ha-textfield>
+        </div>
+        <label>Animated Transitions
+          <ha-switch
+            .checked=${config.animated_transitions !== false}
+            .configValue=${'animated_transitions'}
+            @change=${this._valueChangedSwitch}
+          ></ha-switch>
+        </label>
+        ${config.animated_transitions !== false ? html`
+          <ha-textfield
+            label="Transition Time (ms)"
+            .value=${config.transition_time !== undefined ? config.transition_time : ''}
+            .configValue=${'transition_time'}
+            @input=${this._valueChangedNumber}
+            helper="Default: 40% of frame delay — max: frame delay"
+          ></ha-textfield>
+        ` : ''}
+
+        <!-- MOBILE OVERRIDES -->
+        <h3 class="section-header">Mobile Overrides</h3>
+        <p class="section-description">
+          Override centre and marker coordinates when accessed from a mobile device.
+          Leave blank to use the base coordinates on all devices.
         </p>
-        <ha-textfield
-            label="Mobile Centre Latitude (optional)"
+        <div class="side-by-side">
+          <ha-textfield
+            label="Mobile Centre Latitude"
             .value=${this._formatCoordinateValue(config.mobile_center_latitude)}
             .configValue=${'mobile_center_latitude'}
             @input=${this._valueChangedCoordinate}
-            helper="Mobile override (e.g., device_tracker.phone)"
-        ></ha-textfield>
-        <ha-textfield
-            label="Mobile Centre Longitude (optional)"
+            helper="e.g. device_tracker.phone"
+          ></ha-textfield>
+          <ha-textfield
+            label="Mobile Centre Longitude"
             .value=${this._formatCoordinateValue(config.mobile_center_longitude)}
             .configValue=${'mobile_center_longitude'}
             @input=${this._valueChangedCoordinate}
-            helper="Mobile override"
-        ></ha-textfield>
-        <ha-textfield
-            label="Mobile Marker Latitude (optional)"
+          ></ha-textfield>
+        </div>
+        <div class="side-by-side">
+          <ha-textfield
+            label="Mobile Marker Latitude"
             .value=${this._formatCoordinateValue(config.mobile_marker_latitude)}
             .configValue=${'mobile_marker_latitude'}
             @input=${this._valueChangedCoordinate}
-            helper="Mobile override"
-        ></ha-textfield>
-        <ha-textfield
-            label="Mobile Marker Longitude (optional)"
+          ></ha-textfield>
+          <ha-textfield
+            label="Mobile Marker Longitude"
             .value=${this._formatCoordinateValue(config.mobile_marker_longitude)}
             .configValue=${'mobile_marker_longitude'}
             @input=${this._valueChangedCoordinate}
-            helper="Mobile override"
+          ></ha-textfield>
+        </div>
+        ${config.show_marker === true ? html`
+          <div class="subsection">
+            <ha-selector
+              .hass=${this.hass}
+              .selector=${{
+                select: {
+                  options: [
+                    { value: '', label: 'Same as desktop' },
+                    { value: 'default', label: 'Home' },
+                    { value: 'entity_picture', label: 'Entity Picture' },
+                    { value: 'mdi:account', label: 'MDI: Account' },
+                    { value: 'mdi:account-circle', label: 'MDI: Account Circle' },
+                    { value: 'mdi:map-marker', label: 'MDI: Map Marker' },
+                    { value: 'mdi:home', label: 'MDI: Home' },
+                    { value: 'mdi:car', label: 'MDI: Car' },
+                    { value: 'mdi:cellphone', label: 'MDI: Cellphone' },
+                  ],
+                },
+              }}
+              .value=${config.mobile_marker_icon || ''}
+              .label=${'Mobile Marker Icon'}
+              .configValue=${'mobile_marker_icon'}
+              @value-changed=${this._handleSelectorChanged}
+            ></ha-selector>
+            ${config.mobile_marker_icon === 'entity_picture' ? html`
+              <ha-textfield
+                label="Mobile Icon Entity"
+                .value=${config.mobile_marker_icon_entity || ''}
+                .configValue=${'mobile_marker_icon_entity'}
+                @input=${this._valueChangedString}
+                helper="Mobile override for entity picture"
+              ></ha-textfield>
+            ` : ''}
+          </div>
+        ` : ''}
+
+        <!-- APPEARANCE -->
+        <h3 class="section-header">Appearance</h3>
+        <ha-textfield
+          label="Card Title"
+          .value=${config.card_title ? config.card_title : ''}
+          .configValue=${'card_title'}
+          @input=${this._valueChangedString}
         ></ha-textfield>
         <div class="side-by-side">
           <ha-textfield
-              label="Frame Count (optional)"
-              .value=${config.frame_count ? config.frame_count : ''}
-              .configValue=${'frame_count'}
-              @input=${this._valueChangedNumber}
+            label="Height"
+            .value=${config.height ? config.height : ''}
+            .configValue=${'height'}
+            @input=${this._valueChangedString}
+            helper="e.g. 400px, 50vh"
           ></ha-textfield>
           <ha-textfield
-              label="Frame Delay(ms) (optional)"
-              .value=${config.frame_delay ? config.frame_delay : ''}
-              .configValue=${'frame_delay'}
-              @input=${this._valueChangedNumber}
-          ></ha-textfield>
-          <ha-textfield
-              label="Restart Delay(ms) (optional)"
-              .value=${config.restart_delay ? config.restart_delay : ''}
-              .configValue=${'restart_delay'}
-              @input=${this._valueChangedNumber}
+            label="Width"
+            .value=${config.width ? config.width : ''}
+            .configValue=${'width'}
+            @input=${this._valueChangedString}
+            helper="e.g. 100%, 500px"
           ></ha-textfield>
         </div>
-        <div class="side-by-side">
-          <label>
-            Animated Transitions
-            <ha-switch
-              .checked=${config.animated_transitions !== false}
-              .configValue=${'animated_transitions'}
-              @change=${this._valueChangedSwitch}
-            ></ha-switch>
-          </label>
-          ${config.animated_transitions !== false ? html`
-          <ha-textfield
-              label="Transition Time (ms)"
-              .value=${config.transition_time !== undefined ? config.transition_time : ''}
-              .configValue=${'transition_time'}
-              @input=${this._valueChangedNumber}
-              helper="Default: 40% of frame delay, max: frame delay"
-          ></ha-textfield>
-          ` : ''}
-        </div>
-        <div class="side-by-side">
-          <label>
-            Static Map
-            <ha-switch
-              .checked=${config.static_map === true}
-              .configValue=${'static_map'}
-              @change=${this._valueChangedSwitch}
-            ></ha-switch>
-          </label>
-          <label>
-            Show Zoom
-            <ha-switch
-              .checked=${config.show_zoom === true}
-              .configValue=${'show_zoom'}
-              @change=${this._valueChangedSwitch}
-            ></ha-switch>
-          </label>
-          <label>
-            Square Map
-            <ha-switch
-              .checked=${config.square_map === true}
-              .configValue=${'square_map'}
-              @change=${this._valueChangedSwitch}
-            ></ha-switch>
-          </label>
-        </div>
-        <div class="side-by-side">
-          <label>
-            Show Marker
-            <ha-switch
-              .checked=${config.show_marker === true}
-              .configValue=${'show_marker'}
-              @change=${this._valueChangedSwitch}
-            ></ha-switch>
-          </label>
-          <label>
-            Show Playback
-            <ha-switch
-              .checked=${config.show_playback === true}
-              .configValue=${'show_playback'}
-              @change=${this._valueChangedSwitch}
-            ></ha-switch>
-          </label>
-          <label>
-            Show Recenter
-            <ha-switch
-              .checked=${config.show_recenter === true}
-              .configValue=${'show_recenter'}
-              @change=${this._valueChangedSwitch}
-            ></ha-switch>
-          </label>
-        </div>
-        ${
-          config.show_marker === true
-            ? html`
-                <h3>Marker Icon</h3>
-                <div class="side-by-side">
-                  <ha-selector
-                    .hass=${this.hass}
-                    .selector=${{
-                      select: {
-                        options: [
-                          { value: 'default', label: 'Default (Home)' },
-                          { value: 'entity_picture', label: 'Entity Picture' },
-                          { value: 'mdi:account', label: 'MDI: Account' },
-                          { value: 'mdi:account-circle', label: 'MDI: Account Circle' },
-                          { value: 'mdi:map-marker', label: 'MDI: Map Marker' },
-                          { value: 'mdi:home', label: 'MDI: Home' },
-                          { value: 'mdi:car', label: 'MDI: Car' },
-                          { value: 'mdi:cellphone', label: 'MDI: Cellphone' },
-                        ],
-                      },
-                    }}
-                    .value=${config.marker_icon || 'default'}
-                    .label=${'Icon Type'}
-                    .configValue=${'marker_icon'}
-                    @value-changed=${this._handleSelectorChanged}
-                  ></ha-selector>
-                </div>
-                ${config.marker_icon === 'entity_picture'
-                  ? html`
-                      <ha-textfield
-                        label="Icon Entity (optional)"
-                        .value=${config.marker_icon_entity || ''}
-                        .configValue=${'marker_icon_entity'}
-                        @input=${this._valueChangedString}
-                        helper="Entity with picture (auto-detects from marker entity if empty)"
-                      ></ha-textfield>
-                    `
-                  : ''}
-                <h4>Mobile Icon Overrides</h4>
-                <div class="side-by-side">
-                  <ha-selector
-                    .hass=${this.hass}
-                    .selector=${{
-                      select: {
-                        options: [
-                          { value: '', label: 'None' },
-                          { value: 'default', label: 'Default (Home)' },
-                          { value: 'entity_picture', label: 'Entity Picture' },
-                          { value: 'mdi:account', label: 'MDI: Account' },
-                          { value: 'mdi:account-circle', label: 'MDI: Account Circle' },
-                          { value: 'mdi:map-marker', label: 'MDI: Map Marker' },
-                          { value: 'mdi:home', label: 'MDI: Home' },
-                          { value: 'mdi:car', label: 'MDI: Car' },
-                          { value: 'mdi:cellphone', label: 'MDI: Cellphone' },
-                        ],
-                      },
-                    }}
-                    .value=${config.mobile_marker_icon || ''}
-                    .label=${'Mobile Icon Type (optional)'}
-                    .configValue=${'mobile_marker_icon'}
-                    @value-changed=${this._handleSelectorChanged}
-                  ></ha-selector>
-                </div>
-                ${config.mobile_marker_icon === 'entity_picture'
-                  ? html`
-                      <ha-textfield
-                        label="Mobile Icon Entity (optional)"
-                        .value=${config.mobile_marker_icon_entity || ''}
-                        .configValue=${'mobile_marker_icon_entity'}
-                        @input=${this._valueChangedString}
-                        helper="Mobile override for entity with picture"
-                      ></ha-textfield>
-                    `
-                  : ''}
-              `
-            : ''
-        }
-        <div class="side-by-side">
-          <label>
-            Show Scale
-            <ha-switch
-              .checked=${config.show_scale === true}
-              .configValue=${'show_scale'}
-              @change=${this._valueChangedSwitch}
-            ></ha-switch>
-          </label>
-          <label>
-            Show Range
-            <ha-switch
-              .checked=${config.show_range === true}
-              .configValue=${'show_range'}
-              @change=${this._valueChangedSwitch}
-            ></ha-switch>
-          </label>
-          <label>
-            Show Extra Labels
-            <ha-switch
-              .checked=${config.extra_labels === true}
-              .configValue=${'extra_labels'}
-              @change=${this._valueChangedSwitch}
-            ></ha-switch>
-          </label>
-        </div>
+
       </div>
     `;
   }
@@ -587,24 +559,50 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
       margin-bottom: 16px;
       display: block;
     }
+    .section-header {
+      font-size: 0.75em;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--primary-color);
+      margin: 20px 0 8px 0;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--divider-color);
+    }
+    .section-header:first-child {
+      margin-top: 4px;
+    }
+    .section-description {
+      font-size: 0.85em;
+      color: var(--secondary-text-color);
+      margin: 0 0 12px 0;
+    }
+    .subsection {
+      margin-left: 16px;
+      padding-left: 8px;
+      border-left: 2px solid var(--divider-color);
+      margin-bottom: 8px;
+    }
     label {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 0;
+      padding: 6px 0;
+      font-size: 0.95em;
     }
     ha-switch {
-      padding: 16px 6px;
+      padding: 12px 6px;
     }
     .side-by-side {
       display: flex;
+      gap: 8px;
     }
     .side-by-side > * {
       flex: 1;
-      padding-right: 4px;
+      min-width: 0;
     }
     .values {
-      padding-left: 16px;
+      padding: 0 16px 8px 16px;
       background: var(--secondary-background-color);
     }
   `;
