@@ -547,7 +547,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
           <title>Weather Radar Card</title>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <meta name="referrer" content="no-referrer-when-downgrade" />
           <link rel="stylesheet" href="/local/community/weather-radar-card/leaflet.css"/>
           <link rel="stylesheet" href="/local/community/weather-radar-card/leaflet.toolbar.min.css"/>
           <script src="/local/community/weather-radar-card/leaflet.js"></script>
@@ -710,6 +709,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               var labelZoom = ${JSON.stringify(this._config.extra_labels !== undefined ? (this._config.extra_labels ? 1 : 0) : 0)};
               var map_style = ${JSON.stringify(this._config.map_style !== undefined && this._config.map_style !== null ? this._config.map_style.toLowerCase() : 'light')};
               var osmLabels = false;
+              var basemap_subdomains = 'abcd';
               switch (map_style) {
                 case "dark":
                   var basemap_url = 'https://{s}.basemaps.cartocdn.com/{style}/{z}/{x}/{y}.png';
@@ -738,6 +738,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                 case "osm":
                   osmLabels = true;
                   var basemap_url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                  var basemap_subdomains = 'abc';
                   var basemap_style = '';
                   var label_url = '';
                   var label_style = '';
@@ -756,6 +757,39 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               if (dataSource === 'NOAA') {
                 attribution = attribution.replace('Radar data by <a href="https://rainviewer.com" target="_blank">RainViewer</a>', 'Radar data by <a href="https://www.weather.gov" target="_blank">NOAA/NWS</a>');
               }
+
+              // Fetch-based tile layers: send a real Referer header (srcdoc iframes
+              // have an opaque about:srcdoc origin, so <meta referrer> is useless)
+              // and retry failed tiles with exponential backoff.
+              var parentRef = '';
+              try { parentRef = window.parent.location.href; } catch(e) {}
+
+              function createFetchTile(coords, done) {
+                var tile = document.createElement('img');
+                tile.setAttribute('role', 'presentation');
+                var url = this.getTileUrl(coords);
+                var maxRetries = this.options.maxRetries !== undefined ? this.options.maxRetries : 3;
+                var retryDelay = this.options.retryDelay !== undefined ? this.options.retryDelay : 500;
+                var attempt = 0;
+                function tryFetch() {
+                  fetch(url, { referrer: parentRef, referrerPolicy: 'no-referrer-when-downgrade' })
+                    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+                    .then(function(blob) {
+                      var objUrl = URL.createObjectURL(blob);
+                      tile.onload = function() { URL.revokeObjectURL(objUrl); };
+                      tile.src = objUrl;
+                      done(null, tile);
+                    })
+                    .catch(function(err) {
+                      if (++attempt < maxRetries) { setTimeout(tryFetch, retryDelay * attempt); }
+                      else { done(err, tile); }
+                    });
+                }
+                tryFetch();
+                return tile;
+              }
+              var FetchTileLayer = L.TileLayer.extend({ createTile: createFetchTile });
+              var FetchWmsTileLayer = L.TileLayer.WMS.extend({ createTile: createFetchTile });
 
               var idx = 0;
               var run = true;
@@ -938,16 +972,13 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                 this.document.getElementById("bottom-container").className = "dark-links";
               }
 
-              L.tileLayer(
-                basemap_url,
-                {
-                  style: basemap_style,
-                  subdomains: 'abcd',
-                  detectRetina: false,
-                  tileSize: tileSize,
-                  zoomOffset: 0,
-                },
-              ).addTo(radarMap);
+              new FetchTileLayer(basemap_url, {
+                style: basemap_style,
+                subdomains: basemap_subdomains,
+                detectRetina: false,
+                tileSize: tileSize,
+                zoomOffset: 0,
+              }).addTo(radarMap);
 
               async function fetchRadarPaths() {
                 if (dataSource === 'NOAA') {
@@ -1054,7 +1085,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               function createRadarLayer(frameData) {
                 if (dataSource === 'NOAA') {
                   var isoTime = new Date(frameData.time * 1000).toISOString().split('.')[0] + 'Z';
-                  return L.tileLayer.wms(noaaWmsURL, {
+                  return new FetchWmsTileLayer(noaaWmsURL, {
                     layers: noaaWmsLayer,
                     format: 'image/png',
                     transparent: true,
@@ -1064,7 +1095,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
                     maxNativeZoom: 7,
                   });
                 }
-                return L.tileLayer(tileURL, {
+                return new FetchTileLayer(tileURL, {
                   path: frameData.path,
                   detectRetina: false,
                   tileSize: tileSize,
@@ -1114,15 +1145,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
               initRadar();
 
               if (!osmLabels) {
-                townLayer = L.tileLayer(
-                  label_url,
-                  {
-                    subdomains: 'abcd',
-                    detectRetina: false,
-                    tileSize: labelSize,
-                    zoomOffset: labelZoom,
-                  },
-                ).addTo(radarMap);
+                townLayer = new FetchTileLayer(label_url, {
+                  subdomains: 'abcd',
+                  detectRetina: false,
+                  tileSize: labelSize,
+                  zoomOffset: labelZoom,
+                }).addTo(radarMap);
                 townLayer.setZIndex(2);
               }
 
