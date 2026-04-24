@@ -15665,6 +15665,22 @@ class RadarPlayer {
         else
             this._stopLoop();
     }
+    get frameCount() { return this._configFrameCount; }
+    /** Move to a specific frame index without restarting the loop timer. */
+    scrubTo(fi) {
+        const slot = this._loadedSlots.indexOf(fi);
+        if (slot === -1)
+            return;
+        this._stopLoop();
+        this._currentSlot = slot;
+        this._showSlot(slot);
+    }
+    /** Called when a scrub gesture ends — resumes playback if it was running. */
+    scrubEnd() {
+        if (this.run && !this.navPaused && !this.viewPaused) {
+            this._startLoop(this._currentSlot);
+        }
+    }
     skipNext() {
         var _a;
         if (!this._radarReady)
@@ -16326,6 +16342,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         this._dynamicStyleEl = document.createElement('style');
         this._dynamicStyleEl.id = 'radar-dynamic';
         this.shadowRoot.appendChild(this._dynamicStyleEl);
+        this._setupProgressBarScrub();
         this._initMap();
     }
     updated(changedProps) {
@@ -16363,7 +16380,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
           </button>
         ` : ''}
         <div id="mapid" style="height:${this._calculateHeight()}"></div>
-        <div id="div-progress-bar" style="height:8px;display:${this._config.show_progress_bar === false ? 'none' : 'flex'};background:${dark ? '#1c1c1c' : '#fff'}"></div>
+        <div id="div-progress-bar" style="height:8px;cursor:pointer;display:${this._config.show_progress_bar === false ? 'none' : 'flex'};background:${dark ? '#1c1c1c' : '#fff'}"></div>
         <div id="bottom-container" class="${dark ? 'dark-links' : 'light-links'}"
              style="height:32px;background:${dark ? '#1c1c1c' : '#fff'};color:${dark ? '#ddd' : ''}">
           <div id="timestampid" style="width:120px;height:32px;float:left;position:absolute">
@@ -16610,6 +16627,39 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         this._map.setView([c.lat, c.lon], (_g = cfg.zoom_level) !== null && _g !== void 0 ? _g : 7);
     }
     // ── Navigation pause ──────────────────────────────────────────────────────
+    _setupProgressBarScrub() {
+        var _a;
+        const bar = (_a = this.shadowRoot) === null || _a === void 0 ? void 0 : _a.getElementById('div-progress-bar');
+        if (!bar)
+            return;
+        let active = false;
+        const seek = (e) => {
+            if (!this._player || this._player.frameCount === 0)
+                return;
+            const rect = bar.getBoundingClientRect();
+            const ratio = Math.max(0, Math.min(1 - 1e-9, (e.clientX - rect.left) / rect.width));
+            this._player.scrubTo(Math.floor(ratio * this._player.frameCount));
+        };
+        bar.addEventListener('pointerdown', (e) => {
+            active = true;
+            bar.setPointerCapture(e.pointerId);
+            seek(e);
+        });
+        bar.addEventListener('pointermove', (e) => { if (active)
+            seek(e); });
+        bar.addEventListener('pointerup', () => {
+            var _a;
+            if (!active)
+                return;
+            active = false;
+            (_a = this._player) === null || _a === void 0 ? void 0 : _a.scrubEnd();
+        });
+        bar.addEventListener('pointercancel', () => {
+            var _a;
+            active = false;
+            (_a = this._player) === null || _a === void 0 ? void 0 : _a.scrubEnd();
+        });
+    }
     _setupNavListeners() {
         if (!this._map)
             return;

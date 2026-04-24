@@ -142,6 +142,24 @@ export class RadarPlayer {
     else this._stopLoop();
   }
 
+  get frameCount(): number { return this._configFrameCount; }
+
+  /** Move to a specific frame index without restarting the loop timer. */
+  scrubTo(fi: number): void {
+    const slot = this._loadedSlots.indexOf(fi);
+    if (slot === -1) return;
+    this._stopLoop();
+    this._currentSlot = slot;
+    this._showSlot(slot);
+  }
+
+  /** Called when a scrub gesture ends — resumes playback if it was running. */
+  scrubEnd(): void {
+    if (this.run && !this.navPaused && !this.viewPaused) {
+      this._startLoop(this._currentSlot);
+    }
+  }
+
   skipNext(): void {
     if (!this._radarReady) return;
     const n = this._loadedSlots.length;

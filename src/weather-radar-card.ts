@@ -126,6 +126,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     this._dynamicStyleEl = document.createElement('style');
     this._dynamicStyleEl.id = 'radar-dynamic';
     this.shadowRoot!.appendChild(this._dynamicStyleEl);
+    this._setupProgressBarScrub();
     this._initMap();
   }
 
@@ -165,7 +166,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
           </button>
         ` : ''}
         <div id="mapid" style="height:${this._calculateHeight()}"></div>
-        <div id="div-progress-bar" style="height:8px;display:${this._config.show_progress_bar === false ? 'none' : 'flex'};background:${dark ? '#1c1c1c' : '#fff'}"></div>
+        <div id="div-progress-bar" style="height:8px;cursor:pointer;display:${this._config.show_progress_bar === false ? 'none' : 'flex'};background:${dark ? '#1c1c1c' : '#fff'}"></div>
         <div id="bottom-container" class="${dark ? 'dark-links' : 'light-links'}"
              style="height:32px;background:${dark ? '#1c1c1c' : '#fff'};color:${dark ? '#ddd' : ''}">
           <div id="timestampid" style="width:120px;height:32px;float:left;position:absolute">
@@ -415,6 +416,35 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   }
 
   // ── Navigation pause ──────────────────────────────────────────────────────
+
+  private _setupProgressBarScrub(): void {
+    const bar = this.shadowRoot?.getElementById('div-progress-bar');
+    if (!bar) return;
+    let active = false;
+
+    const seek = (e: PointerEvent): void => {
+      if (!this._player || this._player.frameCount === 0) return;
+      const rect = bar.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1 - 1e-9, (e.clientX - rect.left) / rect.width));
+      this._player.scrubTo(Math.floor(ratio * this._player.frameCount));
+    };
+
+    bar.addEventListener('pointerdown', (e) => {
+      active = true;
+      bar.setPointerCapture(e.pointerId);
+      seek(e);
+    });
+    bar.addEventListener('pointermove', (e) => { if (active) seek(e); });
+    bar.addEventListener('pointerup', () => {
+      if (!active) return;
+      active = false;
+      this._player?.scrubEnd();
+    });
+    bar.addEventListener('pointercancel', () => {
+      active = false;
+      this._player?.scrubEnd();
+    });
+  }
 
   private _setupNavListeners(): void {
     if (!this._map) return;
