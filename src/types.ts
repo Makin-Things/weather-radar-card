@@ -22,9 +22,9 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   square_map: boolean;
   height?: string;
   width?: string;
-  extra_labels: undefined;
-  frame_count: undefined;
-  frame_delay: undefined;
+  extra_labels?: boolean;
+  frame_count?: number;
+  frame_delay?: number;
   animated_transitions?: boolean;
   transition_time?: number;
   // Base coordinates (used on all devices)

@@ -50,7 +50,9 @@ export function resolveCoordinate(
   if (typeof config === 'number') return config;
   if (typeof config === 'string') {
     const val = hass?.states[config]?.attributes?.[coordType];
-    return val !== undefined ? parseFloat(val) || fallback : fallback;
+    if (val === undefined) return fallback;
+    const num = parseFloat(val);
+    return !isNaN(num) ? num : fallback;
   }
   if (typeof config === 'object' && 'entity' in config) {
     const attr =
@@ -58,7 +60,9 @@ export function resolveCoordinate(
         ? config.latitude_attribute || 'latitude'
         : config.longitude_attribute || 'longitude';
     const val = hass?.states[config.entity]?.attributes?.[attr];
-    return val !== undefined ? parseFloat(val) || fallback : fallback;
+    if (val === undefined) return fallback;
+    const num = parseFloat(val);
+    return !isNaN(num) ? num : fallback;
   }
   return fallback;
 }

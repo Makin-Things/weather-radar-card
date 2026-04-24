@@ -66,6 +66,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _navReloadTimer: ReturnType<typeof setTimeout> | null = null;
   private _visObserver: IntersectionObserver | null = null;
   private _resizeObserver: ResizeObserver | null = null;
+  private _visibilityHandler: (() => void) | null = null;
+  private _navContainer: HTMLElement | null = null;
+  private _markUserMove: (() => void) | null = null;
 
   private _rainviewerLimiter = new RateLimiter(500);
   private _noaaLimiter = new RateLimiter(120);
@@ -220,6 +223,16 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     if (this._navReloadTimer) clearTimeout(this._navReloadTimer);
     if (this._visObserver) { this._visObserver.disconnect(); this._visObserver = null; }
     if (this._resizeObserver) { this._resizeObserver.disconnect(); this._resizeObserver = null; }
+    if (this._visibilityHandler) {
+      document.removeEventListener('visibilitychange', this._visibilityHandler);
+      this._visibilityHandler = null;
+    }
+    if (this._navContainer && this._markUserMove) {
+      this._navContainer.removeEventListener('pointerdown', this._markUserMove);
+      this._navContainer.removeEventListener('wheel', this._markUserMove);
+      this._navContainer = null;
+      this._markUserMove = null;
+    }
     this._player?.clear();
     this._player = null;
     if (this._map) { this._map.remove(); this._map = null; }
@@ -373,10 +386,10 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     if (!this._map) return;
     // pointerdown and wheel fire for real user gestures but NOT for programmatic
     // moves like invalidateSize() or setView(). Use them to gate the save button.
-    const container = (this._map as any).getContainer() as HTMLElement;
-    const markUserMove = (): void => { this._userMoveInProgress = true; };
-    container.addEventListener('pointerdown', markUserMove, { passive: true });
-    container.addEventListener('wheel', markUserMove, { passive: true });
+    this._navContainer = (this._map as any).getContainer() as HTMLElement;
+    this._markUserMove = (): void => { this._userMoveInProgress = true; };
+    this._navContainer.addEventListener('pointerdown', this._markUserMove, { passive: true });
+    this._navContainer.addEventListener('wheel', this._markUserMove, { passive: true });
 
     this._map.on('movestart zoomstart', () => {
       if (this._navReloadTimer) clearTimeout(this._navReloadTimer);
@@ -403,10 +416,11 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       else this._player?.onVisibilityHidden();
     }, { threshold: 0.1 });
     this._visObserver.observe(this);
-    document.addEventListener('visibilitychange', () => {
+    this._visibilityHandler = () => {
       if (document.hidden) this._player?.onVisibilityHidden();
       else this._player?.onVisibilityVisible();
-    });
+    };
+    document.addEventListener('visibilitychange', this._visibilityHandler);
   }
 
   private _setupResizeObserver(): void {

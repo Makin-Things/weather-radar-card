@@ -53,8 +53,10 @@ export function getMarkerIconConfig(
   isMobile: boolean,
   userInfo: { personEntity: string; deviceTracker?: string } | null,
 ): { type: string; entity?: string } {
+  // Mobile falls back to the desktop icon type (not entity_picture) when unset.
+  // Use || so that the editor's empty-string "Same as desktop" sentinel also falls through.
   const iconType = isMobile
-    ? (config.mobile_marker_icon ?? 'entity_picture')
+    ? (config.mobile_marker_icon || config.marker_icon || 'default')
     : (config.marker_icon || 'default');
   let iconEntity = isMobile ? config.mobile_marker_icon_entity : config.marker_icon_entity;
 

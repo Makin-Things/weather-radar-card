@@ -15042,7 +15042,9 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
         }
         if (configValue) {
             if (value === '' || value === null) {
-                delete this._config[configValue];
+                const newConfig = Object.assign({}, this._config);
+                delete newConfig[configValue];
+                this._config = newConfig;
             }
             else {
                 this._config = Object.assign(Object.assign({}, this._config), { [configValue]: Number(value) });
@@ -15062,7 +15064,9 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
         }
         if (configValue) {
             if (value === '') {
-                delete this._config[configValue];
+                const newConfig = Object.assign({}, this._config);
+                delete newConfig[configValue];
+                this._config = newConfig;
             }
             else {
                 this._config = Object.assign(Object.assign({}, this._config), { [configValue]: value });
@@ -15549,6 +15553,7 @@ class RadarPlayer {
         this._loopGen = 0;
         // Web worker timer (used only for the periodic 5-min radar update)
         this._worker = null;
+        this._workerBlobUrl = null;
         this._workerCallbacks = new Map();
         this._workerNextId = 0;
         // Rate-limit state
@@ -15591,6 +15596,10 @@ class RadarPlayer {
         (_a = this._worker) === null || _a === void 0 ? void 0 : _a.terminate();
         this._worker = null;
         this._workerCallbacks.clear();
+        if (this._workerBlobUrl) {
+            URL.revokeObjectURL(this._workerBlobUrl);
+            this._workerBlobUrl = null;
+        }
     }
     // ── Navigation / visibility pause ────────────────────────────────────────
     onNavPaused() {
@@ -15690,6 +15699,8 @@ class RadarPlayer {
     _showSlot(slot) {
         var _a, _b, _c;
         const n = this._loadedSlots.length;
+        if (n === 0 || slot < 0 || slot >= n)
+            return;
         const fade = this._fadeMs;
         const transition = fade > 0 ? `opacity ${fade}ms linear` : 'none';
         for (let s = 0; s < n; s++) {
@@ -15857,9 +15868,17 @@ class RadarPlayer {
         const myGen = this._frameGeneration;
         this._loadedSlots = [];
         this._currentSlot = 0;
-        const pastFrames = await this._fetchPaths();
+        let pastFrames;
+        try {
+            pastFrames = await this._fetchPaths();
+        }
+        catch (_d) {
+            return; // network/parse error — card stays blank until next nav or reload
+        }
         if (myGen !== this._frameGeneration)
             return;
+        if (pastFrames.length === 0)
+            return; // API returned no frames
         this._radarPaths = pastFrames;
         const frameCount = pastFrames.length;
         this._configFrameCount = frameCount;
@@ -15946,7 +15965,21 @@ class RadarPlayer {
         var _a, _b;
         if (!this._map)
             return;
-        const pastFrames = await this._fetchPaths();
+        const myGen = this._frameGeneration;
+        let pastFrames;
+        try {
+            pastFrames = await this._fetchPaths();
+        }
+        catch (_c) {
+            this._scheduleUpdate(); // retry on next cycle
+            return;
+        }
+        if (myGen !== this._frameGeneration)
+            return; // torn down while fetching
+        if (pastFrames.length === 0) {
+            this._scheduleUpdate();
+            return;
+        } // no frames from API
         const latestFrame = pastFrames[pastFrames.length - 1];
         const frameCount = this._configFrameCount;
         const newLayer = this._createLayer(latestFrame);
@@ -15968,6 +16001,8 @@ class RadarPlayer {
         }
         this._setSegment(frameCount - 1, 'loading');
         newLayer.once('load', () => {
+            if (myGen !== this._frameGeneration)
+                return; // torn down before tiles finished
             for (let i = 0; i < frameCount; i++) {
                 const l = this._radarImage[i];
                 if (l)
@@ -15996,7 +16031,8 @@ class RadarPlayer {
         }
       };
     `;
-        this._worker = new Worker(URL.createObjectURL(new Blob([code], { type: 'application/javascript' })));
+        this._workerBlobUrl = URL.createObjectURL(new Blob([code], { type: 'application/javascript' }));
+        this._worker = new Worker(this._workerBlobUrl);
         this._worker.onmessage = (e) => {
             const cb = this._workerCallbacks.get(e.data.id);
             if (cb) {
@@ -16055,14 +16091,20 @@ function resolveCoordinate(config, coordType, fallback, hass) {
         return config;
     if (typeof config === 'string') {
         const val = (_b = (_a = hass === null || hass === void 0 ? void 0 : hass.states[config]) === null || _a === void 0 ? void 0 : _a.attributes) === null || _b === void 0 ? void 0 : _b[coordType];
-        return val !== undefined ? parseFloat(val) || fallback : fallback;
+        if (val === undefined)
+            return fallback;
+        const num = parseFloat(val);
+        return !isNaN(num) ? num : fallback;
     }
     if (typeof config === 'object' && 'entity' in config) {
         const attr = coordType === 'latitude'
             ? config.latitude_attribute || 'latitude'
             : config.longitude_attribute || 'longitude';
         const val = (_d = (_c = hass === null || hass === void 0 ? void 0 : hass.states[config.entity]) === null || _c === void 0 ? void 0 : _c.attributes) === null || _d === void 0 ? void 0 : _d[attr];
-        return val !== undefined ? parseFloat(val) || fallback : fallback;
+        if (val === undefined)
+            return fallback;
+        const num = parseFloat(val);
+        return !isNaN(num) ? num : fallback;
     }
     return fallback;
 }
@@ -16121,20 +16163,22 @@ function resolveEntityPicture(entityId, hass) {
     return (_c = (_b = (_a = hass === null || hass === void 0 ? void 0 : hass.states[entityId]) === null || _a === void 0 ? void 0 : _a.attributes) === null || _b === void 0 ? void 0 : _b.entity_picture) !== null && _c !== void 0 ? _c : null;
 }
 function getMarkerIconConfig(config, hass, isMobile, userInfo) {
-    var _a, _b, _c;
+    var _a, _b;
+    // Mobile falls back to the desktop icon type (not entity_picture) when unset.
+    // Use || so that the editor's empty-string "Same as desktop" sentinel also falls through.
     const iconType = isMobile
-        ? ((_a = config.mobile_marker_icon) !== null && _a !== void 0 ? _a : 'entity_picture')
+        ? (config.mobile_marker_icon || config.marker_icon || 'default')
         : (config.marker_icon || 'default');
     let iconEntity = isMobile ? config.mobile_marker_icon_entity : config.marker_icon_entity;
     if (iconType === 'entity_picture' && !iconEntity) {
         const latCfg = isMobile
-            ? ((_b = config.mobile_marker_latitude) !== null && _b !== void 0 ? _b : config.marker_latitude)
+            ? ((_a = config.mobile_marker_latitude) !== null && _a !== void 0 ? _a : config.marker_latitude)
             : config.marker_latitude;
         if (typeof latCfg === 'string')
             iconEntity = resolveToPersonEntity(latCfg, hass);
         if (!iconEntity) {
             const cLat = isMobile
-                ? ((_c = config.mobile_center_latitude) !== null && _c !== void 0 ? _c : config.center_latitude)
+                ? ((_b = config.mobile_center_latitude) !== null && _b !== void 0 ? _b : config.center_latitude)
                 : config.center_latitude;
             if (typeof cLat === 'string')
                 iconEntity = resolveToPersonEntity(cLat, hass);
@@ -16148,7 +16192,7 @@ function createMarkerIcon(config, hass, isMobile, userInfo, mapStyle) {
     const iconCfg = getMarkerIconConfig(config, hass, isMobile, userInfo);
     const svgFile = mapStyle === 'dark' ? 'home-circle-light.svg' : 'home-circle-dark.svg';
     const defaultIcon = () => leafletSrcExports.icon({ iconUrl: `${ICON_BASE}${svgFile}`, iconSize: [16, 16] });
-    if (!iconCfg.type || iconCfg.type === 'default')
+    if (iconCfg.type === 'default')
         return defaultIcon();
     if (iconCfg.type === 'entity_picture') {
         const pictureUrl = resolveEntityPicture(iconCfg.entity, hass);
@@ -16196,6 +16240,9 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         this._navReloadTimer = null;
         this._visObserver = null;
         this._resizeObserver = null;
+        this._visibilityHandler = null;
+        this._navContainer = null;
+        this._markUserMove = null;
         this._rainviewerLimiter = new RateLimiter(500);
         this._noaaLimiter = new RateLimiter(120);
     }
@@ -16345,6 +16392,16 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             this._resizeObserver.disconnect();
             this._resizeObserver = null;
         }
+        if (this._visibilityHandler) {
+            document.removeEventListener('visibilitychange', this._visibilityHandler);
+            this._visibilityHandler = null;
+        }
+        if (this._navContainer && this._markUserMove) {
+            this._navContainer.removeEventListener('pointerdown', this._markUserMove);
+            this._navContainer.removeEventListener('wheel', this._markUserMove);
+            this._navContainer = null;
+            this._markUserMove = null;
+        }
         (_a = this._player) === null || _a === void 0 ? void 0 : _a.clear();
         this._player = null;
         if (this._map) {
@@ -16489,10 +16546,10 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             return;
         // pointerdown and wheel fire for real user gestures but NOT for programmatic
         // moves like invalidateSize() or setView(). Use them to gate the save button.
-        const container = this._map.getContainer();
-        const markUserMove = () => { this._userMoveInProgress = true; };
-        container.addEventListener('pointerdown', markUserMove, { passive: true });
-        container.addEventListener('wheel', markUserMove, { passive: true });
+        this._navContainer = this._map.getContainer();
+        this._markUserMove = () => { this._userMoveInProgress = true; };
+        this._navContainer.addEventListener('pointerdown', this._markUserMove, { passive: true });
+        this._navContainer.addEventListener('wheel', this._markUserMove, { passive: true });
         this._map.on('movestart zoomstart', () => {
             var _a;
             if (this._navReloadTimer)
@@ -16523,13 +16580,14 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
                 (_b = this._player) === null || _b === void 0 ? void 0 : _b.onVisibilityHidden();
         }, { threshold: 0.1 });
         this._visObserver.observe(this);
-        document.addEventListener('visibilitychange', () => {
+        this._visibilityHandler = () => {
             var _a, _b;
             if (document.hidden)
                 (_a = this._player) === null || _a === void 0 ? void 0 : _a.onVisibilityHidden();
             else
                 (_b = this._player) === null || _b === void 0 ? void 0 : _b.onVisibilityVisible();
-        });
+        };
+        document.addEventListener('visibilitychange', this._visibilityHandler);
     }
     _setupResizeObserver() {
         var _a;
