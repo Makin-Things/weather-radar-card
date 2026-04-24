@@ -88,16 +88,15 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             .selector=${{
               select: {
                 options: [
-                  { value: '', label: 'Default (CARTO Light)' },
-                  { value: 'Light', label: 'CARTO Light' },
-                  { value: 'Voyager', label: 'CARTO Voyager' },
-                  { value: 'Dark', label: 'CARTO Dark' },
-                  { value: 'Satellite', label: 'Satellite' },
+                  { value: 'Light', label: 'CARTO Light (English only)' },
+                  { value: 'Voyager', label: 'CARTO Voyager (English only)' },
+                  { value: 'Dark', label: 'CARTO Dark (English only)' },
+                  { value: 'Satellite', label: 'Satellite (English only)' },
                   { value: 'OSM', label: 'OpenStreetMap (Localized)' },
                 ],
               },
             }}
-            .value=${config.map_style || ''}
+            .value=${config.map_style || 'Light'}
             .label=${'Map Style'}
             .configValue=${'map_style'}
             @value-changed=${this._handleSelectorChanged}
