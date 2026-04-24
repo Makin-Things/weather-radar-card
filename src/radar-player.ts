@@ -351,11 +351,10 @@ export class RadarPlayer {
   }
 
   private _getTimeString(epochMs: number): string {
-    const d = new Date(epochMs);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return new Intl.DateTimeFormat(undefined, {
+      weekday: 'short', day: 'numeric', month: 'short',
+      hour: 'numeric', minute: '2-digit',
+    }).format(new Date(epochMs));
   }
 
   // ── Radar init ───────────────────────────────────────────────────────────

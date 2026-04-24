@@ -50,6 +50,8 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   show_snow?: boolean;
   show_progress_bar?: boolean;
   show_color_bar?: boolean;
+  // Simple shortcut string OR a standard HA action object e.g. {action: navigate, navigation_path: /lovelace/1}
+  double_tap_action?: string | { action: string; [key: string]: unknown };
   show_warning?: boolean;
   show_error?: boolean;
   test_gui?: boolean;

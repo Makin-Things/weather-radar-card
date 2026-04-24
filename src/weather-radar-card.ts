@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { LitElement, html, css, unsafeCSS, TemplateResult, PropertyValues } from 'lit';
 import { property, customElement, state } from 'lit/decorators.js';
-import { HomeAssistant, LovelaceCardEditor, LovelaceCard } from 'custom-card-helpers';
+import { HomeAssistant, LovelaceCardEditor, LovelaceCard, handleAction, ActionConfig } from 'custom-card-helpers';
 import * as L from 'leaflet';
 // @ts-expect-error — rollup-plugin-string imports CSS as a raw string
 import leafletCss from 'leaflet/dist/leaflet.css';
@@ -197,9 +197,11 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     );
 
     const isStatic = cfg.static_map === true;
+    const hasDoubleTapAction = cfg.double_tap_action && cfg.double_tap_action !== 'none';
     this._map = L.map(mapEl as HTMLElement, {
       zoomControl: cfg.show_zoom === true && !isStatic,
-      scrollWheelZoom: !isStatic, doubleClickZoom: !isStatic,
+      // Disable Leaflet's built-in double-click zoom when a custom action is configured.
+      scrollWheelZoom: !isStatic, doubleClickZoom: !isStatic && !hasDoubleTapAction,
       boxZoom: !isStatic, dragging: !isStatic, keyboard: !isStatic, touchZoom: !isStatic,
       wheelPxPerZoomLevel: 120, attributionControl: false,
       minZoom: 3, maxZoom: 10,
@@ -210,6 +212,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     this._setupMarker(isMobile, userInfo, mapStyle);
     this._setupToolbar();
     this._setupNavListeners();
+    this._setupDoubleTapAction();
     this._setupVisibilityObserver();
     this._setupResizeObserver();
     // When map_style is auto (or unset), reinit the map if the OS colour scheme changes.
@@ -382,6 +385,21 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         zoom_level: zoom,
       },
     }));
+  }
+
+  private _setupDoubleTapAction(): void {
+    if (!this._map) return;
+    const action = this._config.double_tap_action;
+    if (!action || action === 'none') return;
+    this._map.on('dblclick', (e: L.LeafletMouseEvent) => {
+      L.DomEvent.stopPropagation(e);
+      if (action === 'recenter') { this._recenter(); return; }
+      if (action === 'toggle_play') { this._player?.togglePlay(); return; }
+      // HA action object — e.g. {action: 'navigate', navigation_path: '/lovelace/1'}
+      if (typeof action === 'object') {
+        handleAction(this, this.hass, { tap_action: action as ActionConfig }, 'tap');
+      }
+    });
   }
 
   private _recenter(): void {
