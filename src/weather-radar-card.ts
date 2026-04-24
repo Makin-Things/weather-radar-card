@@ -89,7 +89,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _navPaused = false;
   private _viewPaused = false;
   private _navReloadTimer: ReturnType<typeof setTimeout> | null = null;
-  private _navRestoreTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ── Observers / workers ─────────────────────────────────────────────────────
 
@@ -181,7 +180,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         <div id="color-bar" style="height:8px">
           <img id="img-color-bar" height="8" style="vertical-align:top" />
         </div>
-        <div id="nav-banner" class="nav-banner" style="display:none">Paused while Navigating</div>
         <div id="mapid" style="height:${height}"></div>
         <div id="div-progress-bar" style="height:8px;display:flex;background:${dark ? '#1c1c1c' : '#fff'}"></div>
         <div id="bottom-container" class="${dark ? 'dark-links' : 'light-links'}"
@@ -249,7 +247,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   private _teardown(): void {
     if (this._navReloadTimer) clearTimeout(this._navReloadTimer);
-    if (this._navRestoreTimer) clearTimeout(this._navRestoreTimer);
     if (this._visObserver) { this._visObserver.disconnect(); this._visObserver = null; }
     if (this._resizeObserver) { this._resizeObserver.disconnect(); this._resizeObserver = null; }
     if (this._updateWorker) { this._updateWorker.terminate(); this._updateWorker = null; }
@@ -501,11 +498,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   private _onNavStart(): void {
     if (this._navReloadTimer) clearTimeout(this._navReloadTimer);
-    if (this._navRestoreTimer) clearTimeout(this._navRestoreTimer);
     if (!this._navPaused) {
       this._navPaused = true;
-      const banner = this.shadowRoot?.getElementById('nav-banner');
-      if (banner) banner.style.display = 'block';
       this._pauseAnimations();
       for (let i = 0; i < this._configFrameCount; i++) this._setSegmentStatus(i, 'empty');
     }
@@ -513,26 +507,16 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   private _onNavEnd(): void {
     if (this._navReloadTimer) clearTimeout(this._navReloadTimer);
-    if (this._navRestoreTimer) clearTimeout(this._navRestoreTimer);
+    // 100ms settle: reload full frame history for the new view.
+    // Newest-first loading already shows the latest frame immediately,
+    // so no single-frame intermediate step is needed.
     this._navReloadTimer = setTimeout(() => {
+      this._navPaused = false;
       if (this._run) { this._animPauseStartTime = null; this._animAccPauseMs = 0; }
-      this._loadSingleFrame();
-      this._navRestoreTimer = setTimeout(() => {
-        this._navPaused = false;
-        const banner = this.shadowRoot?.getElementById('nav-banner');
-        if (banner) banner.style.display = 'none';
-        if (this._run) { this._animPauseStartTime = null; this._animAccPauseMs = 0; }
-        this._clearRadarLayers();
-        this._configFrameCount = this._config.frame_count ?? 5;
-        this._initRadar();
-      }, 5000);
-    }, 250);
-  }
-
-  private _loadSingleFrame(): void {
-    this._clearRadarLayers();
-    this._configFrameCount = 1;
-    this._initRadar();
+      this._clearRadarLayers();
+      this._configFrameCount = this._config.frame_count ?? 5;
+      this._initRadar();
+    }, 100);
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -865,7 +849,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     // 512px tiles with color=255 and options=1_1_1_0 (smooth, snow, labels, 0) are the
     // current working format. zoomOffset:-1 compensates for the doubled tile size.
     const host = frame.host ?? 'https://tilecache.rainviewer.com';
-    const tileURL = `${host}${frame.path}/512/{z}/{x}/{y}/255/1_1_1_0.png`;
+    const tileURL = `${host}${frame.path}/512/{z}/{x}/{y}/2/1_0.png`;
     return new FetchTileLayer(tileURL, {
       detectRetina: false,
       tileSize: 512,
@@ -1040,7 +1024,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _calculateHeight(): string {
     const cfg = this._config;
     if (cfg.height && this._validateCssSize(cfg.height)) return cfg.height;
-    if (this.isPanel) return '100%';
     if (cfg.square_map) {
       const w = cfg.width && this._validateCssSize(cfg.width) ? cfg.width : '100%';
       return w;
@@ -1182,20 +1165,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       #mapid {
         width: 100%;
         position: relative;
-      }
-      .nav-banner {
-        position: absolute;
-        top: 8px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 1000;
-        background: rgba(0,0,0,0.65);
-        color: #fff;
-        padding: 4px 12px;
-        border-radius: 4px;
-        font: 12px/1.5 'Helvetica Neue', Arial, sans-serif;
-        pointer-events: none;
-        white-space: nowrap;
       }
       .marker-entity-picture {
         border-radius: 50%;
