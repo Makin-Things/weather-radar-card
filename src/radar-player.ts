@@ -17,7 +17,6 @@ const NOAA_WMS_LAYER = 'radar_base_reflectivity_time';
 export interface RadarPlayerOptions {
   map: L.Map;
   shadowRoot: ShadowRoot;
-  dynamicStyleEl: HTMLStyleElement;
   getConfig: () => WeatherRadarCardConfig;
   rainviewerLimiter: RateLimiter;
   noaaLimiter: RateLimiter;
@@ -34,7 +33,6 @@ export class RadarPlayer {
   // Private radar state
   private _map: L.Map;
   private _shadowRoot: ShadowRoot;
-  private _dynamicStyleEl: HTMLStyleElement;
   private _getConfig: () => WeatherRadarCardConfig;
   private _rainviewerLimiter: RateLimiter;
   private _noaaLimiter: RateLimiter;
@@ -49,18 +47,18 @@ export class RadarPlayer {
   private _configFrameCount = 5;
   private _doRadarUpdate = false;
 
-  // Animation state
-  private _animStartWallTime = 0;
-  private _animPauseStartTime: number | null = null;
-  private _animAccPauseMs = 0;
+  // Frame loop state — _loopGen is incremented to cancel in-flight timers
+  private _currentSlot = 0;
+  private _loopGen = 0;
 
-  // Web worker timer
+  // Web worker timer (used only for the periodic 5-min radar update)
   private _worker: Worker | null = null;
   private _workerCallbacks = new Map<number, () => void>();
   private _workerNextId = 0;
 
-  // Timers
+  // Rate-limit state
   private _rateLimitTimer: ReturnType<typeof setTimeout> | null = null;
+  private _isRateLimited = false;
 
   // Toolbar reference (set externally after toolbar is created)
   toolbar: RadarToolbar | null = null;
@@ -68,7 +66,6 @@ export class RadarPlayer {
   constructor(opts: RadarPlayerOptions) {
     this._map = opts.map;
     this._shadowRoot = opts.shadowRoot;
-    this._dynamicStyleEl = opts.dynamicStyleEl;
     this._getConfig = opts.getConfig;
     this._rainviewerLimiter = opts.rainviewerLimiter;
     this._noaaLimiter = opts.noaaLimiter;
@@ -95,6 +92,7 @@ export class RadarPlayer {
 
   /** Tear down all layers and cancel pending async work. */
   clear(): void {
+    this._stopLoop();
     this._clearLayers();
     if (this._rateLimitTimer) { clearTimeout(this._rateLimitTimer); this._rateLimitTimer = null; }
     this._worker?.terminate();
@@ -106,13 +104,13 @@ export class RadarPlayer {
 
   onNavPaused(): void {
     this.navPaused = true;
-    this._pauseAnimations();
+    this._stopLoop();
     for (let i = 0; i < this._configFrameCount; i++) this._setSegment(i, 'empty');
+    this._showRateLimitBanner(false);
   }
 
   async onNavSettled(frameCount: number): Promise<void> {
     this.navPaused = false;
-    if (this.run) { this._animPauseStartTime = null; this._animAccPauseMs = 0; }
     this._clearLayers();
     this._configFrameCount = frameCount;
     await this._initRadar();
@@ -120,7 +118,7 @@ export class RadarPlayer {
 
   onVisibilityHidden(): void {
     this.viewPaused = true;
-    this._pauseAnimations();
+    this._stopLoop();
   }
 
   onVisibilityVisible(): void {
@@ -129,8 +127,8 @@ export class RadarPlayer {
     if (this._doRadarUpdate && this._radarReady) {
       this._doRadarUpdate = false;
       this._updateRadar();
-    } else {
-      this._resumeAnimations();
+    } else if (this.run && this._radarReady) {
+      this._startLoop();
     }
   }
 
@@ -138,18 +136,17 @@ export class RadarPlayer {
 
   togglePlay(): void {
     this.run = !this.run;
-    if (this.run) this._resumeAnimations();
-    else this._pauseAnimations();
+    if (this.run) this._startLoop();
+    else this._stopLoop();
   }
 
   skipNext(): void {
     if (!this._radarReady) return;
     const n = this._loadedSlots.length;
     if (n < 2) return;
-    const elapsed = this._getElapsed() % (n * this._timeout + this._restartDelay);
-    const slot = Math.min(Math.floor(elapsed / this._timeout), n - 1);
-    this._seekToFrame((slot + 1) % n);
-    this._pauseAnimations();
+    this._currentSlot = (this._currentSlot + 1) % n;
+    this._showSlot(this._currentSlot);
+    this._stopLoop();
     this.run = false;
     this.toolbar?.setPlaying(false);
   }
@@ -158,141 +155,63 @@ export class RadarPlayer {
     if (!this._radarReady) return;
     const n = this._loadedSlots.length;
     if (n < 2) return;
-    const elapsed = this._getElapsed() % (n * this._timeout + this._restartDelay);
-    const slot = Math.min(Math.floor(elapsed / this._timeout), n - 1);
-    this._seekToFrame((slot - 1 + n) % n);
-    this._pauseAnimations();
+    this._currentSlot = (this._currentSlot - 1 + n) % n;
+    this._showSlot(this._currentSlot);
+    this._stopLoop();
     this.run = false;
     this.toolbar?.setPlaying(false);
   }
 
-  // ── Animation ─────────────────────────────────────────────────────────────
+  // ── Frame loop ───────────────────────────────────────────────────────────
 
-  private _getElapsed(): number {
-    const now = performance.now();
-    const pending = this._animPauseStartTime ? now - this._animPauseStartTime : 0;
-    return now - this._animStartWallTime - this._animAccPauseMs - pending;
+  private _stopLoop(): void {
+    this._loopGen++;
   }
 
-  private _pauseAnimations(): void {
-    if (this._animPauseStartTime) return;
-    this._animPauseStartTime = performance.now();
-    this._setPlayState('paused');
+  /** Start (or restart) the frame loop, optionally jumping to a specific slot. */
+  private _startLoop(startSlot?: number): void {
+    this._loopGen++;
+    const gen = this._loopGen;
+    if (startSlot !== undefined) this._currentSlot = startSlot;
+    this._showSlot(this._currentSlot);
+    this._scheduleNext(gen);
   }
 
-  private _resumeAnimations(): void {
-    if (this._animPauseStartTime) {
-      this._animAccPauseMs += performance.now() - this._animPauseStartTime;
-      this._animPauseStartTime = null;
-    }
-    this._setPlayState('running');
-  }
-
-  private _setPlayState(state: 'paused' | 'running'): void {
-    for (const layer of this._radarImage) {
-      if (!layer) continue;
-      const el = (layer as any).getContainer?.() as HTMLElement | undefined;
-      if (el) el.style.animationPlayState = state;
-    }
-  }
-
-  private _applyAnimations(): void {
+  private _scheduleNext(gen: number): void {
+    if (!this.run || this.navPaused || this.viewPaused) return;
     const n = this._loadedSlots.length;
-    if (n === 0) return;
-    const totalMs = n * this._timeout + this._restartDelay;
-    const wasPaused = this._animPauseStartTime !== null;
-    this._animStartWallTime = performance.now();
-    this._animAccPauseMs = 0;
-    this._animPauseStartTime = null;
-    this._dynamicStyleEl.textContent = this._buildKeyframes(n);
-    const timing = this._fadeMs === 0 ? 'step-end' : 'linear';
-    for (let fi = 0; fi < this._configFrameCount; fi++) {
+    if (n < 2) return;
+    const delay = this._currentSlot === n - 1
+      ? this._timeout + this._restartDelay
+      : this._timeout;
+    setTimeout(() => {
+      if (gen !== this._loopGen) return;
+      this._currentSlot = (this._currentSlot + 1) % this._loadedSlots.length;
+      this._showSlot(this._currentSlot);
+      this._scheduleNext(gen);
+    }, delay);
+  }
+
+  /** Show one slot: set its container to opacity 1, all others to 0, update UI. */
+  private _showSlot(slot: number): void {
+    const n = this._loadedSlots.length;
+    const fade = this._fadeMs;
+    const transition = fade > 0 ? `opacity ${fade}ms linear` : 'none';
+    for (let s = 0; s < n; s++) {
+      const fi = this._loadedSlots[s];
       const layer = this._radarImage[fi];
       const el = layer && (layer as any).getContainer?.() as HTMLElement | undefined;
-      if (!el) continue;
-      const slot = this._loadedSlots.indexOf(fi);
-      if (slot === -1) {
-        el.style.animation = 'none';
-        el.style.opacity = '0';
-      } else {
-        el.style.opacity = '0';
-        el.style.animation = `radar-slot-${slot} ${totalMs}ms ${timing} infinite`;
-      }
-    }
-    if (wasPaused) { this._animPauseStartTime = performance.now(); this._setPlayState('paused'); }
-  }
-
-  private _seekToFrame(targetSlot: number): void {
-    const n = this._loadedSlots.length;
-    if (n === 0) return;
-    const totalMs = n * this._timeout + this._restartDelay;
-    const seekMs = targetSlot * this._timeout;
-    const wasPaused = this._animPauseStartTime !== null;
-    this._animStartWallTime = performance.now() - seekMs;
-    this._animAccPauseMs = 0;
-    this._animPauseStartTime = null;
-    const timing = this._fadeMs === 0 ? 'step-end' : 'linear';
-    for (let slot = 0; slot < n; slot++) {
-      const fi = this._loadedSlots[slot];
-      const el = this._radarImage[fi] && (this._radarImage[fi] as any).getContainer?.() as HTMLElement | undefined;
       if (el) {
-        el.style.animation = 'none';
-        void el.offsetHeight;
-        el.style.animation = `radar-slot-${slot} ${totalMs}ms ${timing} -${seekMs}ms infinite`;
+        el.style.transition = transition;
+        el.style.opacity = s === slot ? '1' : '0';
       }
     }
-    if (wasPaused) { this._animPauseStartTime = performance.now(); this._setPlayState('paused'); }
-  }
-
-  private _buildKeyframes(n: number): string {
-    if (n === 0) return '';
-    const timeout = this._timeout;
-    const totalMs = n * timeout + this._restartDelay;
-    const halfFade = Math.floor(this._fadeMs / 2);
-    const pct = (ms: number) => `${((ms / totalMs) * 100).toFixed(4)}%`;
-    let css = '';
-    for (let slot = 0; slot < n; slot++) {
-      const start = slot * timeout;
-      const end = (slot + 1) * timeout;
-      css += `@keyframes radar-slot-${slot} {`;
-      if (halfFade === 0) {
-        css += slot === 0 ? '0%{opacity:1}' : `0%{opacity:0}${pct(start)}{opacity:1}`;
-        css += slot === n - 1
-          ? '99.9999%{opacity:1}100%{opacity:0}'
-          : `${pct(end)}{opacity:0}100%{opacity:0}`;
-      } else {
-        if (slot === 0) css += '0%{opacity:1}';
-        else css += `${start - halfFade > 0 ? pct(start - halfFade) : '0%'}{opacity:0}${pct(start)}{opacity:1}`;
-        if (slot === n - 1)
-          css += `${pct(end)}{opacity:1}99.9999%{opacity:1}100%{opacity:0}`;
-        else
-          css += `${pct(end)}{opacity:1}${pct(Math.min(end + halfFade, n * timeout))}{opacity:0}100%{opacity:0}`;
-      }
-      css += '} ';
+    const fi = this._loadedSlots[slot];
+    if (fi !== undefined) {
+      const ts = this._shadowRoot.getElementById('timestamp');
+      if (ts) ts.textContent = this._radarTime[fi] ?? '';
+      this._highlightSegment(fi);
     }
-    return css;
-  }
-
-  // ── UI updater ───────────────────────────────────────────────────────────
-
-  private _startUIUpdater(gen: number): void {
-    const tick = (): void => {
-      if (gen !== this._frameGeneration) return;
-      const n = this._loadedSlots.length;
-      if (n === 0) { setTimeout(tick, this._timeout); return; }
-      const totalMs = n * this._timeout + this._restartDelay;
-      const elapsed = this._getElapsed() % totalMs;
-      const slot = Math.min(Math.floor(elapsed / this._timeout), n - 1);
-      const fi = this._loadedSlots[slot];
-      if (fi !== undefined) {
-        const ts = this._shadowRoot.getElementById('timestamp');
-        if (ts) ts.textContent = this._radarTime[fi] ?? '';
-        this._highlightSegment(fi);
-      }
-      const msIntoSlot = elapsed % this._timeout;
-      setTimeout(tick, this._timeout - msIntoSlot + 10);
-    };
-    tick();
   }
 
   // ── Progress bar ─────────────────────────────────────────────────────────
@@ -337,14 +256,24 @@ export class RadarPlayer {
 
   // ── Rate limit banner ────────────────────────────────────────────────────
 
-  private _onRateLimited(): void {
+  private _showRateLimitBanner(show: boolean): void {
     const banner = this._shadowRoot.getElementById('rate-limit-banner');
-    if (banner) banner.style.display = 'block';
+    if (banner) banner.style.display = show ? 'block' : 'none';
+  }
+
+  private _onRateLimited(): void {
+    if (this._isRateLimited) return;
+    this._isRateLimited = true;
+    this._showRateLimitBanner(true);
     if (this._rateLimitTimer) clearTimeout(this._rateLimitTimer);
-    this._rateLimitTimer = setTimeout(() => {
-      const b = this._shadowRoot.getElementById('rate-limit-banner');
-      if (b) b.style.display = 'none';
-    }, 65_000);
+    this._rateLimitTimer = setTimeout(() => this._retryAfterRateLimit(), 10_000);
+  }
+
+  private _retryAfterRateLimit(): void {
+    this._isRateLimited = false;
+    this._rateLimitTimer = null;
+    this._clearLayers();
+    this._initRadar();
   }
 
   // ── Layer helpers ────────────────────────────────────────────────────────
@@ -399,10 +328,10 @@ export class RadarPlayer {
         transparent: true,
         version: '1.3.0',
         TIME: isoTime,
-        opacity: 0,
         maxNativeZoom: 7,
         rateLimiter: this._noaaLimiter,
         on429: () => this._onRateLimited(),
+        animationOwnsOpacity: true,
       } as any);
     }
     const snow = this._cfg.show_snow ? 1 : 0;
@@ -411,10 +340,10 @@ export class RadarPlayer {
       detectRetina: false,
       tileSize: 512,
       zoomOffset: -1,
-      opacity: 0,
       maxNativeZoom: 7,
       rateLimiter: this._rainviewerLimiter,
       on429: () => this._onRateLimited(),
+      animationOwnsOpacity: true,
     } as any);
   }
 
@@ -429,12 +358,19 @@ export class RadarPlayer {
   // ── Radar init ───────────────────────────────────────────────────────────
 
   private async _initRadar(): Promise<void> {
+    // Increment generation before the first await so any concurrently-running
+    // _initRadar call (same-gen double-start) aborts at its next gen check.
+    this._stopLoop();
+    this._frameGeneration++;
+    const myGen = this._frameGeneration;
+    this._loadedSlots = [];
+    this._currentSlot = 0;
+
     const pastFrames = await this._fetchPaths();
+    if (myGen !== this._frameGeneration) return;
     this._radarPaths = pastFrames;
     const frameCount = pastFrames.length;
     this._configFrameCount = frameCount;
-    const myGen = this._frameGeneration;
-    this._loadedSlots = [];
 
     this._buildSegments();
 
@@ -447,7 +383,6 @@ export class RadarPlayer {
     }
 
     let newestShown = false;
-    let uiStarted = false;
 
     for (let fi = frameCount - 1; fi >= 0; fi--) {
       if (myGen !== this._frameGeneration || !this._map) return;
@@ -467,19 +402,28 @@ export class RadarPlayer {
       this._setSegment(fi, status);
 
       if (status === 'loaded') {
+        const prevSlotCount = this._loadedSlots.length;
         this._loadedSlots.unshift(fi);
+
         if (!newestShown) {
+          // Show newest frame as a static preview before the loop starts
           newestShown = true;
-          const frameEl = (layer as any).getContainer?.() as HTMLElement | undefined;
-          if (frameEl) frameEl.style.opacity = '1';
+          if (el) el.style.opacity = '1';
           const ts = this._shadowRoot.getElementById('timestamp');
           if (ts) ts.textContent = this._radarTime[fi];
           this._highlightSegment(fi);
         }
+
         if (this._loadedSlots.length >= 2) {
           this._radarReady = true;
-          this._applyAnimations();
-          if (!uiStarted) { uiStarted = true; this._startUIUpdater(myGen); }
+          if (prevSlotCount >= 2) {
+            // A new older frame was prepended; shift _currentSlot to keep the
+            // same frame (newest) showing — the running timer continues unaffected.
+            this._currentSlot++;
+          } else {
+            // Two frames ready: start the loop at the newest slot.
+            this._startLoop(this._loadedSlots.length - 1);
+          }
         }
       } else {
         for (let j = fi - 1; j >= 0; j--) this._setSegment(j, 'failed');
@@ -490,7 +434,6 @@ export class RadarPlayer {
     if (myGen !== this._frameGeneration) return;
     if (this._loadedSlots.length > 0) {
       this._radarReady = true;
-      if (!uiStarted) this._startUIUpdater(myGen);
       this._scheduleUpdate();
     }
   }
@@ -543,7 +486,9 @@ export class RadarPlayer {
       const newStatus: FrameStatus = newLayer._tileFailed > 0 ? 'failed' : 'loaded';
       this._setSegment(frameCount - 1, newStatus);
       if (newStatus === 'loaded') this._loadedSlots.push(frameCount - 1);
-      this._applyAnimations();
+      // Restart loop at newest frame so new data shows immediately
+      this._currentSlot = this._loadedSlots.length - 1;
+      this._startLoop();
     });
 
     this._doRadarUpdate = false;

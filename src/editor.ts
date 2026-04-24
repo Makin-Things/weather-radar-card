@@ -17,8 +17,29 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
 
   public setConfig(config: WeatherRadarCardConfig): void {
     this._config = config;
-
     this.loadCardHelpers();
+  }
+
+  private _boundCenterUpdate = (e: Event): void => {
+    const ev = e as CustomEvent;
+    if (!this._config) return;
+    this._config = {
+      ...this._config,
+      center_latitude: ev.detail.center_latitude,
+      center_longitude: ev.detail.center_longitude,
+      zoom_level: ev.detail.zoom_level,
+    };
+    fireEvent(this, 'config-changed', { config: this._config });
+  };
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    window.addEventListener('weather-radar-center-update', this._boundCenterUpdate);
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    window.removeEventListener('weather-radar-center-update', this._boundCenterUpdate);
   }
 
   protected shouldUpdate(): boolean {
@@ -194,6 +215,11 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             <ha-switch .checked=${config.show_marker === true} .configValue=${'show_marker'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
         </div>
+        <div class="side-by-side">
+          <label>Show Snow
+            <ha-switch .checked=${config.show_snow === true} .configValue=${'show_snow'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+        </div>
         ${config.show_marker === true ? html`
           <div class="subsection">
             <ha-selector
@@ -254,13 +280,6 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             helper="Default: 1000"
           ></ha-textfield>
         </div>
-        <label>Show Snow
-          <ha-switch
-            .checked=${config.show_snow === true}
-            .configValue=${'show_snow'}
-            @change=${this._valueChangedSwitch}
-          ></ha-switch>
-        </label>
         <label>Animated Transitions
           <ha-switch
             .checked=${config.animated_transitions !== false}
