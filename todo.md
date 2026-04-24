@@ -105,11 +105,11 @@ Implementation notes:
 
 ### Tasks
 
-- [ ] **Add `disable_scroll` config option** — `boolean`, default `false`; document in README options table
+- [x] **Add `disable_scroll` config option** — `boolean`, default `false`; document in README options table
 
-- [ ] **Disable dragging, keep pinch** — after map init, if `disable_scroll` is true call `this._map.dragging.disable()`; `touchZoom` remains enabled so pinch still works. No extra event listeners needed.
+- [x] **Disable dragging, keep pinch** — after map init, if `disable_scroll` is true call `this._map.dragging.disable()`; `touchZoom` remains enabled so pinch still works. No extra event listeners needed.
 
-- [ ] **Add toggle to editor** — in the Map Behaviour section alongside `static_map`
+- [x] **Add toggle to editor** — in the Interaction section
 
 - [ ] **Update README and CHANGELOG**
 
