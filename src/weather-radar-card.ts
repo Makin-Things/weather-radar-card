@@ -33,7 +33,7 @@ console.info(
 
 type FrameStatus = 'empty' | 'loading' | 'loaded' | 'failed';
 
-interface RadarFrame { time: number; path: string; }
+interface RadarFrame { time: number; path: string; host?: string; }
 
 const NOAA_WMS_URL = 'https://mapservices.weather.noaa.gov/eventdriven/services/radar/radar_base_reflectivity_time/ImageServer/WMSServer';
 const NOAA_WMS_LAYER = 'radar_base_reflectivity_time';
@@ -101,7 +101,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   // ── Rate limiters ───────────────────────────────────────────────────────────
 
-  private _rainviewerLimiter = new RateLimiter(100);
+  private _rainviewerLimiter = new RateLimiter(500); // confirmed from x-ratelimit-limit response header
   private _noaaLimiter = new RateLimiter(120);
 
   // ── Dark mode ───────────────────────────────────────────────────────────────
@@ -827,17 +827,17 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       return frames;
     }
 
-    // RainViewer
+    // RainViewer — path already contains /v2/radar/<id>, host is in the response
     const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
     const data = await res.json();
-    const past: RadarFrame[] = (data?.radar?.past ?? []).map((f: any) => ({ time: f.time, path: f.path }));
+    const host: string = data.host ?? 'https://tilecache.rainviewer.com';
+    const past: RadarFrame[] = (data?.radar?.past ?? []).map((f: any) => ({ time: f.time, path: f.path, host }));
     const maxFrames = 13;
     return past.slice(-Math.min(this._configFrameCount, maxFrames));
   }
 
   private _createRadarLayer(frame: RadarFrame): FetchTileLayer | FetchWmsTileLayer {
     const dataSource = this._config.data_source ?? 'RainViewer';
-    const tileSize = this._config.extra_labels ? 128 : 256;
 
     if (dataSource === 'NOAA') {
       const isoTime = new Date(frame.time * 1000).toISOString().split('.')[0] + 'Z';
@@ -853,12 +853,15 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       } as any);
     }
 
-    const tileURL = `https://tilecache.rainviewer.com/v2/radar/${frame.path}/256/{z}/{x}/{y}/2/1_1.png`;
+    // path is e.g. /v2/radar/a8183d857150 — prepend the CDN host from the API response.
+    // 512px tiles with color=255 and options=1_1_1_0 (smooth, snow, labels, 0) are the
+    // current working format. zoomOffset:-1 compensates for the doubled tile size.
+    const host = frame.host ?? 'https://tilecache.rainviewer.com';
+    const tileURL = `${host}${frame.path}/512/{z}/{x}/{y}/255/1_1_1_0.png`;
     return new FetchTileLayer(tileURL, {
-      path: frame.path,
       detectRetina: false,
-      tileSize,
-      zoomOffset: 0,
+      tileSize: 512,
+      zoomOffset: -1,
       opacity: 0,
       maxNativeZoom: 7,
       rateLimiter: this._rainviewerLimiter,
