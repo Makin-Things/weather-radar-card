@@ -254,6 +254,13 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             helper="Default: 1000"
           ></ha-textfield>
         </div>
+        <label>Show Snow
+          <ha-switch
+            .checked=${config.show_snow === true}
+            .configValue=${'show_snow'}
+            @change=${this._valueChangedSwitch}
+          ></ha-switch>
+        </label>
         <label>Animated Transitions
           <ha-switch
             .checked=${config.animated_transitions !== false}
