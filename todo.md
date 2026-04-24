@@ -93,6 +93,28 @@ markers:
 
 ---
 
+## Scroll / Swipe Passthrough
+
+On mobile, the map consumes all touch gestures — swiping to scroll the HA dashboard moves the map instead of the page. A `disable_scroll` option should suppress single-finger pan on the map while preserving pinch-zoom so the user can still zoom the radar view.
+
+Implementation notes:
+
+- Use Leaflet's built-in options: `dragging: false, touchZoom: true`. This disables single-finger pan (and mouse drag) on both mobile and desktop consistently, while preserving pinch-to-zoom. Behaviour is the same regardless of device.
+- Apply by calling `this._map.dragging.disable()` after map init when the option is on (and `enable()` when off), so the map object is already constructed.
+- The option should default to `false` (current behaviour — drag and pinch both active).
+
+### Tasks
+
+- [ ] **Add `disable_scroll` config option** — `boolean`, default `false`; document in README options table
+
+- [ ] **Disable dragging, keep pinch** — after map init, if `disable_scroll` is true call `this._map.dragging.disable()`; `touchZoom` remains enabled so pinch still works. No extra event listeners needed.
+
+- [ ] **Add toggle to editor** — in the Map Behaviour section alongside `static_map`
+
+- [ ] **Update README and CHANGELOG**
+
+---
+
 ## Other Backlog Items
 
 - Clickable / draggable timeline — already implemented ✅
