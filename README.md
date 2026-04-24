@@ -15,9 +15,42 @@ Help support development with a donation!
 
 ## Description
 
-This card displays animated weather radar loops within Home Assistant. It supports multiple radar data sources and map styles, and can be zoomed and panned seamlessly. The animation is driven entirely by CSS keyframes for smooth, efficient transitions.
+This card displays animated weather radar loops within Home Assistant. It supports multiple radar data sources and map styles, and can be zoomed and panned seamlessly.
 
 ![Weather Radar card](https://raw.githubusercontent.com/makin-things/weather-radar-card/master/weather-radar-card.gif)
+
+## What's New in 3.0
+
+Version 3.0 is a complete rewrite of the card internals. The user-visible behaviour is unchanged, but the implementation is fundamentally different.
+
+### No more iframe
+
+Previous versions rendered the map inside a hidden `<iframe>` to work around Leaflet's incompatibility with Home Assistant's Shadow DOM. Version 3.0 is a native LitElement web component — the map lives directly in the card's Shadow DOM alongside the rest of your dashboard. This means:
+
+- Proper integration with HA theming and layout
+- No opaque origin / referrer header workarounds
+- Faster initial render and lower memory overhead
+- Full browser DevTools visibility into card state
+
+### Leaflet is now bundled
+
+Leaflet is imported as an npm module and compiled into `weather-radar-card.js`. You no longer need to manually copy `leaflet.js`, `leaflet.css`, `leaflet.toolbar.min.js`, or `leaflet.toolbar.min.css` into your `www` folder. **If upgrading from v2, delete those files** — they are unused and waste space.
+
+The only files still distributed alongside `weather-radar-card.js` are the toolbar icon PNGs, the marker SVGs, and the colour-bar image.
+
+### Save map center from the card
+
+In Home Assistant edit mode, pan and zoom the map to your desired position and a **Save as map center** button appears. Clicking it writes the new `center_latitude`, `center_longitude`, and `zoom_level` directly into the card config — no need to look up or type coordinates manually.
+
+### Other improvements
+
+- NOAA/NWS radar source (US only, experimental)
+- Show Snow toggle (RainViewer only) — includes or excludes snow in the precipitation display
+- Rate-limit banner — visible indicator when the API quota is temporarily exhausted
+- Animated crossfades via CSS `transition` on layer containers (simpler and more reliable than the previous CSS keyframe engine)
+- Marker defaults to HA home location rather than the map center, so changing the map center no longer moves the marker
+
+---
 
 ## Options
 
@@ -28,12 +61,12 @@ All options can be configured using the GUI editor — there is no need to edit 
 | type | string | **Required** | | must be `'custom:weather-radar-card'` |
 | card_title | string | **Optional** | Title displayed on the card | no title |
 | data_source | string | **Optional** | Radar tile source (see [Data Source](#data-source)) | `'RainViewer'` |
-| map_style | string | **Optional** | Map style (see [Map Style](#map-style)) | `'Light'` |
+| map_style | string | **Optional** | Map style (see [Map Style](#map-style)) | `'Light'` (English) / `'OSM'` (other languages) |
 | zoom_level | number | **Optional** | Initial zoom level, 3–10 | `7` |
 | center_latitude | number / string / object | **Optional** | Initial map center latitude (see [Location Coordinates](#location-coordinates)) | HA instance location |
 | center_longitude | number / string / object | **Optional** | Initial map center longitude | HA instance location |
-| marker_latitude | number / string / object | **Optional** | Latitude for the home marker (see [Location Coordinates](#location-coordinates)) | same as center_latitude |
-| marker_longitude | number / string / object | **Optional** | Longitude for the home marker | same as center_longitude |
+| marker_latitude | number / string / object | **Optional** | Latitude for the home marker (see [Location Coordinates](#location-coordinates)) | HA instance location |
+| marker_longitude | number / string / object | **Optional** | Longitude for the home marker | HA instance location |
 | mobile_center_latitude | number / string / object | **Optional** | Mobile override for center latitude (see [Mobile Device Overrides](#mobile-device-overrides)) | not set |
 | mobile_center_longitude | number / string / object | **Optional** | Mobile override for center longitude | not set |
 | mobile_marker_latitude | number / string / object | **Optional** | Mobile override for marker latitude | not set |
@@ -42,16 +75,20 @@ All options can be configured using the GUI editor — there is no need to edit 
 | frame_delay | number | **Optional** | Milliseconds to display each frame | `500` |
 | restart_delay | number | **Optional** | Extra milliseconds to hold the last frame before looping | `1000` |
 | animated_transitions | boolean | **Optional** | Enable crossfade transitions between frames | `true` |
-| transition_time | number | **Optional** | Total crossfade duration in ms (max: frame_delay). Default is 40% of frame_delay | auto |
+| transition_time | number | **Optional** | Crossfade duration in ms. Default is 40% of frame_delay | auto |
+| show_snow | boolean | **Optional** | Include snow in the precipitation display (RainViewer only) | `false` |
 | static_map | boolean | **Optional** | Disable all panning and zooming | `false` |
 | show_zoom | boolean | **Optional** | Show zoom controls | `false` |
-| square_map | boolean | **Optional** | Keep the map square (not in panel mode) | `false` |
-| height | string | **Optional** | Custom card height using CSS units e.g. `'400px'`, `'50vh'` | auto |
+| square_map | boolean | **Optional** | Keep the map square | `false` |
+| height | string | **Optional** | Custom card height using CSS units e.g. `'400px'`, `'50vh'` | `'400px'` |
 | width | string | **Optional** | Custom card width using CSS units e.g. `'500px'`, `'80%'` | `'100%'` |
 | show_marker | boolean | **Optional** | Show the home marker | `false` |
+| marker_icon | string | **Optional** | Marker icon type: `'default'`, `'entity_picture'`, or `'mdi:icon-name'` | `'default'` |
+| marker_icon_entity | string | **Optional** | Entity ID for the `entity_picture` marker icon | auto-detected |
+| mobile_marker_icon | string | **Optional** | Mobile override for marker icon type | same as `marker_icon` |
+| mobile_marker_icon_entity | string | **Optional** | Entity ID for mobile `entity_picture` icon | auto-detected |
 | show_playback | boolean | **Optional** | Show playback controls toolbar | `false` |
 | show_recenter | boolean | **Optional** | Show re-center button in toolbar | `false` |
-| show_scale | boolean | **Optional** | Show scale bar | `false` |
 | show_range | boolean | **Optional** | Show range rings around marker | `false` |
 | extra_labels | boolean | **Optional** | Show more place labels (labels become smaller) | `false` |
 
@@ -64,7 +101,7 @@ Selects where radar tile data comes from.
 | `RainViewer` | Global | Default. Updated every 5 minutes, ~1–6 minute lag. No API key required. Personal/educational use only per RainViewer terms. |
 | `NOAA` | US only | Experimental. Uses NOAA/NWS MRMS base reflectivity composite via `mapservices.weather.noaa.gov`. Government data — free, no API key. 15-minute lag, 5-minute frame steps. |
 
-> **NOAA note:** This is an experimental feature using a public government service with no documented rate limits. It is US-only. The map is allowed to zoom to level 10 when NOAA is selected, but radar tiles are fetched at a maximum of zoom 7 (the native 1 km MRMS resolution) and upscaled for display.
+> **NOAA note:** This is an experimental feature using a public government service with no documented rate limits. It is US-only. Radar tiles are fetched at a maximum of zoom 7 (the native 1 km MRMS resolution) and upscaled for display.
 
 ### Map Style
 
@@ -72,33 +109,32 @@ Specifies the base map style. All CARTO-based styles render labels in English on
 
 | Value | Description |
 | ----- | ----------- |
-| `Light` | CARTO Light (default) — English only |
+| `Light` | CARTO Light — English only |
 | `Dark` | CARTO Dark — English only |
 | `Voyager` | CARTO Voyager — English only |
 | `Satellite` | ESRI World Imagery — English only |
 | `OSM` | OpenStreetMap — labels rendered in local language |
 
+The default map style is `Light` for English-language HA instances and `OSM` for all others.
+
 > **OpenStreetMap note:** OSM tiles are provided by the OpenStreetMap community. For high-traffic deployments please consider the [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
 
 ### Animation
 
-The card uses CSS `@keyframes` animation for smooth, efficient frame transitions. The animation is generated once from your config settings and runs entirely in CSS — no JavaScript runs on each frame.
+Each frame is a Leaflet tile layer. The card loads all frames simultaneously (newest first) and switches between them using JavaScript-driven opacity changes. This approach works reliably in Shadow DOM without any CSS cascade or reflow interactions.
 
-**Crossfade behaviour (animated_transitions: true):**
+**Crossfade (animated_transitions: true):**
 
-- The incoming frame fades in over half the transition time
-- At the midpoint both frames are fully visible simultaneously
-- The outgoing frame fades out over the second half
-- The last frame holds fully visible through the restart delay, then the loop cuts back to frame 1 instantly
+When one frame fades out and the next fades in, the outgoing frame's `opacity` transitions to `0` and the incoming frame's transitions to `1` simultaneously over `transition_time` milliseconds, producing a smooth crossfade.
 
 **Hard cut (animated_transitions: false):**
 
-- Frames switch instantly with no fade — uses CSS `step-end` timing for true hard cuts
+Opacity changes are instant — no transition property is applied.
 
 **Automatic pause:**
 
-- Animation pauses while the card is scrolled out of view or the browser tab is hidden, resuming when it becomes visible again
-- Animation also pauses while navigating (panning/zooming). During navigation only the latest single frame is loaded to reduce tile requests. Full frame history is restored 5 seconds after navigation settles
+- Animation pauses when the card is scrolled out of view or the browser tab is hidden, and resumes when visible again.
+- During map navigation (panning or zooming), only the latest single frame is loaded to reduce tile requests. Full frame history is restored 100 ms after the map settles.
 
 ### Location Coordinates
 
@@ -243,11 +279,15 @@ zoom_level: 9
 
 ## Install
 
+### HACS
+
 If you use HACS, the card is part of the default HACS store.
 
-If you don't use HACS, download the files from the [latest release](https://github.com/makin-things/weather-radar-card/releases) and place them in `www/community/weather-radar-card` in your `config` directory:
+### Manual
 
-```
+Download the files from the [latest release](https://github.com/makin-things/weather-radar-card/releases) and place them in `www/community/weather-radar-card` in your HA `config` directory:
+
+```text
 └── configuration.yaml
 └── www
     └── community
@@ -255,10 +295,6 @@ If you don't use HACS, download the files from the [latest release](https://gith
             └── weather-radar-card.js
             └── home-circle-dark.svg
             └── home-circle-light.svg
-            └── leaflet.css
-            └── leaflet.js
-            └── leaflet.toolbar.min.css
-            └── leaflet.toolbar.min.js
             └── pause.png
             └── play.png
             └── radar-colour-bar-universalblue.png
@@ -266,6 +302,8 @@ If you don't use HACS, download the files from the [latest release](https://gith
             └── skip-back.png
             └── skip-next.png
 ```
+
+> **Upgrading from v2?** Delete `leaflet.js`, `leaflet.css`, `leaflet.toolbar.min.js`, and `leaflet.toolbar.min.css` from `www/community/weather-radar-card/` — they are bundled into `weather-radar-card.js` in v3 and the old files are no longer used.
 
 Then add the following to your Lovelace resources:
 
