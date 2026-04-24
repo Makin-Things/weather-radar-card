@@ -47,6 +47,7 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   name?: string;
   map_style?: string;
   data_source?: string;
+  show_snow?: boolean;
   show_warning?: boolean;
   show_error?: boolean;
   test_gui?: boolean;

@@ -89,6 +89,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _navPaused = false;
   private _viewPaused = false;
   private _navReloadTimer: ReturnType<typeof setTimeout> | null = null;
+  private _rateLimitTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ── Observers / workers ─────────────────────────────────────────────────────
 
@@ -180,6 +181,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         <div id="color-bar" style="height:8px">
           <img id="img-color-bar" height="8" style="vertical-align:top" />
         </div>
+        <div id="rate-limit-banner" class="status-banner" style="display:none">Rate limited — waiting for quota to reset</div>
         <div id="mapid" style="height:${height}"></div>
         <div id="div-progress-bar" style="height:8px;display:flex;background:${dark ? '#1c1c1c' : '#fff'}"></div>
         <div id="bottom-container" class="${dark ? 'dark-links' : 'light-links'}"
@@ -247,6 +249,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   private _teardown(): void {
     if (this._navReloadTimer) clearTimeout(this._navReloadTimer);
+    if (this._rateLimitTimer) clearTimeout(this._rateLimitTimer);
     if (this._visObserver) { this._visObserver.disconnect(); this._visObserver = null; }
     if (this._resizeObserver) { this._resizeObserver.disconnect(); this._resizeObserver = null; }
     if (this._updateWorker) { this._updateWorker.terminate(); this._updateWorker = null; }
@@ -494,6 +497,17 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     if (!this._map) return;
     this._map.on('movestart zoomstart', () => this._onNavStart());
     this._map.on('moveend zoomend', () => this._onNavEnd());
+  }
+
+  private _onRateLimited(): void {
+    const banner = this.shadowRoot?.getElementById('rate-limit-banner');
+    if (banner) banner.style.display = 'block';
+    if (this._rateLimitTimer) clearTimeout(this._rateLimitTimer);
+    // Auto-hide once the 60s rate-limit window should have cleared
+    this._rateLimitTimer = setTimeout(() => {
+      const b = this.shadowRoot?.getElementById('rate-limit-banner');
+      if (b) b.style.display = 'none';
+    }, 65_000);
   }
 
   private _onNavStart(): void {
@@ -849,7 +863,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     // 512px tiles with color=255 and options=1_1_1_0 (smooth, snow, labels, 0) are the
     // current working format. zoomOffset:-1 compensates for the doubled tile size.
     const host = frame.host ?? 'https://tilecache.rainviewer.com';
-    const tileURL = `${host}${frame.path}/512/{z}/{x}/{y}/2/1_0.png`;
+    const snow = this._config.show_snow ? 1 : 0;
+    const tileURL = `${host}${frame.path}/512/{z}/{x}/{y}/2/1_${snow}.png`;
     return new FetchTileLayer(tileURL, {
       detectRetina: false,
       tileSize: 512,
@@ -857,6 +872,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       opacity: 0,
       maxNativeZoom: 7,
       rateLimiter: this._rainviewerLimiter,
+      on429: () => this._onRateLimited(),
     } as any);
   }
 
@@ -1165,6 +1181,20 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       #mapid {
         width: 100%;
         position: relative;
+      }
+      .status-banner {
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        background: rgba(180,60,0,0.85);
+        color: #fff;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font: 12px/1.5 'Helvetica Neue', Arial, sans-serif;
+        pointer-events: none;
+        white-space: nowrap;
       }
       .marker-entity-picture {
         border-radius: 50%;

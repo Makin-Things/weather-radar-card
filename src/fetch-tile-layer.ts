@@ -9,6 +9,7 @@ export interface FetchTileOptions extends L.TileLayerOptions {
   rateLimiter?: RateLimiter;
   maxRetries?: number;
   retryDelay?: number;
+  on429?: () => void;
 }
 
 // Augment Leaflet's Coords type (it's missing `z` in some @types versions)
@@ -30,6 +31,7 @@ function createFetchTile(
   const maxRetries = opts.maxRetries ?? 3;
   const retryDelay = opts.retryDelay ?? 500;
   const limiter = opts.rateLimiter;
+        const on429 = opts.on429;
   let attempt = 0;
 
   layer._tilePending++;
@@ -68,6 +70,7 @@ function createFetchTile(
         if (err.status === 404) {
           fail();
         } else if (err.status === 429) {
+          on429?.();
           const wait = limiter ? Math.max(limiter.msUntilSlot(), 1000) : 5000;
           setTimeout(tryFetch, wait);
         } else if (++attempt < maxRetries) {
