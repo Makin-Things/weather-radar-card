@@ -66,6 +66,16 @@ markers:
   stack above; re-centre the map to the winning marker's current position; warn to
   console on ties at the same priority level
 
+- [ ] **Auto-migrate old config** — in `setConfig()`, if `markers` is absent but old
+  single-marker fields (`marker_latitude`, `mobile_marker_latitude`, etc.) are
+  present, synthesise a `markers` array in memory so old configs continue to work
+  without touching the user's YAML. Log a deprecation warning. When `editMode` is
+  active, optionally fire `config-changed` with the translated config so the editor
+  writes the new format back automatically. Notes: collapse same-string lat/lon
+  entity pairs to a single `entity` field; add `mobile_only: true` to any marker
+  synthesised from mobile fields; do not migrate `center_latitude` / mobile center
+  (those are map-centering fields, not markers).
+
 - [ ] **Remove conflicting mobile support** — deprecate and remove
   `marker_latitude`, `marker_longitude`, `mobile_marker_latitude`,
   `mobile_marker_longitude`, `marker_icon`, `mobile_marker_icon`,
@@ -84,8 +94,6 @@ markers:
 ---
 
 ## Other Backlog Items
-
-*(from the general feature list — not yet designed)*
 
 - Clickable / draggable timeline — already implemented ✅
 - AM/PM vs 24 h time display — already implemented (browser locale) ✅
