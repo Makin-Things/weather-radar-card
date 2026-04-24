@@ -69,7 +69,10 @@ function createFetchTile(
       .catch((err: any) => {
         if (err.status === 404) {
           fail();
-        } else if (err.status === 429) {
+        } else if (err.status === 429 || (limiter && !err.status)) {
+          // 429 with CORS headers sets err.status; without CORS headers the browser
+          // blocks the response entirely, leaving err.status undefined. If we have a
+          // rate limiter on this source, treat any statusless error as rate-limited.
           on429?.();
           const wait = limiter ? Math.max(limiter.msUntilSlot(), 1000) : 5000;
           setTimeout(tryFetch, wait);
