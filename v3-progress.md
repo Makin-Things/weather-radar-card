@@ -79,8 +79,8 @@ Leaflet.Toolbar2 CSS is inlined from `dist/leaflet.toolbar.min.css` the same way
 | T2 | All 5 basemap styles render correctly | ⬜ |
 | T3 | RainViewer radar tiles load and animate | ✅ |
 | T4 | NOAA tiles load and animate | ✅ |
-| T5 | Markers render at correct position in all styles | ⬜ |
-| T6 | Playback controls work (play/pause/skip) | ⬜ |
+| T5 | Markers render at correct position in all styles | ✅ |
+| T6 | Playback controls work (play/pause/skip) | ✅ |
 | T7 | Navigation pause / restore cycle works | ⬜ |
 | T8 | Scroll visibility pause works | ⬜ |
 | T9 | Panel mode layout correct | ⬜ |
