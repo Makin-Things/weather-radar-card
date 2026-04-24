@@ -106,8 +106,16 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   // ── Dark mode ───────────────────────────────────────────────────────────────
 
+  /** Resolves the effective map style, defaulting based on HA language when not configured. */
+  private _effectiveMapStyle(): string {
+    const configured = this._config?.map_style;
+    if (configured) return configured.toLowerCase();
+    const lang = this.hass?.language ?? 'en';
+    return lang.startsWith('en') ? 'light' : 'osm';
+  }
+
   private get _isDark(): boolean {
-    const s = (this._config?.map_style ?? 'light').toLowerCase();
+    const s = this._effectiveMapStyle();
     return s === 'dark' || s === 'satellite';
   }
 
@@ -207,7 +215,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       haLat, haLon,
     );
 
-    const mapStyle = (cfg.map_style ?? 'light').toLowerCase();
+    const mapStyle = this._effectiveMapStyle();
     const zoom = cfg.zoom_level ?? 7;
     const minZoom = 3;
     const maxZoom = 10;
