@@ -208,6 +208,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       minZoom: 3, maxZoom: 10,
     }).setView([center.lat, center.lon], cfg.zoom_level ?? 7);
 
+    if (cfg.disable_scroll === true && !isStatic) {
+      this._map.dragging.disable();
+    }
     this._setupBasemap(mapStyle);
     this._setupAttribution(mapStyle);
     this._setupMarker(isMobile, userInfo, mapStyle);

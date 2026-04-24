@@ -264,6 +264,9 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
 
         <!-- INTERACTION -->
         <h3 class="section-header">Interaction</h3>
+        <label>Disable Scroll (allow page swipe through map)
+          <ha-switch .checked=${config.disable_scroll === true} .configValue=${'disable_scroll'} @change=${this._valueChangedSwitch}></ha-switch>
+        </label>
         <ha-selector
           .hass=${this.hass}
           .selector=${{

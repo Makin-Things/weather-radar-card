@@ -14843,6 +14843,9 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
 
         <!-- INTERACTION -->
         <h3 class="section-header">Interaction</h3>
+        <label>Disable Scroll (allow page swipe through map)
+          <ha-switch .checked=${config.disable_scroll === true} .configValue=${'disable_scroll'} @change=${this._valueChangedSwitch}></ha-switch>
+        </label>
         <ha-selector
           .hass=${this.hass}
           .selector=${{
@@ -16414,6 +16417,9 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             wheelPxPerZoomLevel: 120, attributionControl: false,
             minZoom: 3, maxZoom: 10,
         }).setView([center.lat, center.lon], (_h = cfg.zoom_level) !== null && _h !== void 0 ? _h : 7);
+        if (cfg.disable_scroll === true && !isStatic) {
+            this._map.dragging.disable();
+        }
         this._setupBasemap(mapStyle);
         this._setupAttribution(mapStyle);
         this._setupMarker(isMobile, userInfo, mapStyle);
