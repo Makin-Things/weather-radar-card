@@ -69,6 +69,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _visibilityHandler: (() => void) | null = null;
   private _navContainer: HTMLElement | null = null;
   private _markUserMove: (() => void) | null = null;
+  private _darkModeQuery: MediaQueryList | null = null;
+  private _darkModeHandler: (() => void) | null = null;
 
   private _rainviewerLimiter = new RateLimiter(500);
   private _noaaLimiter = new RateLimiter(120);
@@ -76,9 +78,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   private _effectiveMapStyle(): string {
-    const configured = this._config?.map_style;
-    if (configured) return configured.toLowerCase();
-    return (this.hass?.language ?? 'en').startsWith('en') ? 'light' : 'osm';
+    const configured = this._config?.map_style?.toLowerCase();
+    if (configured && configured !== 'auto') return configured;
+    const isEnglish = (this.hass?.language ?? 'en').startsWith('en');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (prefersDark) return 'dark';
+    return isEnglish ? 'light' : 'osm';
   }
 
   private get _isDark(): boolean {
@@ -148,7 +153,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     const dark = this._isDark;
     return html`
       <ha-card class=${dark ? 'radar-dark' : ''}>
-        <div id="color-bar" style="height:8px">
+        <div id="color-bar" style="height:8px;display:${this._config.show_color_bar === false ? 'none' : ''}">
           <img id="img-color-bar" height="8" style="vertical-align:top" />
         </div>
         <div id="rate-limit-banner" class="status-banner" style="display:none">
@@ -160,7 +165,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
           </button>
         ` : ''}
         <div id="mapid" style="height:${this._calculateHeight()}"></div>
-        <div id="div-progress-bar" style="height:8px;display:flex;background:${dark ? '#1c1c1c' : '#fff'}"></div>
+        <div id="div-progress-bar" style="height:8px;display:${this._config.show_progress_bar === false ? 'none' : 'flex'};background:${dark ? '#1c1c1c' : '#fff'}"></div>
         <div id="bottom-container" class="${dark ? 'dark-links' : 'light-links'}"
              style="height:32px;background:${dark ? '#1c1c1c' : '#fff'};color:${dark ? '#ddd' : ''}">
           <div id="timestampid" style="width:120px;height:32px;float:left;position:absolute">
@@ -207,6 +212,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     this._setupNavListeners();
     this._setupVisibilityObserver();
     this._setupResizeObserver();
+    // When map_style is auto (or unset), reinit the map if the OS colour scheme changes.
+    if (!cfg.map_style || cfg.map_style.toLowerCase() === 'auto') {
+      this._darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      this._darkModeHandler = () => { this._teardown(); this.requestUpdate(); };
+      this._darkModeQuery.addEventListener('change', this._darkModeHandler);
+    }
 
     this._player = new RadarPlayer({
       map: this._map,
@@ -232,6 +243,11 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       this._navContainer.removeEventListener('wheel', this._markUserMove);
       this._navContainer = null;
       this._markUserMove = null;
+    }
+    if (this._darkModeQuery && this._darkModeHandler) {
+      this._darkModeQuery.removeEventListener('change', this._darkModeHandler);
+      this._darkModeQuery = null;
+      this._darkModeHandler = null;
     }
     this._player?.clear();
     this._player = null;
