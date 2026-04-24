@@ -53,6 +53,7 @@ export class RadarPlayer {
 
   // Web worker timer (used only for the periodic 5-min radar update)
   private _worker: Worker | null = null;
+  private _workerBlobUrl: string | null = null;
   private _workerCallbacks = new Map<number, () => void>();
   private _workerNextId = 0;
 
@@ -98,6 +99,7 @@ export class RadarPlayer {
     this._worker?.terminate();
     this._worker = null;
     this._workerCallbacks.clear();
+    if (this._workerBlobUrl) { URL.revokeObjectURL(this._workerBlobUrl); this._workerBlobUrl = null; }
   }
 
   // ── Navigation / visibility pause ────────────────────────────────────────
@@ -195,6 +197,7 @@ export class RadarPlayer {
   /** Show one slot: set its container to opacity 1, all others to 0, update UI. */
   private _showSlot(slot: number): void {
     const n = this._loadedSlots.length;
+    if (n === 0 || slot < 0 || slot >= n) return;
     const fade = this._fadeMs;
     const transition = fade > 0 ? `opacity ${fade}ms linear` : 'none';
     for (let s = 0; s < n; s++) {
@@ -366,8 +369,14 @@ export class RadarPlayer {
     this._loadedSlots = [];
     this._currentSlot = 0;
 
-    const pastFrames = await this._fetchPaths();
+    let pastFrames: RadarFrame[];
+    try {
+      pastFrames = await this._fetchPaths();
+    } catch {
+      return; // network/parse error — card stays blank until next nav or reload
+    }
     if (myGen !== this._frameGeneration) return;
+    if (pastFrames.length === 0) return; // API returned no frames
     this._radarPaths = pastFrames;
     const frameCount = pastFrames.length;
     this._configFrameCount = frameCount;
@@ -454,7 +463,16 @@ export class RadarPlayer {
 
   private async _updateRadar(): Promise<void> {
     if (!this._map) return;
-    const pastFrames = await this._fetchPaths();
+    const myGen = this._frameGeneration;
+    let pastFrames: RadarFrame[];
+    try {
+      pastFrames = await this._fetchPaths();
+    } catch {
+      this._scheduleUpdate(); // retry on next cycle
+      return;
+    }
+    if (myGen !== this._frameGeneration) return; // torn down while fetching
+    if (pastFrames.length === 0) { this._scheduleUpdate(); return; } // no frames from API
     const latestFrame = pastFrames[pastFrames.length - 1];
     const frameCount = this._configFrameCount;
 
@@ -479,6 +497,7 @@ export class RadarPlayer {
     this._setSegment(frameCount - 1, 'loading');
 
     newLayer.once('load', () => {
+      if (myGen !== this._frameGeneration) return; // torn down before tiles finished
       for (let i = 0; i < frameCount; i++) {
         const l = this._radarImage[i];
         if (l) this._setLayerZ(l, i + 1);
@@ -508,7 +527,8 @@ export class RadarPlayer {
         }
       };
     `;
-    this._worker = new Worker(URL.createObjectURL(new Blob([code], { type: 'application/javascript' })));
+    this._workerBlobUrl = URL.createObjectURL(new Blob([code], { type: 'application/javascript' }));
+    this._worker = new Worker(this._workerBlobUrl);
     this._worker.onmessage = (e) => {
       const cb = this._workerCallbacks.get(e.data.id);
       if (cb) { this._workerCallbacks.delete(e.data.id); cb(); }

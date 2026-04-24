@@ -476,7 +476,9 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
 
     if (configValue) {
       if (value === '' || value === null) {
-        delete this._config[configValue];
+        const newConfig = { ...this._config };
+        delete newConfig[configValue];
+        this._config = newConfig;
       } else {
         this._config = {
           ...this._config,
@@ -500,7 +502,9 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
 
     if (configValue) {
       if (value === '') {
-        delete this._config[configValue];
+        const newConfig = { ...this._config };
+        delete newConfig[configValue];
+        this._config = newConfig;
       } else {
         this._config = {
           ...this._config,
