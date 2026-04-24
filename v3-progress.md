@@ -75,10 +75,10 @@ Leaflet.Toolbar2 CSS is inlined from `dist/leaflet.toolbar.min.css` the same way
 
 | # | What to test | Status |
 |---|---|---|
-| T1 | Basic Leaflet map renders in shadow DOM, no console errors | ⬜ |
+| T1 | Basic Leaflet map renders in shadow DOM, no console errors | ✅ |
 | T2 | All 5 basemap styles render correctly | ⬜ |
-| T3 | RainViewer radar tiles load and animate | ⬜ |
-| T4 | NOAA tiles load and animate | ⬜ |
+| T3 | RainViewer radar tiles load and animate | ✅ |
+| T4 | NOAA tiles load and animate | ✅ |
 | T5 | Markers render at correct position in all styles | ⬜ |
 | T6 | Playback controls work (play/pause/skip) | ⬜ |
 | T7 | Navigation pause / restore cycle works | ⬜ |
