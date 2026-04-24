@@ -387,8 +387,9 @@ export class RadarPlayer {
     const colourBar = this._shadowRoot.getElementById('color-bar');
     const colourImg = this._shadowRoot.getElementById('img-color-bar') as HTMLImageElement | null;
     if (colourBar && colourImg) {
-      colourBar.style.display = dataSource === 'NOAA' ? 'none' : '';
-      if (dataSource !== 'NOAA') colourImg.src = '/local/community/weather-radar-card/radar-colour-bar-universalblue.png';
+      const showBar = this._cfg.show_color_bar !== false && dataSource !== 'NOAA';
+      colourBar.style.display = showBar ? '' : 'none';
+      if (showBar) colourImg.src = '/local/community/weather-radar-card/radar-colour-bar-universalblue.png';
     }
 
     let newestShown = false;

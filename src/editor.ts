@@ -109,6 +109,7 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             .selector=${{
               select: {
                 options: [
+                  { value: 'Auto', label: 'Auto (follows OS dark/light mode)' },
                   { value: 'Light', label: 'CARTO Light (English only)' },
                   { value: 'Voyager', label: 'CARTO Voyager (English only)' },
                   { value: 'Dark', label: 'CARTO Dark (English only)' },
@@ -218,6 +219,12 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
         <div class="side-by-side">
           <label>Show Snow
             <ha-switch .checked=${config.show_snow === true} .configValue=${'show_snow'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+          <label>Show Colour Bar
+            <ha-switch .checked=${config.show_color_bar !== false} .configValue=${'show_color_bar'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+          <label>Show Progress Bar
+            <ha-switch .checked=${config.show_progress_bar !== false} .configValue=${'show_progress_bar'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
         </div>
         ${config.show_marker === true ? html`

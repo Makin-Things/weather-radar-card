@@ -14688,6 +14688,7 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
             .selector=${{
             select: {
                 options: [
+                    { value: 'Auto', label: 'Auto (follows OS dark/light mode)' },
                     { value: 'Light', label: 'CARTO Light (English only)' },
                     { value: 'Voyager', label: 'CARTO Voyager (English only)' },
                     { value: 'Dark', label: 'CARTO Dark (English only)' },
@@ -14797,6 +14798,12 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
         <div class="side-by-side">
           <label>Show Snow
             <ha-switch .checked=${config.show_snow === true} .configValue=${'show_snow'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+          <label>Show Colour Bar
+            <ha-switch .checked=${config.show_color_bar !== false} .configValue=${'show_color_bar'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+          <label>Show Progress Bar
+            <ha-switch .checked=${config.show_progress_bar !== false} .configValue=${'show_progress_bar'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
         </div>
         ${config.show_marker === true ? b `
@@ -15887,8 +15894,9 @@ class RadarPlayer {
         const colourBar = this._shadowRoot.getElementById('color-bar');
         const colourImg = this._shadowRoot.getElementById('img-color-bar');
         if (colourBar && colourImg) {
-            colourBar.style.display = dataSource === 'NOAA' ? 'none' : '';
-            if (dataSource !== 'NOAA')
+            const showBar = this._cfg.show_color_bar !== false && dataSource !== 'NOAA';
+            colourBar.style.display = showBar ? '' : 'none';
+            if (showBar)
                 colourImg.src = '/local/community/weather-radar-card/radar-colour-bar-universalblue.png';
         }
         let newestShown = false;
@@ -16243,6 +16251,8 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         this._visibilityHandler = null;
         this._navContainer = null;
         this._markUserMove = null;
+        this._darkModeQuery = null;
+        this._darkModeHandler = null;
         this._rainviewerLimiter = new RateLimiter(500);
         this._noaaLimiter = new RateLimiter(120);
     }
@@ -16252,11 +16262,15 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
     static getStubConfig() { return {}; }
     // ── Helpers ───────────────────────────────────────────────────────────────
     _effectiveMapStyle() {
-        var _a, _b, _c;
-        const configured = (_a = this._config) === null || _a === void 0 ? void 0 : _a.map_style;
-        if (configured)
-            return configured.toLowerCase();
-        return ((_c = (_b = this.hass) === null || _b === void 0 ? void 0 : _b.language) !== null && _c !== void 0 ? _c : 'en').startsWith('en') ? 'light' : 'osm';
+        var _a, _b, _c, _d;
+        const configured = (_b = (_a = this._config) === null || _a === void 0 ? void 0 : _a.map_style) === null || _b === void 0 ? void 0 : _b.toLowerCase();
+        if (configured && configured !== 'auto')
+            return configured;
+        const isEnglish = ((_d = (_c = this.hass) === null || _c === void 0 ? void 0 : _c.language) !== null && _d !== void 0 ? _d : 'en').startsWith('en');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (prefersDark)
+            return 'dark';
+        return isEnglish ? 'light' : 'osm';
     }
     get _isDark() {
         const s = this._effectiveMapStyle();
@@ -16319,7 +16333,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         const dark = this._isDark;
         return b `
       <ha-card class=${dark ? 'radar-dark' : ''}>
-        <div id="color-bar" style="height:8px">
+        <div id="color-bar" style="height:8px;display:${this._config.show_color_bar === false ? 'none' : ''}">
           <img id="img-color-bar" height="8" style="vertical-align:top" />
         </div>
         <div id="rate-limit-banner" class="status-banner" style="display:none">
@@ -16331,7 +16345,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
           </button>
         ` : ''}
         <div id="mapid" style="height:${this._calculateHeight()}"></div>
-        <div id="div-progress-bar" style="height:8px;display:flex;background:${dark ? '#1c1c1c' : '#fff'}"></div>
+        <div id="div-progress-bar" style="height:8px;display:${this._config.show_progress_bar === false ? 'none' : 'flex'};background:${dark ? '#1c1c1c' : '#fff'}"></div>
         <div id="bottom-container" class="${dark ? 'dark-links' : 'light-links'}"
              style="height:32px;background:${dark ? '#1c1c1c' : '#fff'};color:${dark ? '#ddd' : ''}">
           <div id="timestampid" style="width:120px;height:32px;float:left;position:absolute">
@@ -16370,6 +16384,12 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         this._setupNavListeners();
         this._setupVisibilityObserver();
         this._setupResizeObserver();
+        // When map_style is auto (or unset), reinit the map if the OS colour scheme changes.
+        if (!cfg.map_style || cfg.map_style.toLowerCase() === 'auto') {
+            this._darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            this._darkModeHandler = () => { this._teardown(); this.requestUpdate(); };
+            this._darkModeQuery.addEventListener('change', this._darkModeHandler);
+        }
         this._player = new RadarPlayer({
             map: this._map,
             shadowRoot: this.shadowRoot,
@@ -16401,6 +16421,11 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             this._navContainer.removeEventListener('wheel', this._markUserMove);
             this._navContainer = null;
             this._markUserMove = null;
+        }
+        if (this._darkModeQuery && this._darkModeHandler) {
+            this._darkModeQuery.removeEventListener('change', this._darkModeHandler);
+            this._darkModeQuery = null;
+            this._darkModeHandler = null;
         }
         (_a = this._player) === null || _a === void 0 ? void 0 : _a.clear();
         this._player = null;
