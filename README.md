@@ -43,6 +43,11 @@ In Home Assistant edit mode, pan and zoom the map to your desired position and a
 - Rate-limit banner — visible indicator when the API quota is temporarily exhausted
 - Animated crossfades via CSS `transition` on layer containers (simpler and more reliable than the previous CSS keyframe engine)
 - Marker defaults to HA home location rather than the map center, so changing the map center no longer moves the marker
+- **Scrubbable timeline** — click or drag the progress bar to jump to any frame
+- **Locale-aware timestamps** — the frame time display uses the browser's locale automatically, showing 12 h (AM/PM) for US users and 24 h for everyone else, with locale-appropriate date ordering
+- **Auto map style** — `map_style: Auto` follows the OS light/dark mode preference; switches the map automatically when the system theme changes
+- **Configurable double-tap action** — `double_tap_action` can re-centre the map, toggle play/pause, or execute any standard HA action (navigate, call-service, etc.)
+- Show/hide the progress bar and colour bar independently via config
 
 ---
 
@@ -71,6 +76,9 @@ All options can be configured using the GUI editor — there is no need to edit 
 | animated_transitions | boolean | **Optional** | Enable crossfade transitions between frames | `true` |
 | transition_time | number | **Optional** | Crossfade duration in ms. Default is 40% of frame_delay | auto |
 | show_snow | boolean | **Optional** | Include snow in the precipitation display (RainViewer only) | `false` |
+| show_color_bar | boolean | **Optional** | Show the radar colour scale bar (RainViewer only) | `true` |
+| show_progress_bar | boolean | **Optional** | Show the frame progress / timeline bar | `true` |
+| double_tap_action | string / object | **Optional** | Action on double-tap: `'recenter'`, `'toggle_play'`, `'none'`, or any HA action object | `'none'` |
 | static_map | boolean | **Optional** | Disable all panning and zooming | `false` |
 | show_zoom | boolean | **Optional** | Show zoom controls | `false` |
 | square_map | boolean | **Optional** | Keep the map square | `false` |
@@ -103,19 +111,28 @@ Specifies the base map style. All CARTO-based styles render labels in English on
 
 | Value | Description |
 | ----- | ----------- |
+| `Auto` | Follows OS dark/light mode — Dark when system is dark, Light (English) or OSM (other) when light |
 | `Light` | CARTO Light — English only |
 | `Dark` | CARTO Dark — English only |
 | `Voyager` | CARTO Voyager — English only |
 | `Satellite` | ESRI World Imagery — English only |
 | `OSM` | OpenStreetMap — labels rendered in local language |
 
-The default map style is `Light` for English-language HA instances and `OSM` for all others.
+When `map_style` is not set or set to `Auto`, the card picks Dark when the OS is in dark mode, `Light` for English-language instances in light mode, and `OSM` for all other languages in light mode. The map updates automatically if the OS theme changes.
 
 > **OpenStreetMap note:** OSM tiles are provided by the OpenStreetMap community. For high-traffic deployments please consider the [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
 
 ### Animation
 
 Each frame is a Leaflet tile layer. The card loads all frames simultaneously (newest first) and switches between them using JavaScript-driven opacity changes. This approach works reliably in Shadow DOM without any CSS cascade or reflow interactions.
+
+**Timeline scrubbing:**
+
+Click anywhere on the progress bar to jump to that frame, or click and drag to scrub through the loop. Dragging pauses the animation; releasing resumes it if playback was active.
+
+**Timestamp:**
+
+The frame timestamp uses the browser's locale via `Intl.DateTimeFormat`, so 12 h (AM/PM) or 24 h format is chosen automatically based on the user's regional settings.
 
 **Crossfade (animated_transitions: true):**
 
@@ -129,6 +146,34 @@ Opacity changes are instant — no transition property is applied.
 
 - Animation pauses when the card is scrolled out of view or the browser tab is hidden, and resumes when visible again.
 - During map navigation (panning or zooming), only the latest single frame is loaded to reduce tile requests. Full frame history is restored 100 ms after the map settles.
+
+### Double-tap Action
+
+`double_tap_action` fires when the user double-clicks the map (or double-taps on touch). Leaflet's built-in double-click zoom is automatically disabled when a non-`none` action is configured.
+
+Simple shortcut values:
+
+| Value | Behaviour |
+| ----- | --------- |
+| `none` | No action (default) |
+| `recenter` | Return the map to the configured center and zoom |
+| `toggle_play` | Toggle radar playback on/off |
+
+For advanced use, any standard HA action object is accepted in YAML:
+
+```yaml
+double_tap_action:
+  action: navigate
+  navigation_path: /lovelace/cameras
+```
+
+```yaml
+double_tap_action:
+  action: call-service
+  service: scene.turn_on
+  service_data:
+    entity_id: scene.evening
+```
 
 ### Location Coordinates
 
