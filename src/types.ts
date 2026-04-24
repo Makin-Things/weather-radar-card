@@ -42,7 +42,7 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   marker_icon_entity?: string; // Entity ID for entity_picture source
   mobile_marker_icon?: string; // Mobile override for marker icon type
   mobile_marker_icon_entity?: string; // Mobile override for icon entity
-  zoom_level: undefined;
+  zoom_level?: number;
   type: string;
   name?: string;
   map_style?: string;

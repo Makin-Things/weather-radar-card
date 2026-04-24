@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { LitElement, html, css, unsafeCSS, TemplateResult, PropertyValues } from 'lit';
-import { property, customElement } from 'lit/decorators.js';
+import { property, customElement, state } from 'lit/decorators.js';
 import { HomeAssistant, LovelaceCardEditor, LovelaceCard } from 'custom-card-helpers';
 import * as L from 'leaflet';
 // @ts-expect-error — rollup-plugin-string imports CSS as a raw string
@@ -60,6 +60,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _dynamicStyleEl!: HTMLStyleElement;
   private _player: RadarPlayer | null = null;
 
+  @state() private _pendingCenter: { lat: number; lon: number; zoom: number } | null = null;
+  private _userMoveInProgress = false;
+
   private _navReloadTimer: ReturnType<typeof setTimeout> | null = null;
   private _visObserver: IntersectionObserver | null = null;
   private _resizeObserver: ResizeObserver | null = null;
@@ -107,7 +110,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   protected shouldUpdate(changedProps: PropertyValues): boolean {
     if (!this._config) return false;
-    return changedProps.has('_config') || changedProps.has('hass');
+    return changedProps.has('_config') || changedProps.has('hass')
+      || changedProps.has('editMode') || changedProps.has('_pendingCenter');
   }
 
   protected firstUpdated(): void {
@@ -118,6 +122,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   }
 
   protected updated(changedProps: PropertyValues): void {
+    if (changedProps.has('editMode') && !this.editMode) {
+      this._pendingCenter = null;
+    }
     if (!this._map && this._config) {
       this._initMap();
     } else if (changedProps.has('_config') && this._map) {
@@ -144,6 +151,11 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         <div id="rate-limit-banner" class="status-banner" style="display:none">
           Rate limited — waiting for quota to reset
         </div>
+        ${this.editMode && this._pendingCenter ? html`
+          <button class="save-center-btn" @click=${this._savePendingCenter}>
+            Save as map center
+          </button>
+        ` : ''}
         <div id="mapid" style="height:${this._calculateHeight()}"></div>
         <div id="div-progress-bar" style="height:8px;display:flex;background:${dark ? '#1c1c1c' : '#fff'}"></div>
         <div id="bottom-container" class="${dark ? 'dark-links' : 'light-links'}"
@@ -187,7 +199,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
     this._setupBasemap(mapStyle);
     this._setupAttribution(mapStyle);
-    this._setupMarker(isMobile, userInfo, center, mapStyle);
+    this._setupMarker(isMobile, userInfo, mapStyle);
     this._setupToolbar();
     this._setupNavListeners();
     this._setupVisibilityObserver();
@@ -196,7 +208,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     this._player = new RadarPlayer({
       map: this._map,
       shadowRoot: this.shadowRoot!,
-      dynamicStyleEl: this._dynamicStyleEl,
       getConfig: () => this._config,
       rainviewerLimiter: this._rainviewerLimiter,
       noaaLimiter: this._noaaLimiter,
@@ -280,15 +291,18 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _setupMarker(
     isMobile: boolean,
     userInfo: { personEntity: string; deviceTracker?: string } | null,
-    center: { lat: number; lon: number },
     mapStyle: string,
   ): void {
     if (!this._map) return;
     const cfg = this._config;
+    // Marker falls back to HA's home location, not the map center, so that
+    // changing the map center via "Save as map center" doesn't move the marker.
+    const haLat = this.hass?.config?.latitude ?? 0;
+    const haLon = this.hass?.config?.longitude ?? 0;
     const markerCoords = resolveCoordinatePair(
       getCoordinateConfig(cfg.marker_latitude, cfg.mobile_marker_latitude, isMobile, userInfo?.deviceTracker),
       getCoordinateConfig(cfg.marker_longitude, cfg.mobile_marker_longitude, isMobile, userInfo?.deviceTracker),
-      center.lat, center.lon, this.hass,
+      haLat, haLon, this.hass,
     );
     if (cfg.show_marker) {
       const icon = createMarkerIcon(cfg, this.hass, isMobile, userInfo, mapStyle);
@@ -325,6 +339,22 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     this._toolbar.addTo(this._map);
   }
 
+  private _savePendingCenter(): void {
+    if (!this._pendingCenter) return;
+    const { lat, lon, zoom } = this._pendingCenter;
+    this._pendingCenter = null;
+    // Communicate to the editor element via a window event so the editor can
+    // fire config-changed from the correct element. Firing it from the card
+    // causes HA to call setConfig back with the old stored config (snap-back).
+    window.dispatchEvent(new CustomEvent('weather-radar-center-update', {
+      detail: {
+        center_latitude: Math.round(lat * 10000) / 10000,
+        center_longitude: Math.round(lon * 10000) / 10000,
+        zoom_level: zoom,
+      },
+    }));
+  }
+
   private _recenter(): void {
     if (!this._map) return;
     const cfg = this._config;
@@ -341,6 +371,13 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   private _setupNavListeners(): void {
     if (!this._map) return;
+    // pointerdown and wheel fire for real user gestures but NOT for programmatic
+    // moves like invalidateSize() or setView(). Use them to gate the save button.
+    const container = (this._map as any).getContainer() as HTMLElement;
+    const markUserMove = (): void => { this._userMoveInProgress = true; };
+    container.addEventListener('pointerdown', markUserMove, { passive: true });
+    container.addEventListener('wheel', markUserMove, { passive: true });
+
     this._map.on('movestart zoomstart', () => {
       if (this._navReloadTimer) clearTimeout(this._navReloadTimer);
       this._player?.onNavPaused();
@@ -350,6 +387,11 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       this._navReloadTimer = setTimeout(() => {
         this._player?.onNavSettled(this._config.frame_count ?? 5);
       }, 100);
+      if (this._userMoveInProgress && this.editMode && this._map) {
+        const c = this._map.getCenter();
+        this._pendingCenter = { lat: c.lat, lon: c.lng, zoom: this._map.getZoom() };
+      }
+      this._userMoveInProgress = false;
     });
   }
 
@@ -401,6 +443,13 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       #bottom-container { font-size: 10px; position: relative; }
       .radar-dark .leaflet-control-scale-line {
         color: #bbb; border-color: #bbb; background: rgba(0,0,0,0.5);
+      }
+      .save-center-btn {
+        position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%);
+        z-index: 1000; background: var(--primary-color); color: var(--text-primary-color, #fff);
+        border: none; border-radius: 4px; padding: 6px 16px; cursor: pointer;
+        font: 12px/1.5 'Helvetica Neue', Arial, sans-serif;
+        white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
       }
     `,
   ];
