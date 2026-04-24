@@ -262,6 +262,25 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
           </div>
         ` : ''}
 
+        <!-- INTERACTION -->
+        <h3 class="section-header">Interaction</h3>
+        <ha-selector
+          .hass=${this.hass}
+          .selector=${{
+            select: {
+              options: [
+                { value: 'none', label: 'None' },
+                { value: 'recenter', label: 'Re-centre map' },
+                { value: 'toggle_play', label: 'Toggle play / pause' },
+              ],
+            },
+          }}
+          .value=${config.double_tap_action || 'none'}
+          .label=${'Double-tap action'}
+          .configValue=${'double_tap_action'}
+          @value-changed=${this._handleSelectorChanged}
+        ></ha-selector>
+
         <!-- ANIMATION -->
         <h3 class="section-header">Animation</h3>
         <div class="side-by-side">
