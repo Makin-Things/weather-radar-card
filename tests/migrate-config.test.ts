@@ -106,11 +106,11 @@ describe('migrateConfig', () => {
     expect(migrateConfig(cfg).markers![1].icon_entity).toBe('person.john');
   });
 
-  it('creates an empty marker when show_marker is true but no coordinates given', () => {
+  it('creates a zone.home marker when show_marker is true but no coordinates given', () => {
     const cfg = { ...base, show_marker: true };
     const result = migrateConfig(cfg);
     expect(result.markers).toHaveLength(1);
-    expect(result.markers![0]).toEqual({});
+    expect(result.markers![0]).toEqual({ entity: 'zone.home' });
   });
 
   it('migrates when marker_latitude present even without show_marker', () => {

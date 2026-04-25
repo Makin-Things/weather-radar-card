@@ -1,6 +1,40 @@
 import { HomeAssistant } from 'custom-card-helpers';
 import { Marker, WeatherRadarCardConfig } from './types';
 
+const EARTH_RADIUS_M = 6_371_000;
+export const HOME_SUPPRESS_RADIUS_M = 500;
+
+export function distanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const toRad = Math.PI / 180;
+  const φ1 = lat1 * toRad;
+  const φ2 = lat2 * toRad;
+  const Δφ = (lat2 - lat1) * toRad;
+  const Δλ = (lon2 - lon1) * toRad;
+  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  return EARTH_RADIUS_M * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export function isAtHome(
+  markerCfg: Marker,
+  lat: number,
+  lon: number,
+  homeLat: number,
+  homeLon: number,
+  hass?: HomeAssistant,
+): boolean {
+  if (!markerCfg.entity) return false;
+  // Zones are places on the map — suppress logic doesn't apply to them.
+  if (markerCfg.entity.startsWith('zone.')) return false;
+  // home_radius: 0 disables suppression entirely, even if state='home'.
+  const radius = markerCfg.home_radius ?? HOME_SUPPRESS_RADIUS_M;
+  if (radius <= 0) return false;
+  // HA's own state is authoritative — GPS drift can't fool it.
+  const entityState = hass?.states[markerCfg.entity]?.state;
+  if (entityState === 'home') return true;
+  // Fallback: GPS distance check for when HA hasn't yet registered 'home'.
+  return distanceMeters(lat, lon, homeLat, homeLon) < radius;
+}
+
 export function migrateConfig(config: WeatherRadarCardConfig): WeatherRadarCardConfig {
   if (config.markers !== undefined) return config;
   if (config.show_marker !== true && config.marker_latitude === undefined && config.mobile_marker_latitude === undefined) return config;
@@ -10,7 +44,10 @@ export function migrateConfig(config: WeatherRadarCardConfig): WeatherRadarCardC
   const lonCfg = config.marker_longitude;
   const m: Marker = {};
 
-  if (typeof latCfg === 'string' && latCfg === lonCfg) {
+  if (latCfg === undefined && lonCfg === undefined) {
+    // No position given — default to the home zone so the marker is always visible.
+    m.entity = 'zone.home';
+  } else if (typeof latCfg === 'string' && latCfg === lonCfg) {
     m.entity = latCfg;
   } else {
     if (typeof latCfg === 'number') m.latitude = latCfg;
@@ -94,5 +131,8 @@ export function resolveTracking(
   }
 
   if (winnerIdx < 0) return null;
-  return resolveMarkerPosition(markers[winnerIdx], hass, fallbackLat, fallbackLon);
+  const pos = resolveMarkerPosition(markers[winnerIdx], hass, fallbackLat, fallbackLon);
+  // Don't pan to the winner if it's at home — same rule as rendering suppression.
+  if (isAtHome(markers[winnerIdx], pos.lat, pos.lon, fallbackLat, fallbackLon, hass)) return null;
+  return pos;
 }

@@ -35,6 +35,17 @@ export function entityState(
   extra: Record<string, unknown> = {},
 ): EntityState {
   return {
+    state: 'not_home',
+    attributes: { latitude: lat, longitude: lon, ...extra },
+  };
+}
+
+export function entityStateHome(
+  lat: number | string,
+  lon: number | string,
+  extra: Record<string, unknown> = {},
+): EntityState {
+  return {
     state: 'home',
     attributes: { latitude: lat, longitude: lon, ...extra },
   };

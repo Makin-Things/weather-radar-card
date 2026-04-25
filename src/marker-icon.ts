@@ -83,24 +83,36 @@ export function createMarkerIconForMarker(
   mapStyle: string,
 ): L.Icon | L.DivIcon {
   const iconType = markerCfg.icon || 'default';
-  const svgFile = (mapStyle === 'dark' || mapStyle === 'satellite') ? 'home-circle-light.svg' : 'home-circle-dark.svg';
-  const defaultIcon = () => L.icon({ iconUrl: `${ICON_BASE}${svgFile}`, iconSize: [16, 16] });
+  const isDarkMap = mapStyle === 'dark' || mapStyle === 'satellite';
+  const svgFile = isDarkMap ? 'home-circle-light.svg' : 'home-circle-dark.svg';
+  const defaultColour = isDarkMap ? '#EEEEEE' : '#333333';
+  const colour = markerCfg.color ?? defaultColour;
 
-  if (iconType === 'default') return defaultIcon();
+  // For default icon: use inline SVG when a custom colour is set, external file otherwise.
+  if (iconType === 'default') {
+    if (markerCfg.color) {
+      const path = MDI_PATHS['home-circle'];
+      return L.divIcon({
+        html: `<svg viewBox="0 0 24 24" width="16" height="16"><path fill="${colour}" d="${path}"/></svg>`,
+        iconSize: [16, 16],
+        className: 'marker-mdi-icon',
+      });
+    }
+    return L.icon({ iconUrl: `${ICON_BASE}${svgFile}`, iconSize: [16, 16] });
+  }
 
   if (iconType === 'entity_picture') {
     const entityId = markerCfg.icon_entity || markerCfg.entity;
     const resolved = entityId ? resolveToPersonEntity(entityId, hass) : undefined;
     const pictureUrl = resolveEntityPicture(resolved, hass);
-    if (!pictureUrl) return defaultIcon();
+    if (!pictureUrl) return L.icon({ iconUrl: `${ICON_BASE}${svgFile}`, iconSize: [16, 16] });
     return L.icon({ iconUrl: pictureUrl, iconSize: [32, 32], className: 'marker-entity-picture' });
   }
 
   if (iconType.startsWith('mdi:')) {
     const name = iconType.substring(4);
     const path = MDI_PATHS[name];
-    if (!path) return defaultIcon();
-    const colour = mapStyle === 'dark' || mapStyle === 'satellite' ? '#EEEEEE' : '#333333';
+    if (!path) return L.icon({ iconUrl: `${ICON_BASE}${svgFile}`, iconSize: [16, 16] });
     return L.divIcon({
       html: `<svg viewBox="0 0 24 24" width="24" height="24"><path fill="${colour}" d="${path}"/></svg>`,
       iconSize: [24, 24],
@@ -108,7 +120,7 @@ export function createMarkerIconForMarker(
     });
   }
 
-  return defaultIcon();
+  return L.icon({ iconUrl: `${ICON_BASE}${svgFile}`, iconSize: [16, 16] });
 }
 
 export function createMarkerIcon(

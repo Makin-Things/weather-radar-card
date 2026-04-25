@@ -332,14 +332,23 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
           <span class="marker-row-label">Marker ${i + 1}</span>
           <button class="remove-marker-btn" @click=${() => this._removeMarker(i)}>Remove</button>
         </div>
-        <ha-textfield
-          label="Entity ID (device_tracker / person / zone)"
+        <ha-selector
+          .hass=${this.hass}
+          .selector=${{
+            entity: {
+              filter: [
+                { domain: 'device_tracker' },
+                { domain: 'person' },
+                { domain: 'zone' },
+              ],
+            },
+          }}
           .value=${m.entity || ''}
+          .label=${'Entity (device_tracker / person / zone)'}
           .markerIndex=${i}
           .markerField=${'entity'}
-          @input=${this._updateMarkerField}
-          helper="Leave blank to use lat/lon below"
-        ></ha-textfield>
+          @value-changed=${this._updateMarkerSelector}
+        ></ha-selector>
         ${!m.entity ? html`
           <div class="side-by-side">
             <ha-textfield
@@ -385,6 +394,30 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
           .markerField=${'track'}
           @value-changed=${this._updateMarkerSelector}
         ></ha-selector>
+        ${m.entity && m.icon !== 'entity_picture' ? html`
+          <div class="marker-color-row">
+            <span class="color-label">Icon colour</span>
+            <input
+              type="color"
+              .value=${m.color || '#888888'}
+              .markerIndex=${i}
+              @input=${this._updateMarkerColor}
+            />
+            ${m.color ? html`
+              <button class="clear-color-btn" @click=${() => this._clearMarkerColor(i)}>Reset</button>
+            ` : ''}
+          </div>
+        ` : ''}
+        ${m.entity && m.entity !== 'zone.home' && m.icon !== 'entity_picture' ? html`
+          <ha-textfield
+            label="Home suppression radius (m)"
+            .value=${m.home_radius !== undefined ? String(m.home_radius) : ''}
+            .markerIndex=${i}
+            .markerField=${'home_radius'}
+            @input=${this._updateMarkerFieldNumber}
+            helper="Default 500 m — entity hidden when within this distance of home (0 = always show)"
+          ></ha-textfield>
+        ` : ''}
         <label class="marker-mobile-only">Mobile only
           <ha-switch
             .checked=${m.mobile_only === true}
@@ -444,11 +477,30 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
     let value: any = ev.detail.value;
     if (field === 'track') {
       value = value === 'true' ? true : value === 'entity' ? 'entity' : undefined;
-    } else if (value === '') {
+    } else if (value === '' || value === null) {
       value = undefined;
     }
     const markers = [...(this._config.markers ?? [])];
     markers[i] = { ...markers[i], [field]: value };
+    this._config = { ...this._config, markers };
+    fireEvent(this, 'config-changed', { config: this._config });
+  }
+
+  private _updateMarkerColor(ev: Event): void {
+    if (!this._config) return;
+    const target = ev.target as HTMLInputElement & { markerIndex: number };
+    const markers = [...(this._config.markers ?? [])];
+    markers[target.markerIndex] = { ...markers[target.markerIndex], color: target.value };
+    this._config = { ...this._config, markers };
+    fireEvent(this, 'config-changed', { config: this._config });
+  }
+
+  private _clearMarkerColor(i: number): void {
+    if (!this._config) return;
+    const markers = [...(this._config.markers ?? [])];
+    const m = { ...markers[i] };
+    delete m.color;
+    markers[i] = m;
     this._config = { ...this._config, markers };
     fireEvent(this, 'config-changed', { config: this._config });
   }
@@ -740,6 +792,35 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
     }
     .marker-mobile-only {
       font-size: 0.85em;
+    }
+    .marker-color-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0 8px 0;
+    }
+    .color-label {
+      font-size: 0.85em;
+      color: var(--secondary-text-color);
+      flex: 1;
+    }
+    input[type='color'] {
+      width: 40px;
+      height: 32px;
+      border: 1px solid var(--divider-color);
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 2px;
+      background: none;
+    }
+    .clear-color-btn {
+      font-size: 0.8em;
+      padding: 2px 8px;
+      border: 1px solid var(--divider-color);
+      border-radius: 4px;
+      background: none;
+      color: var(--secondary-text-color);
+      cursor: pointer;
     }
   `;
 }

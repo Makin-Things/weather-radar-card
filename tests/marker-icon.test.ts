@@ -104,6 +104,45 @@ describe('createMarkerIconForMarker', () => {
     const result = createMarkerIconForMarker({ icon: 'mdi:' }, mockHass(), 'light') as any;
     expect(result._type).toBe('icon');
   });
+
+  // ── Custom colour ─────────────────────────────────────────────────────────
+
+  it('uses custom color on MDI icon instead of map-style default', () => {
+    const result = createMarkerIconForMarker({ icon: 'mdi:home', color: '#ff0000' }, mockHass(), 'light') as any;
+    expect(result._type).toBe('divIcon');
+    expect(result.html).toContain('#ff0000');
+    expect(result.html).not.toContain('#333333');
+  });
+
+  it('custom color overrides dark map style default on MDI icon', () => {
+    const result = createMarkerIconForMarker({ icon: 'mdi:home', color: '#00ff00' }, mockHass(), 'dark') as any;
+    expect(result.html).toContain('#00ff00');
+    expect(result.html).not.toContain('#EEEEEE');
+  });
+
+  it('renders default icon as inline divIcon when color is set', () => {
+    const result = createMarkerIconForMarker({ color: '#ff0000' }, mockHass(), 'light') as any;
+    expect(result._type).toBe('divIcon');
+    expect(result.html).toContain('#ff0000');
+  });
+
+  it('renders default icon as external SVG file when no color set', () => {
+    const result = createMarkerIconForMarker({}, mockHass(), 'light') as any;
+    expect(result._type).toBe('icon');
+    expect(result.iconUrl).toContain('.svg');
+  });
+
+  it('ignores color on entity_picture icons', () => {
+    const hass = mockHass({
+      states: { 'person.john': { state: 'home', attributes: { entity_picture: '/api/image/john.jpg' } } },
+    });
+    const result = createMarkerIconForMarker(
+      { icon: 'entity_picture', entity: 'person.john', color: '#ff0000' },
+      hass, 'light',
+    ) as any;
+    // entity_picture returns an L.Icon with the picture URL, not a coloured SVG
+    expect(result.iconUrl).toBe('/api/image/john.jpg');
+  });
 });
 
 // ── findPersonEntityForDeviceTracker ─────────────────────────────────────────

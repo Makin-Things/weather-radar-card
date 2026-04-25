@@ -21,7 +21,7 @@ import {
   resolveCoordinatePair,
 } from './coordinate-utils';
 import { createMarkerIconForMarker } from './marker-icon';
-import { migrateConfig, resolveMarkerPosition, resolveTracking } from './marker-utils';
+import { migrateConfig, resolveMarkerPosition, resolveTracking, isAtHome } from './marker-utils';
 
 /* eslint no-console: 0 */
 console.info(
@@ -357,6 +357,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       const { lat, lon } = resolveMarkerPosition(markerCfg, this.hass, haLat, haLon);
       const icon = createMarkerIconForMarker(markerCfg, this.hass, mapStyle);
       const lMarker = L.marker([lat, lon], { icon, interactive: false }).addTo(this._map);
+      lMarker.setOpacity(isAtHome(markerCfg, lat, lon, haLat, haLon, this.hass) ? 0 : 1);
       this._markers.set(i, lMarker);
 
       if (!rangeRingsSet && cfg.show_range) {
@@ -381,6 +382,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       if (!markerCfg) continue;
       const { lat, lon } = resolveMarkerPosition(markerCfg, this.hass, haLat, haLon);
       lMarker.setLatLng([lat, lon]);
+      lMarker.setOpacity(isAtHome(markerCfg, lat, lon, haLat, haLon, this.hass) ? 0 : 1);
     }
   }
 
