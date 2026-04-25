@@ -169,8 +169,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         <div id="div-progress-bar" style="height:8px;cursor:pointer;display:${this._config.show_progress_bar === false ? 'none' : 'flex'};background:${dark ? '#1c1c1c' : '#fff'}"></div>
         <div id="bottom-container" class="${dark ? 'dark-links' : 'light-links'}"
              style="height:32px;background:${dark ? '#1c1c1c' : '#fff'};color:${dark ? '#ddd' : ''}">
-          <div id="timestampid" style="width:120px;height:32px;float:left;position:absolute">
-            <p id="timestamp" style="margin:0;padding:4px 8px;font-size:12px"></p>
+          <div id="timestampid" style="height:32px;float:left;position:absolute">
+            <p id="timestamp" style="margin:0;padding:4px 8px;font-size:12px;white-space:nowrap"></p>
           </div>
           <div id="attribution" style="font-size:10px;text-align:right;padding:4px 8px"></div>
         </div>
