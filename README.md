@@ -76,6 +76,7 @@ All options can be configured using the GUI editor — there is no need to edit 
 | show_scale | boolean | **Optional** | Show a distance scale bar on the map | `false` |
 | double_tap_action | string / object | **Optional** | Action on double-tap: `'recenter'`, `'toggle_play'`, `'none'`, or any HA action object | `'none'` |
 | disable_scroll | boolean | **Optional** | Disable map pan/drag while keeping pinch-to-zoom; lets mobile users swipe the page past the map | `false` |
+| cluster_markers | boolean | **Optional** | Cluster nearby markers into a badge; tap/click the badge to spiderfy (fan out) individual markers. The tracked marker always renders outside the cluster. Clusters containing a home marker show the home icon in the badge. | `false` |
 | static_map | boolean | **Optional** | Disable all panning and zooming | `false` |
 | show_zoom | boolean | **Optional** | Show zoom controls | `false` |
 | square_map | boolean | **Optional** | Keep the map square | `false` |

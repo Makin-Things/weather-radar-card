@@ -5,9 +5,12 @@ import { HomeAssistant, LovelaceCardEditor, LovelaceCard, handleAction, ActionCo
 import * as L from 'leaflet';
 // @ts-expect-error — rollup-plugin-string imports CSS as a raw string
 import leafletCss from 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster';
+// @ts-expect-error — rollup-plugin-string imports CSS as a raw string
+import markerClusterCss from 'leaflet.markercluster/dist/MarkerCluster.css';
 
 import './editor';
-import { WeatherRadarCardConfig } from './types';
+import { WeatherRadarCardConfig, Marker } from './types';
 import { CARD_VERSION } from './const';
 import { localize } from './localize/localize';
 import { RateLimiter } from './rate-limiter';
@@ -20,7 +23,7 @@ import {
   getCoordinateConfig,
   resolveCoordinatePair,
 } from './coordinate-utils';
-import { createMarkerIconForMarker } from './marker-icon';
+import { createMarkerIconForMarker, MDI_PATHS } from './marker-icon';
 import { migrateConfig, resolveMarkerPosition, resolveTracking, isAtHome } from './marker-utils';
 
 /* eslint no-console: 0 */
@@ -57,6 +60,10 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _townLayer: FetchTileLayer | null = null;
   private _toolbar: RadarToolbar | null = null;
   private _markers: Map<number, L.Marker> = new Map();
+  private _clusterGroup: L.MarkerClusterGroup | null = null;
+  private _trackedMarkerIdx = -1;
+  private _clusterSpiderfied = false;
+  private _lastTrackedPosition: { lat: number; lon: number } | null = null;
   private _rangeRings: L.Circle[] = [];
   private _dynamicStyleEl!: HTMLStyleElement;
   private _player: RadarPlayer | null = null;
@@ -275,10 +282,14 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     }
     this._player?.clear();
     this._player = null;
+    if (this._clusterGroup) { this._clusterGroup.clearLayers(); this._clusterGroup = null; }
+    this._clusterSpiderfied = false;
     if (this._map) { this._map.remove(); this._map = null; }
     this._townLayer = null;
     this._toolbar = null;
     this._markers.clear();
+    this._trackedMarkerIdx = -1;
+    this._lastTrackedPosition = null;
     this._rangeRings = [];
   }
 
@@ -341,6 +352,32 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   // ── Markers ───────────────────────────────────────────────────────────────
 
+  private _createClusterIcon(cluster: L.MarkerCluster, isDark: boolean): L.DivIcon {
+    const count = cluster.getChildCount();
+    const children = cluster.getAllChildMarkers() as any[];
+    const hasHome = children.some(m => {
+      const cfg = m._wrcCfg as Marker | undefined;
+      return cfg?.entity === 'zone.home' || !cfg?.icon || cfg?.icon === 'default';
+    });
+
+    const bg = isDark ? '#1a1a2e' : '#ffffff';
+    const fg = isDark ? '#e0e0e0' : '#333333';
+    const ring = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)';
+    const size = count < 10 ? 32 : count < 100 ? 38 : 44;
+    const fs = count < 10 ? 12 : count < 100 ? 11 : 10;
+    const iconSz = Math.round(size * 0.45);
+
+    const inner = hasHome
+      ? `<svg viewBox="0 0 24 24" width="${iconSz}" height="${iconSz}"><path fill="${fg}" d="${MDI_PATHS['home-circle']}"/></svg><span style="font:${fs}px/1 'Helvetica Neue',Arial,sans-serif;font-weight:bold">${count}</span>`
+      : `<span style="font:${fs}px/1 'Helvetica Neue',Arial,sans-serif;font-weight:bold">${count}</span>`;
+
+    return L.divIcon({
+      html: `<div style="width:${size}px;height:${size}px;background:${bg};border:2px solid ${ring};border-radius:50%;display:flex;align-items:center;justify-content:center;gap:2px;color:${fg};box-shadow:0 2px 6px rgba(0,0,0,0.35)">${inner}</div>`,
+      className: 'weather-radar-cluster',
+      iconSize: [size, size] as L.PointExpression,
+    });
+  }
+
   private _setupMarkers(mapStyle: string): void {
     if (!this._map) return;
     const cfg = this._config;
@@ -348,7 +385,37 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     const isMobile = isMobileDevice();
     const haLat = this.hass?.config?.latitude ?? 0;
     const haLon = this.hass?.config?.longitude ?? 0;
+    const useClustering = cfg.cluster_markers === true && markers.length > 1;
     let rangeRingsSet = false;
+
+    // Determine tracking winner upfront — the tracked marker bypasses the cluster.
+    const initialWinner = resolveTracking(markers, this.hass, haLat, haLon);
+    this._trackedMarkerIdx = initialWinner?.markerIndex ?? -1;
+
+    if (useClustering) {
+      const isDark = mapStyle === 'dark' || mapStyle === 'satellite';
+      this._clusterGroup = L.markerClusterGroup({
+        iconCreateFunction: (c) => this._createClusterIcon(c, isDark),
+        maxClusterRadius: 60,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: false,  // zoom-to-bounds re-clusters immediately at the same zoom
+        spiderfyOnMaxZoom: false,    // handled by clusterclick below
+        animate: true,
+      });
+      // Always spiderfy on click. Stop the DOM event so it doesn't bubble to the
+      // map container — without this, markercluster's map-level 'click' listener
+      // (_unspiderfyWrapper) fires in the same tick and immediately collapses it.
+      this._clusterGroup.on('clusterclick', (e: any) => {
+        if (e.originalEvent) L.DomEvent.stop(e.originalEvent);
+        // Set the flag BEFORE calling spiderfy() so that any hass update arriving
+        // during the animation does not snap markers back to their entity positions.
+        this._clusterSpiderfied = true;
+        e.layer.spiderfy();
+      });
+      this._clusterGroup.on('spiderfied', () => { this._clusterSpiderfied = true; });
+      this._clusterGroup.on('unspiderfied', () => { this._clusterSpiderfied = false; });
+      this._clusterGroup.addTo(this._map);
+    }
 
     for (let i = 0; i < markers.length; i++) {
       const markerCfg = markers[i];
@@ -356,9 +423,19 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
       const { lat, lon } = resolveMarkerPosition(markerCfg, this.hass, haLat, haLon);
       const icon = createMarkerIconForMarker(markerCfg, this.hass, mapStyle);
-      const lMarker = L.marker([lat, lon], { icon, interactive: false }).addTo(this._map);
-      lMarker.setOpacity(isAtHome(markerCfg, lat, lon, haLat, haLon, this.hass) ? 0 : 1);
+      const lMarker = L.marker([lat, lon], { icon, interactive: false });
+      (lMarker as any)._wrcCfg = markerCfg;
+      const atHome = isAtHome(markerCfg, lat, lon, haLat, haLon, this.hass);
       this._markers.set(i, lMarker);
+      lMarker.setZIndexOffset(i === this._trackedMarkerIdx ? 1000 : 0);
+
+      if (useClustering && i !== this._trackedMarkerIdx) {
+        // Non-tracked markers go into the cluster group unless at home.
+        if (!atHome) this._clusterGroup!.addLayer(lMarker);
+      } else {
+        lMarker.addTo(this._map);
+        lMarker.setOpacity(atHome ? 0 : 1);
+      }
 
       if (!rangeRingsSet && cfg.show_range) {
         const metric = (this.hass?.config?.unit_system?.length ?? 'km') === 'km';
@@ -371,12 +448,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         rangeRingsSet = true;
       }
     }
-
-    // Set initial z-index so the tracked marker starts on top.
-    const initialWinner = resolveTracking(markers, this.hass, haLat, haLon);
-    for (const [i, lMarker] of this._markers.entries()) {
-      lMarker.setZIndexOffset(initialWinner?.markerIndex === i ? 1000 : 0);
-    }
   }
 
   private _updateMarkerPositions(): void {
@@ -387,8 +458,29 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       const markerCfg = markers[i];
       if (!markerCfg) continue;
       const { lat, lon } = resolveMarkerPosition(markerCfg, this.hass, haLat, haLon);
-      lMarker.setLatLng([lat, lon]);
-      lMarker.setOpacity(isAtHome(markerCfg, lat, lon, haLat, haLon, this.hass) ? 0 : 1);
+      const atHome = isAtHome(markerCfg, lat, lon, haLat, haLon, this.hass);
+
+      // Skip setLatLng for clustered markers while spiderfied. During spiderfy,
+      // markercluster calls setLatLng(spiderPosition) on each marker to place it
+      // at its leg endpoint. Calling setLatLng(originalPosition) here would snap
+      // it back to the cluster centre, making the icons vanish while the cluster
+      // icon stays grey (spiderfied state but no visible markers).
+      const inSpiderfy = this._clusterSpiderfied && this._clusterGroup && i !== this._trackedMarkerIdx;
+      if (!inSpiderfy) {
+        const cur = lMarker.getLatLng();
+        if (cur.lat !== lat || cur.lng !== lon) lMarker.setLatLng([lat, lon]);
+      }
+
+      if (this._clusterGroup && i !== this._trackedMarkerIdx) {
+        const inCluster = this._clusterGroup.hasLayer(lMarker);
+        if (atHome && inCluster) {
+          this._clusterGroup.removeLayer(lMarker);
+        } else if (!atHome && !inCluster) {
+          this._clusterGroup.addLayer(lMarker);
+        }
+      } else {
+        lMarker.setOpacity(atHome ? 0 : 1);
+      }
     }
   }
 
@@ -398,11 +490,68 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     const haLat = this.hass?.config?.latitude ?? 0;
     const haLon = this.hass?.config?.longitude ?? 0;
     const result = resolveTracking(markers, this.hass, haLat, haLon);
-    // Keep the tracked marker above all others.
-    for (const [i, lMarker] of this._markers.entries()) {
-      lMarker.setZIndexOffset(result?.markerIndex === i ? 1000 : 0);
+    const newWinnerIdx = result?.markerIndex ?? -1;
+
+    // Move tracked marker between layers when the winner changes.
+    if (this._clusterGroup && newWinnerIdx !== this._trackedMarkerIdx) {
+      this._moveTrackedMarker(newWinnerIdx);
+    } else {
+      this._trackedMarkerIdx = newWinnerIdx;
     }
-    if (result) this._map.panTo([result.lat, result.lon]);
+
+    // Keep the tracked marker above all others.
+    // Skip while spiderfied — markercluster sets zIndexOffset:1000000 on each
+    // spiderfied marker so they appear above the cluster icon; resetting to 0
+    // would make them sink below the cluster icon and become invisible.
+    if (!this._clusterSpiderfied) {
+      for (const [i, lMarker] of this._markers.entries()) {
+        lMarker.setZIndexOffset(newWinnerIdx === i ? 1000 : 0);
+      }
+    }
+    if (result) {
+      const last = this._lastTrackedPosition;
+      // Only pan when the tracked marker has actually moved (>~10 m).
+      // Calling panTo every hass tick with the same coords causes unnecessary
+      // map animation and move events even when the entity hasn't changed position.
+      const moved = !last ||
+        Math.abs(last.lat - result.lat) > 0.0001 ||
+        Math.abs(last.lon - result.lon) > 0.0001;
+      if (moved) {
+        this._lastTrackedPosition = { lat: result.lat, lon: result.lon };
+        this._map.panTo([result.lat, result.lon]);
+      }
+    } else {
+      this._lastTrackedPosition = null;
+    }
+  }
+
+  private _moveTrackedMarker(newWinnerIdx: number): void {
+    const markers = this._config?.markers ?? [];
+    const haLat = this.hass?.config?.latitude ?? 0;
+    const haLon = this.hass?.config?.longitude ?? 0;
+
+    // Return old tracked marker to the cluster group (unless it's at home).
+    if (this._trackedMarkerIdx >= 0) {
+      const old = this._markers.get(this._trackedMarkerIdx);
+      const oldCfg = markers[this._trackedMarkerIdx];
+      if (old && oldCfg && this._map?.hasLayer(old)) {
+        this._map.removeLayer(old);
+        const pos = resolveMarkerPosition(oldCfg, this.hass, haLat, haLon);
+        if (!isAtHome(oldCfg, pos.lat, pos.lon, haLat, haLon, this.hass)) {
+          this._clusterGroup!.addLayer(old);
+        }
+      }
+    }
+
+    // Promote new tracked marker out of the cluster group onto the map directly.
+    if (newWinnerIdx >= 0) {
+      const nw = this._markers.get(newWinnerIdx);
+      if (nw) {
+        if (this._clusterGroup!.hasLayer(nw)) this._clusterGroup!.removeLayer(nw);
+        nw.addTo(this._map!);
+      }
+    }
+    this._trackedMarkerIdx = newWinnerIdx;
   }
 
   // ── Toolbar ───────────────────────────────────────────────────────────────
@@ -550,6 +699,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   static styles = [
     unsafeCSS(leafletCss),
+    unsafeCSS(markerClusterCss),
     css`
       :host { display: block; isolation: isolate; }
       ha-card { overflow: hidden; position: relative; }

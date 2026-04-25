@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Track resolution** — set `track: entity` or `track: true` on a marker to auto-centre the map. Priority: (1) `track: entity` on a `person.*` whose `user_id` matches the logged-in HA user, (2) `track: entity` on any other entity, (3) `track: true`. Ties at the same level warn to console and use the first marker.
 - **`mobile_only` marker flag** — a marker with `mobile_only: true` is only shown on mobile devices (HA Companion app, mobile user agent, or screen width ≤ 768 px). Replaces the old `mobile_marker_*` fields.
 - **Auto-migration** — if `markers` is absent but old single-marker fields (`marker_latitude`, `marker_longitude`, `mobile_marker_*`, `marker_icon`, etc.) are present, the card synthesises a `markers[]` in memory on load so existing YAML continues to work without changes. A deprecation warning is logged to the browser console.
+- **Marker clustering** (`cluster_markers: true`) — nearby markers collapse into a count badge. Tap/click the badge to spiderfy (fan out) individual markers in place. The tracked marker always renders outside the cluster so panning and z-index remain precise. Clusters containing a home marker show the home icon in the badge. Cluster icon colours match the current map style (dark/light).
+- **Icon colour** (`color` field per marker) — CSS colour for `default` and `mdi:*` icons. The default home icon renders as inline SVG when a colour is set, enabling any hex or named colour without extra asset files. Has no effect on `entity_picture`.
+- **Configurable home suppression** (`home_radius` per marker, default 500 m) — entity-based markers are hidden when HA reports `state: home` (authoritative) or the entity is within `home_radius` metres of the HA home location. Set `home_radius: 0` to always show. `zone.*` entities and static lat/lon markers are never suppressed. When `show_marker: true` is migrated with no position, a `zone.home` marker is created automatically so the home icon is always visible.
+- **Tracked marker always on top** — the tracking winner gets `zIndexOffset: 1000` so it renders above all other markers.
+- **`map_style: Satellite` home marker** — default home icon now correctly uses the light SVG on satellite maps (was using dark SVG).
+- **Unit test suite** — 128 Vitest tests covering migration, position resolution, track priority, home suppression, distance/haversine, and icon rendering. Tests run in CI before every build.
 
 ### Changed
 

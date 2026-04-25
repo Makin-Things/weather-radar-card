@@ -201,6 +201,9 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
           <label>Square Map
             <ha-switch .checked=${config.square_map === true} .configValue=${'square_map'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
+          <label>Cluster Markers
+            <ha-switch .checked=${config.cluster_markers === true} .configValue=${'cluster_markers'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
         </div>
         <div class="side-by-side">
           <label>Show Snow

@@ -41,6 +41,7 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   center_latitude?: CoordinateConfig;
   zoom_level?: number;
   markers?: Marker[];
+  cluster_markers?: boolean;
   // Legacy single-marker fields — read-only; used only by _migrateConfig()
   /** @deprecated use markers[] */  show_marker?: boolean;
   /** @deprecated use markers[] */  marker_latitude?: CoordinateConfig;
