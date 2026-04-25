@@ -14741,22 +14741,11 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
             helper="Number or entity ID"
           ></ha-textfield>
         </div>
-        <div class="side-by-side">
-          <ha-textfield
-            label="Marker Latitude"
-            .value=${this._formatCoordinateValue(config.marker_latitude)}
-            .configValue=${'marker_latitude'}
-            @input=${this._valueChangedCoordinate}
-            helper="Number or entity ID"
-          ></ha-textfield>
-          <ha-textfield
-            label="Marker Longitude"
-            .value=${this._formatCoordinateValue(config.marker_longitude)}
-            .configValue=${'marker_longitude'}
-            @input=${this._valueChangedCoordinate}
-            helper="Number or entity ID"
-          ></ha-textfield>
-        </div>
+
+        <!-- MARKERS -->
+        <h3 class="section-header">Markers</h3>
+        ${(config.markers ?? []).map((m, i) => this._renderMarkerRow(m, i))}
+        <button class="add-marker-btn" @click=${this._addMarker}>+ Add Marker</button>
 
         <!-- DISPLAY -->
         <h3 class="section-header">Display</h3>
@@ -14789,9 +14778,6 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
           <label>Square Map
             <ha-switch .checked=${config.square_map === true} .configValue=${'square_map'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
-          <label>Show Marker
-            <ha-switch .checked=${config.show_marker === true} .configValue=${'show_marker'} @change=${this._valueChangedSwitch}></ha-switch>
-          </label>
         </div>
         <div class="side-by-side">
           <label>Show Snow
@@ -14804,40 +14790,6 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
             <ha-switch .checked=${config.show_progress_bar !== false} .configValue=${'show_progress_bar'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
         </div>
-        ${config.show_marker === true ? b `
-          <div class="subsection">
-            <ha-selector
-              .hass=${this.hass}
-              .selector=${{
-            select: {
-                options: [
-                    { value: 'default', label: 'Home (default)' },
-                    { value: 'entity_picture', label: 'Entity Picture' },
-                    { value: 'mdi:account', label: 'MDI: Account' },
-                    { value: 'mdi:account-circle', label: 'MDI: Account Circle' },
-                    { value: 'mdi:map-marker', label: 'MDI: Map Marker' },
-                    { value: 'mdi:home', label: 'MDI: Home' },
-                    { value: 'mdi:car', label: 'MDI: Car' },
-                    { value: 'mdi:cellphone', label: 'MDI: Cellphone' },
-                ],
-            },
-        }}
-              .value=${config.marker_icon || 'default'}
-              .label=${'Marker Icon'}
-              .configValue=${'marker_icon'}
-              @value-changed=${this._handleSelectorChanged}
-            ></ha-selector>
-            ${config.marker_icon === 'entity_picture' ? b `
-              <ha-textfield
-                label="Icon Entity"
-                .value=${config.marker_icon_entity || ''}
-                .configValue=${'marker_icon_entity'}
-                @input=${this._valueChangedString}
-                helper="Auto-detected from marker entity if empty"
-              ></ha-textfield>
-            ` : ''}
-          </div>
-        ` : ''}
 
         <!-- INTERACTION -->
         <h3 class="section-header">Interaction</h3>
@@ -14903,77 +14855,6 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
           ></ha-textfield>
         ` : ''}
 
-        <!-- MOBILE OVERRIDES -->
-        <h3 class="section-header">Mobile Overrides</h3>
-        <p class="section-description">
-          Override centre and marker coordinates when accessed from a mobile device.
-          Leave blank to use the base coordinates on all devices.
-        </p>
-        <div class="side-by-side">
-          <ha-textfield
-            label="Mobile Centre Latitude"
-            .value=${this._formatCoordinateValue(config.mobile_center_latitude)}
-            .configValue=${'mobile_center_latitude'}
-            @input=${this._valueChangedCoordinate}
-            helper="e.g. device_tracker.phone"
-          ></ha-textfield>
-          <ha-textfield
-            label="Mobile Centre Longitude"
-            .value=${this._formatCoordinateValue(config.mobile_center_longitude)}
-            .configValue=${'mobile_center_longitude'}
-            @input=${this._valueChangedCoordinate}
-          ></ha-textfield>
-        </div>
-        <div class="side-by-side">
-          <ha-textfield
-            label="Mobile Marker Latitude"
-            .value=${this._formatCoordinateValue(config.mobile_marker_latitude)}
-            .configValue=${'mobile_marker_latitude'}
-            @input=${this._valueChangedCoordinate}
-          ></ha-textfield>
-          <ha-textfield
-            label="Mobile Marker Longitude"
-            .value=${this._formatCoordinateValue(config.mobile_marker_longitude)}
-            .configValue=${'mobile_marker_longitude'}
-            @input=${this._valueChangedCoordinate}
-          ></ha-textfield>
-        </div>
-        ${config.show_marker === true ? b `
-          <div class="subsection">
-            <ha-selector
-              .hass=${this.hass}
-              .selector=${{
-            select: {
-                options: [
-                    { value: '', label: 'Same as desktop' },
-                    { value: 'default', label: 'Home' },
-                    { value: 'entity_picture', label: 'Entity Picture' },
-                    { value: 'mdi:account', label: 'MDI: Account' },
-                    { value: 'mdi:account-circle', label: 'MDI: Account Circle' },
-                    { value: 'mdi:map-marker', label: 'MDI: Map Marker' },
-                    { value: 'mdi:home', label: 'MDI: Home' },
-                    { value: 'mdi:car', label: 'MDI: Car' },
-                    { value: 'mdi:cellphone', label: 'MDI: Cellphone' },
-                ],
-            },
-        }}
-              .value=${config.mobile_marker_icon || ''}
-              .label=${'Mobile Marker Icon'}
-              .configValue=${'mobile_marker_icon'}
-              @value-changed=${this._handleSelectorChanged}
-            ></ha-selector>
-            ${config.mobile_marker_icon === 'entity_picture' ? b `
-              <ha-textfield
-                label="Mobile Icon Entity"
-                .value=${config.mobile_marker_icon_entity || ''}
-                .configValue=${'mobile_marker_icon_entity'}
-                @input=${this._valueChangedString}
-                helper="Mobile override for entity picture"
-              ></ha-textfield>
-            ` : ''}
-          </div>
-        ` : ''}
-
         <!-- APPEARANCE -->
         <h3 class="section-header">Appearance</h3>
         <ha-textfield
@@ -15001,6 +14882,162 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
 
       </div>
     `;
+    }
+    _renderMarkerRow(m, i) {
+        const iconOptions = [
+            { value: 'default', label: 'Home (default)' },
+            { value: 'entity_picture', label: 'Entity Picture' },
+            { value: 'mdi:account', label: 'MDI: Account' },
+            { value: 'mdi:account-circle', label: 'MDI: Account Circle' },
+            { value: 'mdi:map-marker', label: 'MDI: Map Marker' },
+            { value: 'mdi:home', label: 'MDI: Home' },
+            { value: 'mdi:car', label: 'MDI: Car' },
+            { value: 'mdi:bicycle', label: 'MDI: Bicycle' },
+            { value: 'mdi:cellphone', label: 'MDI: Cellphone' },
+        ];
+        const trackOptions = [
+            { value: '', label: 'Off' },
+            { value: 'entity', label: 'Track entity (person = current user priority)' },
+            { value: 'true', label: 'Always track' },
+        ];
+        const trackValue = m.track === true ? 'true' : (m.track === 'entity' ? 'entity' : '');
+        return b `
+      <div class="marker-row">
+        <div class="marker-row-header">
+          <span class="marker-row-label">Marker ${i + 1}</span>
+          <button class="remove-marker-btn" @click=${() => this._removeMarker(i)}>Remove</button>
+        </div>
+        <ha-textfield
+          label="Entity ID (device_tracker / person / zone)"
+          .value=${m.entity || ''}
+          .markerIndex=${i}
+          .markerField=${'entity'}
+          @input=${this._updateMarkerField}
+          helper="Leave blank to use lat/lon below"
+        ></ha-textfield>
+        ${!m.entity ? b `
+          <div class="side-by-side">
+            <ha-textfield
+              label="Latitude"
+              .value=${m.latitude !== undefined ? String(m.latitude) : ''}
+              .markerIndex=${i}
+              .markerField=${'latitude'}
+              @input=${this._updateMarkerFieldNumber}
+            ></ha-textfield>
+            <ha-textfield
+              label="Longitude"
+              .value=${m.longitude !== undefined ? String(m.longitude) : ''}
+              .markerIndex=${i}
+              .markerField=${'longitude'}
+              @input=${this._updateMarkerFieldNumber}
+            ></ha-textfield>
+          </div>
+        ` : ''}
+        <ha-selector
+          .hass=${this.hass}
+          .selector=${{ select: { options: iconOptions } }}
+          .value=${m.icon || 'default'}
+          .label=${'Icon'}
+          .markerIndex=${i}
+          .markerField=${'icon'}
+          @value-changed=${this._updateMarkerSelector}
+        ></ha-selector>
+        ${m.icon === 'entity_picture' ? b `
+          <ha-textfield
+            label="Icon Entity (auto-detected if blank)"
+            .value=${m.icon_entity || ''}
+            .markerIndex=${i}
+            .markerField=${'icon_entity'}
+            @input=${this._updateMarkerField}
+          ></ha-textfield>
+        ` : ''}
+        <ha-selector
+          .hass=${this.hass}
+          .selector=${{ select: { options: trackOptions } }}
+          .value=${trackValue}
+          .label=${'Tracking'}
+          .markerIndex=${i}
+          .markerField=${'track'}
+          @value-changed=${this._updateMarkerSelector}
+        ></ha-selector>
+        <label class="marker-mobile-only">Mobile only
+          <ha-switch
+            .checked=${m.mobile_only === true}
+            .markerIndex=${i}
+            .markerField=${'mobile_only'}
+            @change=${this._updateMarkerSwitch}
+          ></ha-switch>
+        </label>
+      </div>
+    `;
+    }
+    _addMarker() {
+        if (!this._config)
+            return;
+        const markers = [...(this._config.markers ?? []), {}];
+        this._config = { ...this._config, markers };
+        ne(this, 'config-changed', { config: this._config });
+    }
+    _removeMarker(i) {
+        if (!this._config)
+            return;
+        const markers = (this._config.markers ?? []).filter((_, idx) => idx !== i);
+        this._config = { ...this._config, markers };
+        ne(this, 'config-changed', { config: this._config });
+    }
+    _updateMarkerField(ev) {
+        if (!this._config)
+            return;
+        const target = ev.target;
+        const i = target.markerIndex;
+        const field = target.markerField;
+        const value = target.value?.trim() ?? '';
+        const markers = [...(this._config.markers ?? [])];
+        markers[i] = { ...markers[i], [field]: value || undefined };
+        this._config = { ...this._config, markers };
+        ne(this, 'config-changed', { config: this._config });
+    }
+    _updateMarkerFieldNumber(ev) {
+        if (!this._config)
+            return;
+        const target = ev.target;
+        const i = target.markerIndex;
+        const field = target.markerField;
+        const raw = target.value?.trim() ?? '';
+        const num = raw === '' ? undefined : parseFloat(raw);
+        const markers = [...(this._config.markers ?? [])];
+        markers[i] = { ...markers[i], [field]: num };
+        this._config = { ...this._config, markers };
+        ne(this, 'config-changed', { config: this._config });
+    }
+    _updateMarkerSelector(ev) {
+        if (!this._config)
+            return;
+        const target = ev.target;
+        const i = target.markerIndex;
+        const field = target.markerField;
+        let value = ev.detail.value;
+        if (field === 'track') {
+            value = value === 'true' ? true : value === 'entity' ? 'entity' : undefined;
+        }
+        else if (value === '') {
+            value = undefined;
+        }
+        const markers = [...(this._config.markers ?? [])];
+        markers[i] = { ...markers[i], [field]: value };
+        this._config = { ...this._config, markers };
+        ne(this, 'config-changed', { config: this._config });
+    }
+    _updateMarkerSwitch(ev) {
+        if (!this._config)
+            return;
+        const target = ev.target;
+        const i = target.markerIndex;
+        const field = target.markerField;
+        const markers = [...(this._config.markers ?? [])];
+        markers[i] = { ...markers[i], [field]: target.checked || undefined };
+        this._config = { ...this._config, markers };
+        ne(this, 'config-changed', { config: this._config });
     }
     _initialize() {
         if (this.hass === undefined)
@@ -15231,6 +15268,46 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
     .values {
       padding: 0 16px 8px 16px;
       background: var(--secondary-background-color);
+    }
+    .marker-row {
+      border: 1px solid var(--divider-color);
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+    }
+    .marker-row-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .marker-row-label {
+      font-size: 0.85em;
+      font-weight: 600;
+      color: var(--secondary-text-color);
+    }
+    .remove-marker-btn {
+      font-size: 0.8em;
+      padding: 2px 8px;
+      border: 1px solid var(--error-color, #f44336);
+      border-radius: 4px;
+      background: none;
+      color: var(--error-color, #f44336);
+      cursor: pointer;
+    }
+    .add-marker-btn {
+      width: 100%;
+      padding: 8px;
+      border: 1px dashed var(--primary-color);
+      border-radius: 6px;
+      background: none;
+      color: var(--primary-color);
+      cursor: pointer;
+      font-size: 0.9em;
+      margin-bottom: 8px;
+    }
+    .marker-mobile-only {
+      font-size: 0.85em;
     }
   `;
 };
@@ -16207,45 +16284,22 @@ function resolveEntityPicture(entityId, hass) {
         return null;
     return hass?.states[entityId]?.attributes?.entity_picture ?? null;
 }
-function getMarkerIconConfig(config, hass, isMobile, userInfo) {
-    // Mobile falls back to the desktop icon type (not entity_picture) when unset.
-    // Use || so that the editor's empty-string "Same as desktop" sentinel also falls through.
-    const iconType = isMobile
-        ? (config.mobile_marker_icon || config.marker_icon || 'default')
-        : (config.marker_icon || 'default');
-    let iconEntity = isMobile ? config.mobile_marker_icon_entity : config.marker_icon_entity;
-    if (iconType === 'entity_picture' && !iconEntity) {
-        const latCfg = isMobile
-            ? (config.mobile_marker_latitude ?? config.marker_latitude)
-            : config.marker_latitude;
-        if (typeof latCfg === 'string')
-            iconEntity = resolveToPersonEntity(latCfg, hass);
-        if (!iconEntity) {
-            const cLat = isMobile
-                ? (config.mobile_center_latitude ?? config.center_latitude)
-                : config.center_latitude;
-            if (typeof cLat === 'string')
-                iconEntity = resolveToPersonEntity(cLat, hass);
-        }
-        if (!iconEntity && userInfo?.personEntity)
-            iconEntity = userInfo.personEntity;
-    }
-    return { type: iconType, entity: iconEntity };
-}
-function createMarkerIcon(config, hass, isMobile, userInfo, mapStyle) {
-    const iconCfg = getMarkerIconConfig(config, hass, isMobile, userInfo);
+function createMarkerIconForMarker(markerCfg, hass, mapStyle) {
+    const iconType = markerCfg.icon || 'default';
     const svgFile = mapStyle === 'dark' ? 'home-circle-light.svg' : 'home-circle-dark.svg';
     const defaultIcon = () => leafletSrcExports.icon({ iconUrl: `${ICON_BASE}${svgFile}`, iconSize: [16, 16] });
-    if (iconCfg.type === 'default')
+    if (iconType === 'default')
         return defaultIcon();
-    if (iconCfg.type === 'entity_picture') {
-        const pictureUrl = resolveEntityPicture(iconCfg.entity, hass);
+    if (iconType === 'entity_picture') {
+        const entityId = markerCfg.icon_entity || markerCfg.entity;
+        const resolved = entityId ? resolveToPersonEntity(entityId, hass) : undefined;
+        const pictureUrl = resolveEntityPicture(resolved, hass);
         if (!pictureUrl)
             return defaultIcon();
         return leafletSrcExports.icon({ iconUrl: pictureUrl, iconSize: [32, 32], className: 'marker-entity-picture' });
     }
-    if (iconCfg.type.startsWith('mdi:')) {
-        const name = iconCfg.type.substring(4);
+    if (iconType.startsWith('mdi:')) {
+        const name = iconType.substring(4);
         const path = MDI_PATHS[name];
         if (!path)
             return defaultIcon();
@@ -16281,7 +16335,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
     _map = null;
     _townLayer = null;
     _toolbar = null;
-    _marker = null;
+    _markers = new Map();
     _rangeRings = [];
     _dynamicStyleEl;
     _player = null;
@@ -16329,9 +16383,58 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         if (config.height && config.square_map) {
             console.warn("Weather Radar Card: Both 'height' and 'square_map' configured. height takes priority.");
         }
-        this._config = config;
+        this._config = this._migrateConfig(config);
         if (this._map)
             this._teardown();
+    }
+    _migrateConfig(config) {
+        if (config.markers !== undefined)
+            return config;
+        if (config.show_marker !== true && config.marker_latitude === undefined && config.mobile_marker_latitude === undefined)
+            return config;
+        console.warn('Weather Radar Card: single-marker config fields are deprecated. Migrate to the markers[] array format.');
+        const markers = [];
+        const latCfg = config.marker_latitude;
+        const lonCfg = config.marker_longitude;
+        const m = {};
+        if (typeof latCfg === 'string' && latCfg === lonCfg) {
+            m.entity = latCfg;
+        }
+        else {
+            if (typeof latCfg === 'number')
+                m.latitude = latCfg;
+            if (typeof lonCfg === 'number')
+                m.longitude = lonCfg;
+            if (typeof latCfg === 'string')
+                m.entity = latCfg;
+        }
+        if (config.marker_icon)
+            m.icon = config.marker_icon;
+        if (config.marker_icon_entity)
+            m.icon_entity = config.marker_icon_entity;
+        markers.push(m);
+        const mLat = config.mobile_marker_latitude;
+        const mLon = config.mobile_marker_longitude;
+        if ((mLat !== undefined || mLon !== undefined) && (mLat !== latCfg || mLon !== lonCfg)) {
+            const mm = { mobile_only: true };
+            if (typeof mLat === 'string' && mLat === mLon) {
+                mm.entity = mLat;
+            }
+            else {
+                if (typeof mLat === 'number')
+                    mm.latitude = mLat;
+                if (typeof mLon === 'number')
+                    mm.longitude = mLon;
+                if (typeof mLat === 'string')
+                    mm.entity = mLat;
+            }
+            if (config.mobile_marker_icon)
+                mm.icon = config.mobile_marker_icon;
+            if (config.mobile_marker_icon_entity)
+                mm.icon_entity = config.mobile_marker_icon_entity;
+            markers.push(mm);
+        }
+        return { ...config, markers };
     }
     getCardSize() { return 10; }
     shouldUpdate(changedProps) {
@@ -16357,6 +16460,12 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         else if (changedProps.has('_config') && this._map) {
             this._teardown();
             this._initMap();
+        }
+        else if (changedProps.has('hass') && this._map && this._markers.size > 0) {
+            this._updateMarkerPositions();
+            const hasTracking = (this._config?.markers ?? []).some(m => m.track);
+            if (hasTracking)
+                this._resolveTracking();
         }
     }
     disconnectedCallback() {
@@ -16424,7 +16533,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         }
         this._setupBasemap(mapStyle);
         this._setupAttribution(mapStyle);
-        this._setupMarker(isMobile, userInfo, mapStyle);
+        this._setupMarkers(mapStyle);
         this._setupToolbar();
         this._setupNavListeners();
         this._setupDoubleTapAction();
@@ -16480,7 +16589,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         }
         this._townLayer = null;
         this._toolbar = null;
-        this._marker = null;
+        this._markers.clear();
         this._rangeRings = [];
     }
     // ── Basemap ───────────────────────────────────────────────────────────────
@@ -16541,28 +16650,99 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
                 : '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attribution" target="_blank">CARTO</a>';
         el.innerHTML = `<a href="https://leafletjs.com" target="_blank">Leaflet</a> | ${mapCredit} | ${radarCredit}`;
     }
-    // ── Marker ────────────────────────────────────────────────────────────────
-    _setupMarker(isMobile, userInfo, mapStyle) {
+    // ── Markers ───────────────────────────────────────────────────────────────
+    _setupMarkers(mapStyle) {
         if (!this._map)
             return;
         const cfg = this._config;
-        // Marker falls back to HA's home location, not the map center, so that
-        // changing the map center via "Save as map center" doesn't move the marker.
+        const markers = cfg.markers ?? [];
+        const isMobile = isMobileDevice();
         const haLat = this.hass?.config?.latitude ?? 0;
         const haLon = this.hass?.config?.longitude ?? 0;
-        const markerCoords = resolveCoordinatePair(getCoordinateConfig(cfg.marker_latitude, cfg.mobile_marker_latitude, isMobile, userInfo?.deviceTracker), getCoordinateConfig(cfg.marker_longitude, cfg.mobile_marker_longitude, isMobile, userInfo?.deviceTracker), haLat, haLon, this.hass);
-        if (cfg.show_marker) {
-            const icon = createMarkerIcon(cfg, this.hass, isMobile, userInfo, mapStyle);
-            this._marker = leafletSrcExports.marker([markerCoords.lat, markerCoords.lon], { icon, interactive: false })
-                .addTo(this._map);
-        }
-        if (cfg.show_range) {
-            const metric = (this.hass?.config?.unit_system?.length ?? 'km') === 'km';
-            for (const r of (metric ? [50000, 100000, 200000] : [48280, 96561, 193121])) {
-                this._rangeRings.push(leafletSrcExports.circle([markerCoords.lat, markerCoords.lon], { radius: r, weight: 1, fill: false, opacity: 0.3, interactive: false })
-                    .addTo(this._map));
+        let rangeRingsSet = false;
+        for (let i = 0; i < markers.length; i++) {
+            const markerCfg = markers[i];
+            if (markerCfg.mobile_only && !isMobile)
+                continue;
+            const { lat, lon } = this._resolveMarkerPosition(markerCfg, haLat, haLon);
+            const icon = createMarkerIconForMarker(markerCfg, this.hass, mapStyle);
+            const lMarker = leafletSrcExports.marker([lat, lon], { icon, interactive: false }).addTo(this._map);
+            this._markers.set(i, lMarker);
+            if (!rangeRingsSet && cfg.show_range) {
+                const metric = (this.hass?.config?.unit_system?.length ?? 'km') === 'km';
+                for (const r of (metric ? [50000, 100000, 200000] : [48280, 96561, 193121])) {
+                    this._rangeRings.push(leafletSrcExports.circle([lat, lon], { radius: r, weight: 1, fill: false, opacity: 0.3, interactive: false })
+                        .addTo(this._map));
+                }
+                rangeRingsSet = true;
             }
         }
+    }
+    _resolveMarkerPosition(markerCfg, fallbackLat, fallbackLon) {
+        if (markerCfg.entity) {
+            const state = this.hass?.states[markerCfg.entity];
+            const lat = parseFloat(state?.attributes?.latitude);
+            const lon = parseFloat(state?.attributes?.longitude);
+            if (!isNaN(lat) && !isNaN(lon))
+                return { lat, lon };
+        }
+        return {
+            lat: markerCfg.latitude ?? fallbackLat,
+            lon: markerCfg.longitude ?? fallbackLon,
+        };
+    }
+    _updateMarkerPositions() {
+        const markers = this._config?.markers ?? [];
+        const haLat = this.hass?.config?.latitude ?? 0;
+        const haLon = this.hass?.config?.longitude ?? 0;
+        for (const [i, lMarker] of this._markers.entries()) {
+            const markerCfg = markers[i];
+            if (!markerCfg)
+                continue;
+            const { lat, lon } = this._resolveMarkerPosition(markerCfg, haLat, haLon);
+            lMarker.setLatLng([lat, lon]);
+        }
+    }
+    _resolveTracking() {
+        if (!this._map || this._userMoveInProgress)
+            return;
+        const markers = this._config?.markers ?? [];
+        const haLat = this.hass?.config?.latitude ?? 0;
+        const haLon = this.hass?.config?.longitude ?? 0;
+        const userId = this.hass?.user?.id;
+        let winnerIdx = -1;
+        let winnerPriority = 0;
+        for (let i = 0; i < markers.length; i++) {
+            const m = markers[i];
+            if (!m.track)
+                continue;
+            let p = 0;
+            if (m.track === 'entity' && m.entity) {
+                const state = this.hass?.states[m.entity];
+                if (m.entity.startsWith('person.') && state?.attributes?.user_id === userId) {
+                    p = 3;
+                }
+                else {
+                    p = 2;
+                }
+            }
+            else if (m.track === true) {
+                p = 1;
+            }
+            if (p === 0)
+                continue;
+            if (p > winnerPriority) {
+                winnerIdx = i;
+                winnerPriority = p;
+            }
+            else if (p === winnerPriority) {
+                console.warn('Weather Radar Card: multiple markers at the same track priority — using first');
+            }
+        }
+        if (winnerIdx < 0)
+            return;
+        const { lat, lon } = this._resolveMarkerPosition(markers[winnerIdx], haLat, haLon);
+        this._map.panTo([lat, lon]);
     }
     // ── Toolbar ───────────────────────────────────────────────────────────────
     _setupToolbar() {

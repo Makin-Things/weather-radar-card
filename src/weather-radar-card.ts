@@ -7,7 +7,7 @@ import * as L from 'leaflet';
 import leafletCss from 'leaflet/dist/leaflet.css';
 
 import './editor';
-import { WeatherRadarCardConfig } from './types';
+import { WeatherRadarCardConfig, Marker } from './types';
 import { CARD_VERSION } from './const';
 import { localize } from './localize/localize';
 import { RateLimiter } from './rate-limiter';
@@ -20,7 +20,7 @@ import {
   getCoordinateConfig,
   resolveCoordinatePair,
 } from './coordinate-utils';
-import { createMarkerIcon } from './marker-icon';
+import { createMarkerIconForMarker } from './marker-icon';
 
 /* eslint no-console: 0 */
 console.info(
@@ -55,7 +55,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _map: L.Map | null = null;
   private _townLayer: FetchTileLayer | null = null;
   private _toolbar: RadarToolbar | null = null;
-  private _marker: L.Marker | null = null;
+  private _markers: Map<number, L.Marker> = new Map();
   private _rangeRings: L.Circle[] = [];
   private _dynamicStyleEl!: HTMLStyleElement;
   private _player: RadarPlayer | null = null;
@@ -110,8 +110,49 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     if (config.height && config.square_map) {
       console.warn("Weather Radar Card: Both 'height' and 'square_map' configured. height takes priority.");
     }
-    this._config = config;
+    this._config = this._migrateConfig(config);
     if (this._map) this._teardown();
+  }
+
+  private _migrateConfig(config: WeatherRadarCardConfig): WeatherRadarCardConfig {
+    if (config.markers !== undefined) return config;
+    if (config.show_marker !== true && config.marker_latitude === undefined && config.mobile_marker_latitude === undefined) return config;
+
+    console.warn('Weather Radar Card: single-marker config fields are deprecated. Migrate to the markers[] array format.');
+
+    const markers: Marker[] = [];
+    const latCfg = config.marker_latitude;
+    const lonCfg = config.marker_longitude;
+    const m: Marker = {};
+
+    if (typeof latCfg === 'string' && latCfg === lonCfg) {
+      m.entity = latCfg;
+    } else {
+      if (typeof latCfg === 'number') m.latitude = latCfg;
+      if (typeof lonCfg === 'number') m.longitude = lonCfg;
+      if (typeof latCfg === 'string') m.entity = latCfg;
+    }
+    if (config.marker_icon) m.icon = config.marker_icon;
+    if (config.marker_icon_entity) m.icon_entity = config.marker_icon_entity;
+    markers.push(m);
+
+    const mLat = config.mobile_marker_latitude;
+    const mLon = config.mobile_marker_longitude;
+    if ((mLat !== undefined || mLon !== undefined) && (mLat !== latCfg || mLon !== lonCfg)) {
+      const mm: Marker = { mobile_only: true };
+      if (typeof mLat === 'string' && mLat === mLon) {
+        mm.entity = mLat;
+      } else {
+        if (typeof mLat === 'number') mm.latitude = mLat;
+        if (typeof mLon === 'number') mm.longitude = mLon;
+        if (typeof mLat === 'string') mm.entity = mLat;
+      }
+      if (config.mobile_marker_icon) mm.icon = config.mobile_marker_icon;
+      if (config.mobile_marker_icon_entity) mm.icon_entity = config.mobile_marker_icon_entity;
+      markers.push(mm);
+    }
+
+    return { ...config, markers };
   }
 
   public getCardSize(): number { return 10; }
@@ -139,6 +180,10 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     } else if (changedProps.has('_config') && this._map) {
       this._teardown();
       this._initMap();
+    } else if (changedProps.has('hass') && this._map && this._markers.size > 0) {
+      this._updateMarkerPositions();
+      const hasTracking = (this._config?.markers ?? []).some(m => m.track);
+      if (hasTracking) this._resolveTracking();
     }
   }
 
@@ -217,7 +262,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     }
     this._setupBasemap(mapStyle);
     this._setupAttribution(mapStyle);
-    this._setupMarker(isMobile, userInfo, mapStyle);
+    this._setupMarkers(mapStyle);
     this._setupToolbar();
     this._setupNavListeners();
     this._setupDoubleTapAction();
@@ -265,7 +310,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     if (this._map) { this._map.remove(); this._map = null; }
     this._townLayer = null;
     this._toolbar = null;
-    this._marker = null;
+    this._markers.clear();
     this._rangeRings = [];
   }
 
@@ -326,38 +371,106 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     el.innerHTML = `<a href="https://leafletjs.com" target="_blank">Leaflet</a> | ${mapCredit} | ${radarCredit}`;
   }
 
-  // ── Marker ────────────────────────────────────────────────────────────────
+  // ── Markers ───────────────────────────────────────────────────────────────
 
-  private _setupMarker(
-    isMobile: boolean,
-    userInfo: { personEntity: string; deviceTracker?: string } | null,
-    mapStyle: string,
-  ): void {
+  private _setupMarkers(mapStyle: string): void {
     if (!this._map) return;
     const cfg = this._config;
-    // Marker falls back to HA's home location, not the map center, so that
-    // changing the map center via "Save as map center" doesn't move the marker.
+    const markers = cfg.markers ?? [];
+    const isMobile = isMobileDevice();
     const haLat = this.hass?.config?.latitude ?? 0;
     const haLon = this.hass?.config?.longitude ?? 0;
-    const markerCoords = resolveCoordinatePair(
-      getCoordinateConfig(cfg.marker_latitude, cfg.mobile_marker_latitude, isMobile, userInfo?.deviceTracker),
-      getCoordinateConfig(cfg.marker_longitude, cfg.mobile_marker_longitude, isMobile, userInfo?.deviceTracker),
-      haLat, haLon, this.hass,
-    );
-    if (cfg.show_marker) {
-      const icon = createMarkerIcon(cfg, this.hass, isMobile, userInfo, mapStyle);
-      this._marker = L.marker([markerCoords.lat, markerCoords.lon], { icon, interactive: false })
-        .addTo(this._map);
-    }
-    if (cfg.show_range) {
-      const metric = (this.hass?.config?.unit_system?.length ?? 'km') === 'km';
-      for (const r of (metric ? [50000, 100000, 200000] : [48280, 96561, 193121])) {
-        this._rangeRings.push(
-          L.circle([markerCoords.lat, markerCoords.lon], { radius: r, weight: 1, fill: false, opacity: 0.3, interactive: false })
-            .addTo(this._map),
-        );
+    let rangeRingsSet = false;
+
+    for (let i = 0; i < markers.length; i++) {
+      const markerCfg = markers[i];
+      if (markerCfg.mobile_only && !isMobile) continue;
+
+      const { lat, lon } = this._resolveMarkerPosition(markerCfg, haLat, haLon);
+      const icon = createMarkerIconForMarker(markerCfg, this.hass, mapStyle);
+      const lMarker = L.marker([lat, lon], { icon, interactive: false }).addTo(this._map);
+      this._markers.set(i, lMarker);
+
+      if (!rangeRingsSet && cfg.show_range) {
+        const metric = (this.hass?.config?.unit_system?.length ?? 'km') === 'km';
+        for (const r of (metric ? [50000, 100000, 200000] : [48280, 96561, 193121])) {
+          this._rangeRings.push(
+            L.circle([lat, lon], { radius: r, weight: 1, fill: false, opacity: 0.3, interactive: false })
+              .addTo(this._map),
+          );
+        }
+        rangeRingsSet = true;
       }
     }
+  }
+
+  private _resolveMarkerPosition(
+    markerCfg: Marker,
+    fallbackLat: number,
+    fallbackLon: number,
+  ): { lat: number; lon: number } {
+    if (markerCfg.entity) {
+      const state = this.hass?.states[markerCfg.entity];
+      const lat = parseFloat(state?.attributes?.latitude);
+      const lon = parseFloat(state?.attributes?.longitude);
+      if (!isNaN(lat) && !isNaN(lon)) return { lat, lon };
+    }
+    return {
+      lat: markerCfg.latitude ?? fallbackLat,
+      lon: markerCfg.longitude ?? fallbackLon,
+    };
+  }
+
+  private _updateMarkerPositions(): void {
+    const markers = this._config?.markers ?? [];
+    const haLat = this.hass?.config?.latitude ?? 0;
+    const haLon = this.hass?.config?.longitude ?? 0;
+    for (const [i, lMarker] of this._markers.entries()) {
+      const markerCfg = markers[i];
+      if (!markerCfg) continue;
+      const { lat, lon } = this._resolveMarkerPosition(markerCfg, haLat, haLon);
+      lMarker.setLatLng([lat, lon]);
+    }
+  }
+
+  private _resolveTracking(): void {
+    if (!this._map || this._userMoveInProgress) return;
+    const markers = this._config?.markers ?? [];
+    const haLat = this.hass?.config?.latitude ?? 0;
+    const haLon = this.hass?.config?.longitude ?? 0;
+    const userId = this.hass?.user?.id;
+
+    let winnerIdx = -1;
+    let winnerPriority = 0;
+
+    for (let i = 0; i < markers.length; i++) {
+      const m = markers[i];
+      if (!m.track) continue;
+
+      let p = 0;
+      if (m.track === 'entity' && m.entity) {
+        const state = this.hass?.states[m.entity];
+        if (m.entity.startsWith('person.') && state?.attributes?.user_id === userId) {
+          p = 3;
+        } else {
+          p = 2;
+        }
+      } else if (m.track === true) {
+        p = 1;
+      }
+      if (p === 0) continue;
+
+      if (p > winnerPriority) {
+        winnerIdx = i;
+        winnerPriority = p;
+      } else if (p === winnerPriority) {
+        console.warn('Weather Radar Card: multiple markers at the same track priority — using first');
+      }
+    }
+
+    if (winnerIdx < 0) return;
+    const { lat, lon } = this._resolveMarkerPosition(markers[winnerIdx], haLat, haLon);
+    this._map.panTo([lat, lon]);
   }
 
   // ── Toolbar ───────────────────────────────────────────────────────────────

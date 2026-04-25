@@ -2,7 +2,7 @@
 import { LitElement, html, TemplateResult, css, CSSResultGroup } from 'lit';
 import { HomeAssistant, fireEvent, LovelaceCardEditor } from 'custom-card-helpers';
 
-import { WeatherRadarCardConfig, CoordinateConfig } from './types';
+import { WeatherRadarCardConfig, CoordinateConfig, Marker } from './types';
 import { customElement, property, state } from 'lit/decorators.js';
 
 @customElement('weather-radar-card-editor')
@@ -164,22 +164,11 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             helper="Number or entity ID"
           ></ha-textfield>
         </div>
-        <div class="side-by-side">
-          <ha-textfield
-            label="Marker Latitude"
-            .value=${this._formatCoordinateValue(config.marker_latitude)}
-            .configValue=${'marker_latitude'}
-            @input=${this._valueChangedCoordinate}
-            helper="Number or entity ID"
-          ></ha-textfield>
-          <ha-textfield
-            label="Marker Longitude"
-            .value=${this._formatCoordinateValue(config.marker_longitude)}
-            .configValue=${'marker_longitude'}
-            @input=${this._valueChangedCoordinate}
-            helper="Number or entity ID"
-          ></ha-textfield>
-        </div>
+
+        <!-- MARKERS -->
+        <h3 class="section-header">Markers</h3>
+        ${(config.markers ?? []).map((m, i) => this._renderMarkerRow(m, i))}
+        <button class="add-marker-btn" @click=${this._addMarker}>+ Add Marker</button>
 
         <!-- DISPLAY -->
         <h3 class="section-header">Display</h3>
@@ -212,9 +201,6 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
           <label>Square Map
             <ha-switch .checked=${config.square_map === true} .configValue=${'square_map'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
-          <label>Show Marker
-            <ha-switch .checked=${config.show_marker === true} .configValue=${'show_marker'} @change=${this._valueChangedSwitch}></ha-switch>
-          </label>
         </div>
         <div class="side-by-side">
           <label>Show Snow
@@ -227,40 +213,6 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             <ha-switch .checked=${config.show_progress_bar !== false} .configValue=${'show_progress_bar'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
         </div>
-        ${config.show_marker === true ? html`
-          <div class="subsection">
-            <ha-selector
-              .hass=${this.hass}
-              .selector=${{
-                select: {
-                  options: [
-                    { value: 'default', label: 'Home (default)' },
-                    { value: 'entity_picture', label: 'Entity Picture' },
-                    { value: 'mdi:account', label: 'MDI: Account' },
-                    { value: 'mdi:account-circle', label: 'MDI: Account Circle' },
-                    { value: 'mdi:map-marker', label: 'MDI: Map Marker' },
-                    { value: 'mdi:home', label: 'MDI: Home' },
-                    { value: 'mdi:car', label: 'MDI: Car' },
-                    { value: 'mdi:cellphone', label: 'MDI: Cellphone' },
-                  ],
-                },
-              }}
-              .value=${config.marker_icon || 'default'}
-              .label=${'Marker Icon'}
-              .configValue=${'marker_icon'}
-              @value-changed=${this._handleSelectorChanged}
-            ></ha-selector>
-            ${config.marker_icon === 'entity_picture' ? html`
-              <ha-textfield
-                label="Icon Entity"
-                .value=${config.marker_icon_entity || ''}
-                .configValue=${'marker_icon_entity'}
-                @input=${this._valueChangedString}
-                helper="Auto-detected from marker entity if empty"
-              ></ha-textfield>
-            ` : ''}
-          </div>
-        ` : ''}
 
         <!-- INTERACTION -->
         <h3 class="section-header">Interaction</h3>
@@ -326,77 +278,6 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
           ></ha-textfield>
         ` : ''}
 
-        <!-- MOBILE OVERRIDES -->
-        <h3 class="section-header">Mobile Overrides</h3>
-        <p class="section-description">
-          Override centre and marker coordinates when accessed from a mobile device.
-          Leave blank to use the base coordinates on all devices.
-        </p>
-        <div class="side-by-side">
-          <ha-textfield
-            label="Mobile Centre Latitude"
-            .value=${this._formatCoordinateValue(config.mobile_center_latitude)}
-            .configValue=${'mobile_center_latitude'}
-            @input=${this._valueChangedCoordinate}
-            helper="e.g. device_tracker.phone"
-          ></ha-textfield>
-          <ha-textfield
-            label="Mobile Centre Longitude"
-            .value=${this._formatCoordinateValue(config.mobile_center_longitude)}
-            .configValue=${'mobile_center_longitude'}
-            @input=${this._valueChangedCoordinate}
-          ></ha-textfield>
-        </div>
-        <div class="side-by-side">
-          <ha-textfield
-            label="Mobile Marker Latitude"
-            .value=${this._formatCoordinateValue(config.mobile_marker_latitude)}
-            .configValue=${'mobile_marker_latitude'}
-            @input=${this._valueChangedCoordinate}
-          ></ha-textfield>
-          <ha-textfield
-            label="Mobile Marker Longitude"
-            .value=${this._formatCoordinateValue(config.mobile_marker_longitude)}
-            .configValue=${'mobile_marker_longitude'}
-            @input=${this._valueChangedCoordinate}
-          ></ha-textfield>
-        </div>
-        ${config.show_marker === true ? html`
-          <div class="subsection">
-            <ha-selector
-              .hass=${this.hass}
-              .selector=${{
-                select: {
-                  options: [
-                    { value: '', label: 'Same as desktop' },
-                    { value: 'default', label: 'Home' },
-                    { value: 'entity_picture', label: 'Entity Picture' },
-                    { value: 'mdi:account', label: 'MDI: Account' },
-                    { value: 'mdi:account-circle', label: 'MDI: Account Circle' },
-                    { value: 'mdi:map-marker', label: 'MDI: Map Marker' },
-                    { value: 'mdi:home', label: 'MDI: Home' },
-                    { value: 'mdi:car', label: 'MDI: Car' },
-                    { value: 'mdi:cellphone', label: 'MDI: Cellphone' },
-                  ],
-                },
-              }}
-              .value=${config.mobile_marker_icon || ''}
-              .label=${'Mobile Marker Icon'}
-              .configValue=${'mobile_marker_icon'}
-              @value-changed=${this._handleSelectorChanged}
-            ></ha-selector>
-            ${config.mobile_marker_icon === 'entity_picture' ? html`
-              <ha-textfield
-                label="Mobile Icon Entity"
-                .value=${config.mobile_marker_icon_entity || ''}
-                .configValue=${'mobile_marker_icon_entity'}
-                @input=${this._valueChangedString}
-                helper="Mobile override for entity picture"
-              ></ha-textfield>
-            ` : ''}
-          </div>
-        ` : ''}
-
         <!-- APPEARANCE -->
         <h3 class="section-header">Appearance</h3>
         <ha-textfield
@@ -424,6 +305,163 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
 
       </div>
     `;
+  }
+
+  private _renderMarkerRow(m: Marker, i: number) {
+    const iconOptions = [
+      { value: 'default', label: 'Home (default)' },
+      { value: 'entity_picture', label: 'Entity Picture' },
+      { value: 'mdi:account', label: 'MDI: Account' },
+      { value: 'mdi:account-circle', label: 'MDI: Account Circle' },
+      { value: 'mdi:map-marker', label: 'MDI: Map Marker' },
+      { value: 'mdi:home', label: 'MDI: Home' },
+      { value: 'mdi:car', label: 'MDI: Car' },
+      { value: 'mdi:bicycle', label: 'MDI: Bicycle' },
+      { value: 'mdi:cellphone', label: 'MDI: Cellphone' },
+    ];
+    const trackOptions = [
+      { value: '', label: 'Off' },
+      { value: 'entity', label: 'Track entity (person = current user priority)' },
+      { value: 'true', label: 'Always track' },
+    ];
+    const trackValue = m.track === true ? 'true' : (m.track === 'entity' ? 'entity' : '');
+
+    return html`
+      <div class="marker-row">
+        <div class="marker-row-header">
+          <span class="marker-row-label">Marker ${i + 1}</span>
+          <button class="remove-marker-btn" @click=${() => this._removeMarker(i)}>Remove</button>
+        </div>
+        <ha-textfield
+          label="Entity ID (device_tracker / person / zone)"
+          .value=${m.entity || ''}
+          .markerIndex=${i}
+          .markerField=${'entity'}
+          @input=${this._updateMarkerField}
+          helper="Leave blank to use lat/lon below"
+        ></ha-textfield>
+        ${!m.entity ? html`
+          <div class="side-by-side">
+            <ha-textfield
+              label="Latitude"
+              .value=${m.latitude !== undefined ? String(m.latitude) : ''}
+              .markerIndex=${i}
+              .markerField=${'latitude'}
+              @input=${this._updateMarkerFieldNumber}
+            ></ha-textfield>
+            <ha-textfield
+              label="Longitude"
+              .value=${m.longitude !== undefined ? String(m.longitude) : ''}
+              .markerIndex=${i}
+              .markerField=${'longitude'}
+              @input=${this._updateMarkerFieldNumber}
+            ></ha-textfield>
+          </div>
+        ` : ''}
+        <ha-selector
+          .hass=${this.hass}
+          .selector=${{ select: { options: iconOptions } }}
+          .value=${m.icon || 'default'}
+          .label=${'Icon'}
+          .markerIndex=${i}
+          .markerField=${'icon'}
+          @value-changed=${this._updateMarkerSelector}
+        ></ha-selector>
+        ${m.icon === 'entity_picture' ? html`
+          <ha-textfield
+            label="Icon Entity (auto-detected if blank)"
+            .value=${m.icon_entity || ''}
+            .markerIndex=${i}
+            .markerField=${'icon_entity'}
+            @input=${this._updateMarkerField}
+          ></ha-textfield>
+        ` : ''}
+        <ha-selector
+          .hass=${this.hass}
+          .selector=${{ select: { options: trackOptions } }}
+          .value=${trackValue}
+          .label=${'Tracking'}
+          .markerIndex=${i}
+          .markerField=${'track'}
+          @value-changed=${this._updateMarkerSelector}
+        ></ha-selector>
+        <label class="marker-mobile-only">Mobile only
+          <ha-switch
+            .checked=${m.mobile_only === true}
+            .markerIndex=${i}
+            .markerField=${'mobile_only'}
+            @change=${this._updateMarkerSwitch}
+          ></ha-switch>
+        </label>
+      </div>
+    `;
+  }
+
+  private _addMarker(): void {
+    if (!this._config) return;
+    const markers = [...(this._config.markers ?? []), {}];
+    this._config = { ...this._config, markers };
+    fireEvent(this, 'config-changed', { config: this._config });
+  }
+
+  private _removeMarker(i: number): void {
+    if (!this._config) return;
+    const markers = (this._config.markers ?? []).filter((_, idx) => idx !== i);
+    this._config = { ...this._config, markers };
+    fireEvent(this, 'config-changed', { config: this._config });
+  }
+
+  private _updateMarkerField(ev): void {
+    if (!this._config) return;
+    const target = ev.target;
+    const i: number = target.markerIndex;
+    const field: string = target.markerField;
+    const value: string = target.value?.trim() ?? '';
+    const markers = [...(this._config.markers ?? [])];
+    markers[i] = { ...markers[i], [field]: value || undefined };
+    this._config = { ...this._config, markers };
+    fireEvent(this, 'config-changed', { config: this._config });
+  }
+
+  private _updateMarkerFieldNumber(ev): void {
+    if (!this._config) return;
+    const target = ev.target;
+    const i: number = target.markerIndex;
+    const field: string = target.markerField;
+    const raw: string = target.value?.trim() ?? '';
+    const num = raw === '' ? undefined : parseFloat(raw);
+    const markers = [...(this._config.markers ?? [])];
+    markers[i] = { ...markers[i], [field]: num };
+    this._config = { ...this._config, markers };
+    fireEvent(this, 'config-changed', { config: this._config });
+  }
+
+  private _updateMarkerSelector(ev: CustomEvent): void {
+    if (!this._config) return;
+    const target = ev.target as any;
+    const i: number = target.markerIndex;
+    const field: string = target.markerField;
+    let value: any = ev.detail.value;
+    if (field === 'track') {
+      value = value === 'true' ? true : value === 'entity' ? 'entity' : undefined;
+    } else if (value === '') {
+      value = undefined;
+    }
+    const markers = [...(this._config.markers ?? [])];
+    markers[i] = { ...markers[i], [field]: value };
+    this._config = { ...this._config, markers };
+    fireEvent(this, 'config-changed', { config: this._config });
+  }
+
+  private _updateMarkerSwitch(ev): void {
+    if (!this._config) return;
+    const target = ev.target;
+    const i: number = target.markerIndex;
+    const field: string = target.markerField;
+    const markers = [...(this._config.markers ?? [])];
+    markers[i] = { ...markers[i], [field]: target.checked || undefined };
+    this._config = { ...this._config, markers };
+    fireEvent(this, 'config-changed', { config: this._config });
   }
 
   private _initialize(): void {
@@ -662,6 +700,46 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
     .values {
       padding: 0 16px 8px 16px;
       background: var(--secondary-background-color);
+    }
+    .marker-row {
+      border: 1px solid var(--divider-color);
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+    }
+    .marker-row-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .marker-row-label {
+      font-size: 0.85em;
+      font-weight: 600;
+      color: var(--secondary-text-color);
+    }
+    .remove-marker-btn {
+      font-size: 0.8em;
+      padding: 2px 8px;
+      border: 1px solid var(--error-color, #f44336);
+      border-radius: 4px;
+      background: none;
+      color: var(--error-color, #f44336);
+      cursor: pointer;
+    }
+    .add-marker-btn {
+      width: 100%;
+      padding: 8px;
+      border: 1px dashed var(--primary-color);
+      border-radius: 6px;
+      background: none;
+      color: var(--primary-color);
+      cursor: pointer;
+      font-size: 0.9em;
+      margin-bottom: 8px;
+    }
+    .marker-mobile-only {
+      font-size: 0.85em;
     }
   `;
 }

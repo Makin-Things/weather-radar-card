@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as L from 'leaflet';
 import { HomeAssistant } from 'custom-card-helpers';
-import { WeatherRadarCardConfig } from './types';
+import { WeatherRadarCardConfig, Marker } from './types';
 
 const ICON_BASE = '/local/community/weather-radar-card/';
 
@@ -75,6 +75,40 @@ export function getMarkerIconConfig(
     if (!iconEntity && userInfo?.personEntity) iconEntity = userInfo.personEntity;
   }
   return { type: iconType, entity: iconEntity };
+}
+
+export function createMarkerIconForMarker(
+  markerCfg: Marker,
+  hass: HomeAssistant,
+  mapStyle: string,
+): L.Icon | L.DivIcon {
+  const iconType = markerCfg.icon || 'default';
+  const svgFile = mapStyle === 'dark' ? 'home-circle-light.svg' : 'home-circle-dark.svg';
+  const defaultIcon = () => L.icon({ iconUrl: `${ICON_BASE}${svgFile}`, iconSize: [16, 16] });
+
+  if (iconType === 'default') return defaultIcon();
+
+  if (iconType === 'entity_picture') {
+    const entityId = markerCfg.icon_entity || markerCfg.entity;
+    const resolved = entityId ? resolveToPersonEntity(entityId, hass) : undefined;
+    const pictureUrl = resolveEntityPicture(resolved, hass);
+    if (!pictureUrl) return defaultIcon();
+    return L.icon({ iconUrl: pictureUrl, iconSize: [32, 32], className: 'marker-entity-picture' });
+  }
+
+  if (iconType.startsWith('mdi:')) {
+    const name = iconType.substring(4);
+    const path = MDI_PATHS[name];
+    if (!path) return defaultIcon();
+    const colour = mapStyle === 'dark' || mapStyle === 'satellite' ? '#EEEEEE' : '#333333';
+    return L.divIcon({
+      html: `<svg viewBox="0 0 24 24" width="24" height="24"><path fill="${colour}" d="${path}"/></svg>`,
+      iconSize: [24, 24],
+      className: 'marker-mdi-icon',
+    });
+  }
+
+  return defaultIcon();
 }
 
 export function createMarkerIcon(

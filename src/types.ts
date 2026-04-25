@@ -1,5 +1,15 @@
 import { LovelaceCardConfig } from 'custom-card-helpers';
 
+export interface Marker {
+  entity?: string;
+  latitude?: number;
+  longitude?: number;
+  icon?: string;       // "default" | "entity_picture" | "mdi:icon-name"
+  icon_entity?: string;
+  track?: 'entity' | true;
+  mobile_only?: boolean;
+}
+
 // Entity coordinate configuration for dynamic location from entity attributes
 export interface EntityCoordinate {
   entity: string;
@@ -10,10 +20,8 @@ export interface EntityCoordinate {
 // Coordinate can be a number, entity ID string, or entity config object
 export type CoordinateConfig = number | string | EntityCoordinate;
 
-// TODO Add your configuration elements here for type-checking
 export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   show_range: boolean;
-  show_marker: boolean;
   show_scale: boolean;
   show_playback: boolean;
   show_recenter: boolean;
@@ -27,22 +35,22 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   frame_delay?: number;
   animated_transitions?: boolean;
   transition_time?: number;
-  // Base coordinates (used on all devices)
-  marker_longitude?: CoordinateConfig;
-  marker_latitude?: CoordinateConfig;
   center_longitude?: CoordinateConfig;
   center_latitude?: CoordinateConfig;
-  // Mobile-specific overrides (used when device detected as mobile)
-  mobile_marker_longitude?: CoordinateConfig;
-  mobile_marker_latitude?: CoordinateConfig;
-  mobile_center_longitude?: CoordinateConfig;
-  mobile_center_latitude?: CoordinateConfig;
-  // Marker icon configuration
-  marker_icon?: string; // "default" | "entity_picture" | "mdi:icon-name"
-  marker_icon_entity?: string; // Entity ID for entity_picture source
-  mobile_marker_icon?: string; // Mobile override for marker icon type
-  mobile_marker_icon_entity?: string; // Mobile override for icon entity
   zoom_level?: number;
+  markers?: Marker[];
+  // Legacy single-marker fields — read-only; used only by _migrateConfig()
+  /** @deprecated use markers[] */  show_marker?: boolean;
+  /** @deprecated use markers[] */  marker_latitude?: CoordinateConfig;
+  /** @deprecated use markers[] */  marker_longitude?: CoordinateConfig;
+  /** @deprecated use markers[] */  mobile_marker_latitude?: CoordinateConfig;
+  /** @deprecated use markers[] */  mobile_marker_longitude?: CoordinateConfig;
+  /** @deprecated use markers[] */  mobile_center_latitude?: CoordinateConfig;
+  /** @deprecated use markers[] */  mobile_center_longitude?: CoordinateConfig;
+  /** @deprecated use markers[] */  marker_icon?: string;
+  /** @deprecated use markers[] */  marker_icon_entity?: string;
+  /** @deprecated use markers[] */  mobile_marker_icon?: string;
+  /** @deprecated use markers[] */  mobile_marker_icon_entity?: string;
   type: string;
   name?: string;
   map_style?: string;
