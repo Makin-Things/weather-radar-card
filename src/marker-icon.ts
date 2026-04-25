@@ -83,7 +83,7 @@ export function createMarkerIconForMarker(
   mapStyle: string,
 ): L.Icon | L.DivIcon {
   const iconType = markerCfg.icon || 'default';
-  const svgFile = mapStyle === 'dark' ? 'home-circle-light.svg' : 'home-circle-dark.svg';
+  const svgFile = (mapStyle === 'dark' || mapStyle === 'satellite') ? 'home-circle-light.svg' : 'home-circle-dark.svg';
   const defaultIcon = () => L.icon({ iconUrl: `${ICON_BASE}${svgFile}`, iconSize: [16, 16] });
 
   if (iconType === 'default') return defaultIcon();

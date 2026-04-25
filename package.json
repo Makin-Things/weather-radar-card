@@ -44,12 +44,14 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.24.0",
     "eslint-plugin-prettier": "^4.2.1",
+    "happy-dom": "^20.9.0",
     "prettier": "^3.4.2",
     "rollup": "^4.31.0",
     "rollup-plugin-serve": "^1.1.0",
     "rollup-plugin-string": "^3.0.0",
     "rollup-plugin-typescript2": "^0.36.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.9"
   },
   "overrides": {
     "lit": "^3.3.2",
@@ -61,6 +63,8 @@
     "start": "rollup -c rollup.config.dev.js --watch",
     "build": "npm run lint && npm run rollup",
     "lint": "eslint src/*.ts",
-    "rollup": "rollup -c"
+    "rollup": "rollup -c",
+    "test": "vitest run",
+    "test:watch": "vitest"
   }
 }

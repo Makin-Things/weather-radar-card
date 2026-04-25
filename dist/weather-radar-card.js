@@ -16286,7 +16286,7 @@ function resolveEntityPicture(entityId, hass) {
 }
 function createMarkerIconForMarker(markerCfg, hass, mapStyle) {
     const iconType = markerCfg.icon || 'default';
-    const svgFile = mapStyle === 'dark' ? 'home-circle-light.svg' : 'home-circle-dark.svg';
+    const svgFile = (mapStyle === 'dark' || mapStyle === 'satellite') ? 'home-circle-light.svg' : 'home-circle-dark.svg';
     const defaultIcon = () => leafletSrcExports.icon({ iconUrl: `${ICON_BASE}${svgFile}`, iconSize: [16, 16] });
     if (iconType === 'default')
         return defaultIcon();
@@ -16311,6 +16311,103 @@ function createMarkerIconForMarker(markerCfg, hass, mapStyle) {
         });
     }
     return defaultIcon();
+}
+
+function migrateConfig(config) {
+    if (config.markers !== undefined)
+        return config;
+    if (config.show_marker !== true && config.marker_latitude === undefined && config.mobile_marker_latitude === undefined)
+        return config;
+    const markers = [];
+    const latCfg = config.marker_latitude;
+    const lonCfg = config.marker_longitude;
+    const m = {};
+    if (typeof latCfg === 'string' && latCfg === lonCfg) {
+        m.entity = latCfg;
+    }
+    else {
+        if (typeof latCfg === 'number')
+            m.latitude = latCfg;
+        if (typeof lonCfg === 'number')
+            m.longitude = lonCfg;
+        if (typeof latCfg === 'string')
+            m.entity = latCfg;
+    }
+    if (config.marker_icon)
+        m.icon = config.marker_icon;
+    if (config.marker_icon_entity)
+        m.icon_entity = config.marker_icon_entity;
+    markers.push(m);
+    const mLat = config.mobile_marker_latitude;
+    const mLon = config.mobile_marker_longitude;
+    if ((mLat !== undefined || mLon !== undefined) && (mLat !== latCfg || mLon !== lonCfg)) {
+        const mm = { mobile_only: true };
+        if (typeof mLat === 'string' && mLat === mLon) {
+            mm.entity = mLat;
+        }
+        else {
+            if (typeof mLat === 'number')
+                mm.latitude = mLat;
+            if (typeof mLon === 'number')
+                mm.longitude = mLon;
+            if (typeof mLat === 'string')
+                mm.entity = mLat;
+        }
+        if (config.mobile_marker_icon)
+            mm.icon = config.mobile_marker_icon;
+        if (config.mobile_marker_icon_entity)
+            mm.icon_entity = config.mobile_marker_icon_entity;
+        markers.push(mm);
+    }
+    return { ...config, markers };
+}
+function resolveMarkerPosition(markerCfg, hass, fallbackLat, fallbackLon) {
+    if (markerCfg.entity) {
+        const state = hass?.states[markerCfg.entity];
+        const lat = parseFloat(state?.attributes?.latitude);
+        const lon = parseFloat(state?.attributes?.longitude);
+        if (!isNaN(lat) && !isNaN(lon))
+            return { lat, lon };
+    }
+    return {
+        lat: markerCfg.latitude ?? fallbackLat,
+        lon: markerCfg.longitude ?? fallbackLon,
+    };
+}
+function resolveTracking(markers, hass, fallbackLat, fallbackLon) {
+    const userId = hass?.user?.id;
+    let winnerIdx = -1;
+    let winnerPriority = 0;
+    for (let i = 0; i < markers.length; i++) {
+        const m = markers[i];
+        if (!m.track)
+            continue;
+        let p = 0;
+        if (m.track === 'entity' && m.entity) {
+            const state = hass?.states[m.entity];
+            if (m.entity.startsWith('person.') && state?.attributes?.user_id === userId) {
+                p = 3;
+            }
+            else {
+                p = 2;
+            }
+        }
+        else if (m.track === true) {
+            p = 1;
+        }
+        if (p === 0)
+            continue;
+        if (p > winnerPriority) {
+            winnerIdx = i;
+            winnerPriority = p;
+        }
+        else if (p === winnerPriority) {
+            console.warn('Weather Radar Card: multiple markers at the same track priority — using first');
+        }
+    }
+    if (winnerIdx < 0)
+        return null;
+    return resolveMarkerPosition(markers[winnerIdx], hass, fallbackLat, fallbackLon);
 }
 
 /* eslint no-console: 0 */
@@ -16388,53 +16485,11 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             this._teardown();
     }
     _migrateConfig(config) {
-        if (config.markers !== undefined)
-            return config;
-        if (config.show_marker !== true && config.marker_latitude === undefined && config.mobile_marker_latitude === undefined)
-            return config;
-        console.warn('Weather Radar Card: single-marker config fields are deprecated. Migrate to the markers[] array format.');
-        const markers = [];
-        const latCfg = config.marker_latitude;
-        const lonCfg = config.marker_longitude;
-        const m = {};
-        if (typeof latCfg === 'string' && latCfg === lonCfg) {
-            m.entity = latCfg;
+        const result = migrateConfig(config);
+        if (result !== config) {
+            console.warn('Weather Radar Card: single-marker config fields are deprecated. Migrate to the markers[] array format.');
         }
-        else {
-            if (typeof latCfg === 'number')
-                m.latitude = latCfg;
-            if (typeof lonCfg === 'number')
-                m.longitude = lonCfg;
-            if (typeof latCfg === 'string')
-                m.entity = latCfg;
-        }
-        if (config.marker_icon)
-            m.icon = config.marker_icon;
-        if (config.marker_icon_entity)
-            m.icon_entity = config.marker_icon_entity;
-        markers.push(m);
-        const mLat = config.mobile_marker_latitude;
-        const mLon = config.mobile_marker_longitude;
-        if ((mLat !== undefined || mLon !== undefined) && (mLat !== latCfg || mLon !== lonCfg)) {
-            const mm = { mobile_only: true };
-            if (typeof mLat === 'string' && mLat === mLon) {
-                mm.entity = mLat;
-            }
-            else {
-                if (typeof mLat === 'number')
-                    mm.latitude = mLat;
-                if (typeof mLon === 'number')
-                    mm.longitude = mLon;
-                if (typeof mLat === 'string')
-                    mm.entity = mLat;
-            }
-            if (config.mobile_marker_icon)
-                mm.icon = config.mobile_marker_icon;
-            if (config.mobile_marker_icon_entity)
-                mm.icon_entity = config.mobile_marker_icon_entity;
-            markers.push(mm);
-        }
-        return { ...config, markers };
+        return result;
     }
     getCardSize() { return 10; }
     shouldUpdate(changedProps) {
@@ -16664,7 +16719,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             const markerCfg = markers[i];
             if (markerCfg.mobile_only && !isMobile)
                 continue;
-            const { lat, lon } = this._resolveMarkerPosition(markerCfg, haLat, haLon);
+            const { lat, lon } = resolveMarkerPosition(markerCfg, this.hass, haLat, haLon);
             const icon = createMarkerIconForMarker(markerCfg, this.hass, mapStyle);
             const lMarker = leafletSrcExports.marker([lat, lon], { icon, interactive: false }).addTo(this._map);
             this._markers.set(i, lMarker);
@@ -16678,19 +16733,6 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             }
         }
     }
-    _resolveMarkerPosition(markerCfg, fallbackLat, fallbackLon) {
-        if (markerCfg.entity) {
-            const state = this.hass?.states[markerCfg.entity];
-            const lat = parseFloat(state?.attributes?.latitude);
-            const lon = parseFloat(state?.attributes?.longitude);
-            if (!isNaN(lat) && !isNaN(lon))
-                return { lat, lon };
-        }
-        return {
-            lat: markerCfg.latitude ?? fallbackLat,
-            lon: markerCfg.longitude ?? fallbackLon,
-        };
-    }
     _updateMarkerPositions() {
         const markers = this._config?.markers ?? [];
         const haLat = this.hass?.config?.latitude ?? 0;
@@ -16699,7 +16741,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             const markerCfg = markers[i];
             if (!markerCfg)
                 continue;
-            const { lat, lon } = this._resolveMarkerPosition(markerCfg, haLat, haLon);
+            const { lat, lon } = resolveMarkerPosition(markerCfg, this.hass, haLat, haLon);
             lMarker.setLatLng([lat, lon]);
         }
     }
@@ -16709,40 +16751,9 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         const markers = this._config?.markers ?? [];
         const haLat = this.hass?.config?.latitude ?? 0;
         const haLon = this.hass?.config?.longitude ?? 0;
-        const userId = this.hass?.user?.id;
-        let winnerIdx = -1;
-        let winnerPriority = 0;
-        for (let i = 0; i < markers.length; i++) {
-            const m = markers[i];
-            if (!m.track)
-                continue;
-            let p = 0;
-            if (m.track === 'entity' && m.entity) {
-                const state = this.hass?.states[m.entity];
-                if (m.entity.startsWith('person.') && state?.attributes?.user_id === userId) {
-                    p = 3;
-                }
-                else {
-                    p = 2;
-                }
-            }
-            else if (m.track === true) {
-                p = 1;
-            }
-            if (p === 0)
-                continue;
-            if (p > winnerPriority) {
-                winnerIdx = i;
-                winnerPriority = p;
-            }
-            else if (p === winnerPriority) {
-                console.warn('Weather Radar Card: multiple markers at the same track priority — using first');
-            }
-        }
-        if (winnerIdx < 0)
-            return;
-        const { lat, lon } = this._resolveMarkerPosition(markers[winnerIdx], haLat, haLon);
-        this._map.panTo([lat, lon]);
+        const result = resolveTracking(markers, this.hass, haLat, haLon);
+        if (result)
+            this._map.panTo([result.lat, result.lon]);
     }
     // ── Toolbar ───────────────────────────────────────────────────────────────
     _setupToolbar() {
