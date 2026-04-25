@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-04-25
+
+### Added
+
+- **Multi-marker support** — `markers` array replaces the old single-marker fields. Each entry supports `entity`, `latitude`, `longitude`, `icon`, `icon_entity`, `track`, and `mobile_only`.
+- **Live entity tracking** — markers with an `entity` field update their position on every HA state change. Works with `device_tracker.*`, `person.*`, `zone.*`, or any entity with `latitude`/`longitude` attributes.
+- **Track resolution** — set `track: entity` or `track: true` on a marker to auto-centre the map. Priority: (1) `track: entity` on a `person.*` whose `user_id` matches the logged-in HA user, (2) `track: entity` on any other entity, (3) `track: true`. Ties at the same level warn to console and use the first marker.
+- **`mobile_only` marker flag** — a marker with `mobile_only: true` is only shown on mobile devices (HA Companion app, mobile user agent, or screen width ≤ 768 px). Replaces the old `mobile_marker_*` fields.
+- **Auto-migration** — if `markers` is absent but old single-marker fields (`marker_latitude`, `marker_longitude`, `mobile_marker_*`, `marker_icon`, etc.) are present, the card synthesises a `markers[]` in memory on load so existing YAML continues to work without changes. A deprecation warning is logged to the browser console.
+
+### Changed
+
+- **Breaking: single-marker config fields deprecated.** `show_marker`, `marker_latitude`, `marker_longitude`, `marker_icon`, `marker_icon_entity`, `mobile_marker_latitude`, `mobile_marker_longitude`, `mobile_marker_icon`, `mobile_marker_icon_entity` are no longer written by the editor and will be removed in a future version. Existing YAML still works via auto-migration.
+- Editor Location section now only contains map center coordinates; marker configuration is in the new Markers section with per-marker rows.
+- Editor Mobile Overrides section removed — use `mobile_only: true` on a marker instead.
+
 ## [3.0.1] - 2026-04-24
 
 ### Added
@@ -130,7 +146,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 For changes in versions prior to 2.0.4, please refer to the git commit history.
 
-[Unreleased]: https://github.com/jpettitt/weather-radar-card/compare/v3.0.1...HEAD
+[Unreleased]: https://github.com/jpettitt/weather-radar-card/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/jpettitt/weather-radar-card/compare/v3.0.1...v3.1.0
 [3.0.1]: https://github.com/jpettitt/weather-radar-card/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/jpettitt/weather-radar-card/compare/v2.2.0...v3.0.0
 [2.2.0]: https://github.com/jpettitt/weather-radar-card/compare/v2.1.1...v2.2.0

@@ -62,14 +62,9 @@ All options can be configured using the GUI editor — there is no need to edit 
 | data_source | string | **Optional** | Radar tile source (see [Data Source](#data-source)) | `'RainViewer'` |
 | map_style | string | **Optional** | Map style (see [Map Style](#map-style)) | `'Light'` (English) / `'OSM'` (other languages) |
 | zoom_level | number | **Optional** | Initial zoom level, 3–10 | `7` |
-| center_latitude | number / string / object | **Optional** | Initial map center latitude (see [Location Coordinates](#location-coordinates)) | HA instance location |
-| center_longitude | number / string / object | **Optional** | Initial map center longitude | HA instance location |
-| marker_latitude | number / string / object | **Optional** | Latitude for the home marker (see [Location Coordinates](#location-coordinates)) | HA instance location |
-| marker_longitude | number / string / object | **Optional** | Longitude for the home marker | HA instance location |
-| mobile_center_latitude | number / string / object | **Optional** | Mobile override for center latitude (see [Mobile Device Overrides](#mobile-device-overrides)) | not set |
-| mobile_center_longitude | number / string / object | **Optional** | Mobile override for center longitude | not set |
-| mobile_marker_latitude | number / string / object | **Optional** | Mobile override for marker latitude | not set |
-| mobile_marker_longitude | number / string / object | **Optional** | Mobile override for marker longitude | not set |
+| center_latitude | number / string | **Optional** | Initial map center latitude — number or entity ID | HA instance location |
+| center_longitude | number / string | **Optional** | Initial map center longitude — number or entity ID | HA instance location |
+| markers | list | **Optional** | List of map markers (see [Markers](#markers)) | none |
 | frame_count | number | **Optional** | Number of frames in the loop | `5` |
 | frame_delay | number | **Optional** | Milliseconds to display each frame | `500` |
 | restart_delay | number | **Optional** | Extra milliseconds to hold the last frame before looping | `1000` |
@@ -78,21 +73,18 @@ All options can be configured using the GUI editor — there is no need to edit 
 | show_snow | boolean | **Optional** | Include snow in the precipitation display (RainViewer only) | `false` |
 | show_color_bar | boolean | **Optional** | Show the radar colour scale bar (RainViewer only) | `true` |
 | show_progress_bar | boolean | **Optional** | Show the frame progress / timeline bar | `true` |
+| show_scale | boolean | **Optional** | Show a distance scale bar on the map | `false` |
 | double_tap_action | string / object | **Optional** | Action on double-tap: `'recenter'`, `'toggle_play'`, `'none'`, or any HA action object | `'none'` |
+| disable_scroll | boolean | **Optional** | Disable map pan/drag while keeping pinch-to-zoom; lets mobile users swipe the page past the map | `false` |
 | static_map | boolean | **Optional** | Disable all panning and zooming | `false` |
 | show_zoom | boolean | **Optional** | Show zoom controls | `false` |
 | square_map | boolean | **Optional** | Keep the map square | `false` |
-| height | string | **Optional** | Custom card height using CSS units e.g. `'400px'`, `'50vh'` | `'400px'` |
-| width | string | **Optional** | Custom card width using CSS units e.g. `'500px'`, `'80%'` | `'100%'` |
-| show_marker | boolean | **Optional** | Show the home marker | `false` |
-| marker_icon | string | **Optional** | Marker icon type: `'default'`, `'entity_picture'`, or `'mdi:icon-name'` | `'default'` |
-| marker_icon_entity | string | **Optional** | Entity ID for the `entity_picture` marker icon | auto-detected |
-| mobile_marker_icon | string | **Optional** | Mobile override for marker icon type | same as `marker_icon` |
-| mobile_marker_icon_entity | string | **Optional** | Entity ID for mobile `entity_picture` icon | auto-detected |
 | show_playback | boolean | **Optional** | Show playback controls toolbar | `false` |
 | show_recenter | boolean | **Optional** | Show re-center button in toolbar | `false` |
-| show_range | boolean | **Optional** | Show range rings around marker | `false` |
+| show_range | boolean | **Optional** | Show range rings around the first marker | `false` |
 | extra_labels | boolean | **Optional** | Show more place labels (labels become smaller) | `false` |
+| height | string | **Optional** | Custom card height using CSS units e.g. `'400px'`, `'50vh'` | `'400px'` |
+| width | string | **Optional** | Custom card width using CSS units e.g. `'500px'`, `'80%'` | `'100%'` |
 
 ### Data Source
 
@@ -175,84 +167,114 @@ double_tap_action:
     entity_id: scene.evening
 ```
 
-### Location Coordinates
+### Markers
 
-The card supports three ways to specify latitude and longitude for center and marker positions.
+The `markers` option accepts a list. Each entry can have:
 
-#### 1. Static Numeric Values
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| `entity` | string | Entity ID (`device_tracker.*`, `person.*`, `zone.*`). Position is read from the entity's `latitude`/`longitude` attributes and updated live on every HA state change. |
+| `latitude` | number | Static latitude (used when `entity` is not set or unavailable) |
+| `longitude` | number | Static longitude |
+| `icon` | string | `'default'` (home SVG), `'entity_picture'`, or `'mdi:icon-name'` |
+| `icon_entity` | string | Entity ID for the picture when `icon: entity_picture`. Auto-detected from `entity` if blank. |
+| `track` | string / bool | `'entity'` — pan the map to follow this marker; `true` — lowest-priority always-on fallback |
+| `mobile_only` | boolean | Only show this marker on mobile devices |
+
+#### Track resolution
+
+When multiple markers have `track` set, the card picks one to centre the map on using this priority order (evaluated on every HA update):
+
+1. **`track: entity` on a `person.*` entity whose `user_id` matches the currently logged-in HA user** — highest priority. "I am this person, follow me."
+2. **`track: entity` on any other entity** — viewer-independent tracking.
+3. **`track: true`** — lowest always-on fallback; overridden by any `track: entity` match.
+
+Multiple markers at the same priority level log a console warning and use the first one in the list.
+
+#### Migration from single-marker config
+
+If you have the old `marker_latitude` / `marker_longitude` / `show_marker` fields, the card automatically converts them to a `markers[]` entry in memory on load. Your existing YAML continues to work — no changes required. A deprecation warning is logged to the browser console.
+
+#### Examples
+
+Static home marker:
 
 ```yaml
-center_latitude: -25.567607
-center_longitude: 152.930597
+markers:
+  - latitude: -33.86
+    longitude: 151.21
+    icon: mdi:home
 ```
 
-#### 2. Entity Reference
-
-Use an entity ID. The card uses the entity's `latitude` and `longitude` attributes:
+Track a person (centres map on them when they are the logged-in user):
 
 ```yaml
-marker_latitude: "device_tracker.my_phone"
-marker_longitude: "device_tracker.my_phone"
+markers:
+  - entity: person.john
+    icon: entity_picture
+    track: entity
 ```
 
-Works with `device_tracker.*`, `person.*`, `zone.*`, or any entity with location attributes.
-
-#### 3. Entity Reference with Custom Attributes
+Multiple markers — person takes priority over van for John, van tracks for everyone else:
 
 ```yaml
-marker_latitude:
-  entity: sensor.custom_location
-  latitude_attribute: custom_lat
-marker_longitude:
-  entity: sensor.custom_location
-  longitude_attribute: custom_lon
+markers:
+  - entity: person.john
+    icon: entity_picture
+    track: entity
+
+  - entity: device_tracker.van
+    icon: mdi:car
+    track: entity
+
+  - latitude: -33.86
+    longitude: 151.21
+    icon: mdi:home
 ```
 
-> Coordinates are resolved when the card renders. Reload the card to update entity-based coordinates.
+Desktop shows home marker; mobile shows current device location:
 
-### Mobile Device Overrides
+```yaml
+markers:
+  - latitude: -33.86
+    longitude: 151.21
+    icon: mdi:home
 
-Different coordinates can be shown on mobile vs desktop. Useful for showing your home on desktop while showing your device's current location on mobile.
-
-Mobile is detected via:
-
-- Home Assistant Companion app user agent
-- Mobile user agent strings
-- Screen width ≤ 768px
-
-Fields: `mobile_center_latitude`, `mobile_center_longitude`, `mobile_marker_latitude`, `mobile_marker_longitude`
-
-If not set, base coordinates are used on all devices.
+  - entity: device_tracker.my_phone
+    icon: entity_picture
+    mobile_only: true
+```
 
 ## Samples
 
-Basic radar loop centred on a location:
+Basic radar loop with a static home marker:
 
 ```yaml
 type: 'custom:weather-radar-card'
 frame_count: 10
 center_latitude: -25.567607
 center_longitude: 152.930597
-marker_latitude: -26.175328
-marker_longitude: 152.653189
-show_marker: true
 show_range: true
 show_zoom: true
 show_recenter: true
 show_playback: true
 zoom_level: 8
+markers:
+  - latitude: -26.175328
+    longitude: 152.653189
+    icon: mdi:home
 ```
 
-Dense loop showing 24 hours of radar:
+Dense 24-hour loop:
 
 ```yaml
 type: 'custom:weather-radar-card'
 frame_count: 144
 frame_delay: 100
-marker_latitude: -33.857058
-marker_longitude: 151.215179
-show_marker: true
-show_range: false
+markers:
+  - latitude: -33.857058
+    longitude: 151.215179
+    icon: default
 ```
 
 Custom card dimensions:
@@ -261,7 +283,6 @@ Custom card dimensions:
 type: 'custom:weather-radar-card'
 height: '400px'
 width: '600px'
-show_marker: true
 show_playback: true
 zoom_level: 7
 ```
@@ -286,34 +307,41 @@ Localized map labels using OpenStreetMap:
 type: 'custom:weather-radar-card'
 map_style: OSM
 zoom_level: 7
-show_marker: true
+markers:
+  - latitude: -33.86
+    longitude: 151.21
+    icon: mdi:home
 ```
 
-Mobile device overrides — desktop shows home, mobile shows current location:
+Desktop shows home marker, mobile shows current device location:
 
 ```yaml
 type: 'custom:weather-radar-card'
 center_latitude: -25.567607
 center_longitude: 152.930597
-mobile_center_latitude: "device_tracker.my_phone"
-mobile_center_longitude: "device_tracker.my_phone"
-show_marker: true
 show_range: true
 zoom_level: 8
+markers:
+  - latitude: -25.567607
+    longitude: 152.930597
+    icon: mdi:home
+
+  - entity: device_tracker.my_phone
+    icon: entity_picture
+    mobile_only: true
 ```
 
-Tracking a person entity on all devices:
+Track a person — map follows them when they are the logged-in user:
 
 ```yaml
 type: 'custom:weather-radar-card'
-center_latitude: "person.john"
-center_longitude: "person.john"
-marker_latitude: "person.john"
-marker_longitude: "person.john"
-show_marker: true
 show_range: true
 show_recenter: true
 zoom_level: 9
+markers:
+  - entity: person.john
+    icon: entity_picture
+    track: entity
 ```
 
 ## Install
