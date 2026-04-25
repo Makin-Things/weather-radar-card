@@ -211,6 +211,10 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     if (cfg.disable_scroll === true && !isStatic) {
       this._map.dragging.disable();
     }
+    if (cfg.show_scale === true) {
+      const metric = (this.hass?.config?.unit_system?.length ?? 'km') === 'km';
+      L.control.scale({ imperial: !metric, metric }).addTo(this._map);
+    }
     this._setupBasemap(mapStyle);
     this._setupAttribution(mapStyle);
     this._setupMarker(isMobile, userInfo, mapStyle);

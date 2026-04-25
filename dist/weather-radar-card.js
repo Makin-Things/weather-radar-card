@@ -16396,7 +16396,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
     }
     // ── Map init / teardown ───────────────────────────────────────────────────
     _initMap() {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
         const mapEl = (_a = this.shadowRoot) === null || _a === void 0 ? void 0 : _a.getElementById('mapid');
         if (!mapEl || this._map)
             return;
@@ -16420,6 +16420,10 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         if (cfg.disable_scroll === true && !isStatic) {
             this._map.dragging.disable();
         }
+        if (cfg.show_scale === true) {
+            const metric = ((_m = (_l = (_k = (_j = this.hass) === null || _j === void 0 ? void 0 : _j.config) === null || _k === void 0 ? void 0 : _k.unit_system) === null || _l === void 0 ? void 0 : _l.length) !== null && _m !== void 0 ? _m : 'km') === 'km';
+            leafletSrcExports.control.scale({ imperial: !metric, metric }).addTo(this._map);
+        }
         this._setupBasemap(mapStyle);
         this._setupAttribution(mapStyle);
         this._setupMarker(isMobile, userInfo, mapStyle);
@@ -16442,7 +16446,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             noaaLimiter: this._noaaLimiter,
         });
         this._player.toolbar = this._toolbar;
-        this._player.start((_j = cfg.frame_count) !== null && _j !== void 0 ? _j : 5);
+        this._player.start((_o = cfg.frame_count) !== null && _o !== void 0 ? _o : 5);
     }
     _teardown() {
         var _a;
