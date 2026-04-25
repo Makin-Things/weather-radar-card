@@ -14601,21 +14601,26 @@ var leafletSrcExports = requireLeafletSrc();
 var leafletCss = "/* required styles */\r\n\r\n.leaflet-pane,\r\n.leaflet-tile,\r\n.leaflet-marker-icon,\r\n.leaflet-marker-shadow,\r\n.leaflet-tile-container,\r\n.leaflet-pane > svg,\r\n.leaflet-pane > canvas,\r\n.leaflet-zoom-box,\r\n.leaflet-image-layer,\r\n.leaflet-layer {\r\n\tposition: absolute;\r\n\tleft: 0;\r\n\ttop: 0;\r\n\t}\r\n.leaflet-container {\r\n\toverflow: hidden;\r\n\t}\r\n.leaflet-tile,\r\n.leaflet-marker-icon,\r\n.leaflet-marker-shadow {\r\n\t-webkit-user-select: none;\r\n\t   -moz-user-select: none;\r\n\t        user-select: none;\r\n\t  -webkit-user-drag: none;\r\n\t}\r\n/* Prevents IE11 from highlighting tiles in blue */\r\n.leaflet-tile::selection {\r\n\tbackground: transparent;\r\n}\r\n/* Safari renders non-retina tile on retina better with this, but Chrome is worse */\r\n.leaflet-safari .leaflet-tile {\r\n\timage-rendering: -webkit-optimize-contrast;\r\n\t}\r\n/* hack that prevents hw layers \"stretching\" when loading new tiles */\r\n.leaflet-safari .leaflet-tile-container {\r\n\twidth: 1600px;\r\n\theight: 1600px;\r\n\t-webkit-transform-origin: 0 0;\r\n\t}\r\n.leaflet-marker-icon,\r\n.leaflet-marker-shadow {\r\n\tdisplay: block;\r\n\t}\r\n/* .leaflet-container svg: reset svg max-width decleration shipped in Joomla! (joomla.org) 3.x */\r\n/* .leaflet-container img: map is broken in FF if you have max-width: 100% on tiles */\r\n.leaflet-container .leaflet-overlay-pane svg {\r\n\tmax-width: none !important;\r\n\tmax-height: none !important;\r\n\t}\r\n.leaflet-container .leaflet-marker-pane img,\r\n.leaflet-container .leaflet-shadow-pane img,\r\n.leaflet-container .leaflet-tile-pane img,\r\n.leaflet-container img.leaflet-image-layer,\r\n.leaflet-container .leaflet-tile {\r\n\tmax-width: none !important;\r\n\tmax-height: none !important;\r\n\twidth: auto;\r\n\tpadding: 0;\r\n\t}\r\n\r\n.leaflet-container img.leaflet-tile {\r\n\t/* See: https://bugs.chromium.org/p/chromium/issues/detail?id=600120 */\r\n\tmix-blend-mode: plus-lighter;\r\n}\r\n\r\n.leaflet-container.leaflet-touch-zoom {\r\n\t-ms-touch-action: pan-x pan-y;\r\n\ttouch-action: pan-x pan-y;\r\n\t}\r\n.leaflet-container.leaflet-touch-drag {\r\n\t-ms-touch-action: pinch-zoom;\r\n\t/* Fallback for FF which doesn't support pinch-zoom */\r\n\ttouch-action: none;\r\n\ttouch-action: pinch-zoom;\r\n}\r\n.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {\r\n\t-ms-touch-action: none;\r\n\ttouch-action: none;\r\n}\r\n.leaflet-container {\r\n\t-webkit-tap-highlight-color: transparent;\r\n}\r\n.leaflet-container a {\r\n\t-webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);\r\n}\r\n.leaflet-tile {\r\n\tfilter: inherit;\r\n\tvisibility: hidden;\r\n\t}\r\n.leaflet-tile-loaded {\r\n\tvisibility: inherit;\r\n\t}\r\n.leaflet-zoom-box {\r\n\twidth: 0;\r\n\theight: 0;\r\n\t-moz-box-sizing: border-box;\r\n\t     box-sizing: border-box;\r\n\tz-index: 800;\r\n\t}\r\n/* workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=888319 */\r\n.leaflet-overlay-pane svg {\r\n\t-moz-user-select: none;\r\n\t}\r\n\r\n.leaflet-pane         { z-index: 400; }\r\n\r\n.leaflet-tile-pane    { z-index: 200; }\r\n.leaflet-overlay-pane { z-index: 400; }\r\n.leaflet-shadow-pane  { z-index: 500; }\r\n.leaflet-marker-pane  { z-index: 600; }\r\n.leaflet-tooltip-pane   { z-index: 650; }\r\n.leaflet-popup-pane   { z-index: 700; }\r\n\r\n.leaflet-map-pane canvas { z-index: 100; }\r\n.leaflet-map-pane svg    { z-index: 200; }\r\n\r\n.leaflet-vml-shape {\r\n\twidth: 1px;\r\n\theight: 1px;\r\n\t}\r\n.lvml {\r\n\tbehavior: url(#default#VML);\r\n\tdisplay: inline-block;\r\n\tposition: absolute;\r\n\t}\r\n\r\n\r\n/* control positioning */\r\n\r\n.leaflet-control {\r\n\tposition: relative;\r\n\tz-index: 800;\r\n\tpointer-events: visiblePainted; /* IE 9-10 doesn't have auto */\r\n\tpointer-events: auto;\r\n\t}\r\n.leaflet-top,\r\n.leaflet-bottom {\r\n\tposition: absolute;\r\n\tz-index: 1000;\r\n\tpointer-events: none;\r\n\t}\r\n.leaflet-top {\r\n\ttop: 0;\r\n\t}\r\n.leaflet-right {\r\n\tright: 0;\r\n\t}\r\n.leaflet-bottom {\r\n\tbottom: 0;\r\n\t}\r\n.leaflet-left {\r\n\tleft: 0;\r\n\t}\r\n.leaflet-control {\r\n\tfloat: left;\r\n\tclear: both;\r\n\t}\r\n.leaflet-right .leaflet-control {\r\n\tfloat: right;\r\n\t}\r\n.leaflet-top .leaflet-control {\r\n\tmargin-top: 10px;\r\n\t}\r\n.leaflet-bottom .leaflet-control {\r\n\tmargin-bottom: 10px;\r\n\t}\r\n.leaflet-left .leaflet-control {\r\n\tmargin-left: 10px;\r\n\t}\r\n.leaflet-right .leaflet-control {\r\n\tmargin-right: 10px;\r\n\t}\r\n\r\n\r\n/* zoom and fade animations */\r\n\r\n.leaflet-fade-anim .leaflet-popup {\r\n\topacity: 0;\r\n\t-webkit-transition: opacity 0.2s linear;\r\n\t   -moz-transition: opacity 0.2s linear;\r\n\t        transition: opacity 0.2s linear;\r\n\t}\r\n.leaflet-fade-anim .leaflet-map-pane .leaflet-popup {\r\n\topacity: 1;\r\n\t}\r\n.leaflet-zoom-animated {\r\n\t-webkit-transform-origin: 0 0;\r\n\t    -ms-transform-origin: 0 0;\r\n\t        transform-origin: 0 0;\r\n\t}\r\nsvg.leaflet-zoom-animated {\r\n\twill-change: transform;\r\n}\r\n\r\n.leaflet-zoom-anim .leaflet-zoom-animated {\r\n\t-webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1);\r\n\t   -moz-transition:    -moz-transform 0.25s cubic-bezier(0,0,0.25,1);\r\n\t        transition:         transform 0.25s cubic-bezier(0,0,0.25,1);\r\n\t}\r\n.leaflet-zoom-anim .leaflet-tile,\r\n.leaflet-pan-anim .leaflet-tile {\r\n\t-webkit-transition: none;\r\n\t   -moz-transition: none;\r\n\t        transition: none;\r\n\t}\r\n\r\n.leaflet-zoom-anim .leaflet-zoom-hide {\r\n\tvisibility: hidden;\r\n\t}\r\n\r\n\r\n/* cursors */\r\n\r\n.leaflet-interactive {\r\n\tcursor: pointer;\r\n\t}\r\n.leaflet-grab {\r\n\tcursor: -webkit-grab;\r\n\tcursor:    -moz-grab;\r\n\tcursor:         grab;\r\n\t}\r\n.leaflet-crosshair,\r\n.leaflet-crosshair .leaflet-interactive {\r\n\tcursor: crosshair;\r\n\t}\r\n.leaflet-popup-pane,\r\n.leaflet-control {\r\n\tcursor: auto;\r\n\t}\r\n.leaflet-dragging .leaflet-grab,\r\n.leaflet-dragging .leaflet-grab .leaflet-interactive,\r\n.leaflet-dragging .leaflet-marker-draggable {\r\n\tcursor: move;\r\n\tcursor: -webkit-grabbing;\r\n\tcursor:    -moz-grabbing;\r\n\tcursor:         grabbing;\r\n\t}\r\n\r\n/* marker & overlays interactivity */\r\n.leaflet-marker-icon,\r\n.leaflet-marker-shadow,\r\n.leaflet-image-layer,\r\n.leaflet-pane > svg path,\r\n.leaflet-tile-container {\r\n\tpointer-events: none;\r\n\t}\r\n\r\n.leaflet-marker-icon.leaflet-interactive,\r\n.leaflet-image-layer.leaflet-interactive,\r\n.leaflet-pane > svg path.leaflet-interactive,\r\nsvg.leaflet-image-layer.leaflet-interactive path {\r\n\tpointer-events: visiblePainted; /* IE 9-10 doesn't have auto */\r\n\tpointer-events: auto;\r\n\t}\r\n\r\n/* visual tweaks */\r\n\r\n.leaflet-container {\r\n\tbackground: #ddd;\r\n\toutline-offset: 1px;\r\n\t}\r\n.leaflet-container a {\r\n\tcolor: #0078A8;\r\n\t}\r\n.leaflet-zoom-box {\r\n\tborder: 2px dotted #38f;\r\n\tbackground: rgba(255,255,255,0.5);\r\n\t}\r\n\r\n\r\n/* general typography */\r\n.leaflet-container {\r\n\tfont-family: \"Helvetica Neue\", Arial, Helvetica, sans-serif;\r\n\tfont-size: 12px;\r\n\tfont-size: 0.75rem;\r\n\tline-height: 1.5;\r\n\t}\r\n\r\n\r\n/* general toolbar styles */\r\n\r\n.leaflet-bar {\r\n\tbox-shadow: 0 1px 5px rgba(0,0,0,0.65);\r\n\tborder-radius: 4px;\r\n\t}\r\n.leaflet-bar a {\r\n\tbackground-color: #fff;\r\n\tborder-bottom: 1px solid #ccc;\r\n\twidth: 26px;\r\n\theight: 26px;\r\n\tline-height: 26px;\r\n\tdisplay: block;\r\n\ttext-align: center;\r\n\ttext-decoration: none;\r\n\tcolor: black;\r\n\t}\r\n.leaflet-bar a,\r\n.leaflet-control-layers-toggle {\r\n\tbackground-position: 50% 50%;\r\n\tbackground-repeat: no-repeat;\r\n\tdisplay: block;\r\n\t}\r\n.leaflet-bar a:hover,\r\n.leaflet-bar a:focus {\r\n\tbackground-color: #f4f4f4;\r\n\t}\r\n.leaflet-bar a:first-child {\r\n\tborder-top-left-radius: 4px;\r\n\tborder-top-right-radius: 4px;\r\n\t}\r\n.leaflet-bar a:last-child {\r\n\tborder-bottom-left-radius: 4px;\r\n\tborder-bottom-right-radius: 4px;\r\n\tborder-bottom: none;\r\n\t}\r\n.leaflet-bar a.leaflet-disabled {\r\n\tcursor: default;\r\n\tbackground-color: #f4f4f4;\r\n\tcolor: #bbb;\r\n\t}\r\n\r\n.leaflet-touch .leaflet-bar a {\r\n\twidth: 30px;\r\n\theight: 30px;\r\n\tline-height: 30px;\r\n\t}\r\n.leaflet-touch .leaflet-bar a:first-child {\r\n\tborder-top-left-radius: 2px;\r\n\tborder-top-right-radius: 2px;\r\n\t}\r\n.leaflet-touch .leaflet-bar a:last-child {\r\n\tborder-bottom-left-radius: 2px;\r\n\tborder-bottom-right-radius: 2px;\r\n\t}\r\n\r\n/* zoom control */\r\n\r\n.leaflet-control-zoom-in,\r\n.leaflet-control-zoom-out {\r\n\tfont: bold 18px 'Lucida Console', Monaco, monospace;\r\n\ttext-indent: 1px;\r\n\t}\r\n\r\n.leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out  {\r\n\tfont-size: 22px;\r\n\t}\r\n\r\n\r\n/* layers control */\r\n\r\n.leaflet-control-layers {\r\n\tbox-shadow: 0 1px 5px rgba(0,0,0,0.4);\r\n\tbackground: #fff;\r\n\tborder-radius: 5px;\r\n\t}\r\n.leaflet-control-layers-toggle {\r\n\tbackground-image: url(images/layers.png);\r\n\twidth: 36px;\r\n\theight: 36px;\r\n\t}\r\n.leaflet-retina .leaflet-control-layers-toggle {\r\n\tbackground-image: url(images/layers-2x.png);\r\n\tbackground-size: 26px 26px;\r\n\t}\r\n.leaflet-touch .leaflet-control-layers-toggle {\r\n\twidth: 44px;\r\n\theight: 44px;\r\n\t}\r\n.leaflet-control-layers .leaflet-control-layers-list,\r\n.leaflet-control-layers-expanded .leaflet-control-layers-toggle {\r\n\tdisplay: none;\r\n\t}\r\n.leaflet-control-layers-expanded .leaflet-control-layers-list {\r\n\tdisplay: block;\r\n\tposition: relative;\r\n\t}\r\n.leaflet-control-layers-expanded {\r\n\tpadding: 6px 10px 6px 6px;\r\n\tcolor: #333;\r\n\tbackground: #fff;\r\n\t}\r\n.leaflet-control-layers-scrollbar {\r\n\toverflow-y: scroll;\r\n\toverflow-x: hidden;\r\n\tpadding-right: 5px;\r\n\t}\r\n.leaflet-control-layers-selector {\r\n\tmargin-top: 2px;\r\n\tposition: relative;\r\n\ttop: 1px;\r\n\t}\r\n.leaflet-control-layers label {\r\n\tdisplay: block;\r\n\tfont-size: 13px;\r\n\tfont-size: 1.08333em;\r\n\t}\r\n.leaflet-control-layers-separator {\r\n\theight: 0;\r\n\tborder-top: 1px solid #ddd;\r\n\tmargin: 5px -10px 5px -6px;\r\n\t}\r\n\r\n/* Default icon URLs */\r\n.leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */\r\n\tbackground-image: url(images/marker-icon.png);\r\n\t}\r\n\r\n\r\n/* attribution and scale controls */\r\n\r\n.leaflet-container .leaflet-control-attribution {\r\n\tbackground: #fff;\r\n\tbackground: rgba(255, 255, 255, 0.8);\r\n\tmargin: 0;\r\n\t}\r\n.leaflet-control-attribution,\r\n.leaflet-control-scale-line {\r\n\tpadding: 0 5px;\r\n\tcolor: #333;\r\n\tline-height: 1.4;\r\n\t}\r\n.leaflet-control-attribution a {\r\n\ttext-decoration: none;\r\n\t}\r\n.leaflet-control-attribution a:hover,\r\n.leaflet-control-attribution a:focus {\r\n\ttext-decoration: underline;\r\n\t}\r\n.leaflet-attribution-flag {\r\n\tdisplay: inline !important;\r\n\tvertical-align: baseline !important;\r\n\twidth: 1em;\r\n\theight: 0.6669em;\r\n\t}\r\n.leaflet-left .leaflet-control-scale {\r\n\tmargin-left: 5px;\r\n\t}\r\n.leaflet-bottom .leaflet-control-scale {\r\n\tmargin-bottom: 5px;\r\n\t}\r\n.leaflet-control-scale-line {\r\n\tborder: 2px solid #777;\r\n\tborder-top: none;\r\n\tline-height: 1.1;\r\n\tpadding: 2px 5px 1px;\r\n\twhite-space: nowrap;\r\n\t-moz-box-sizing: border-box;\r\n\t     box-sizing: border-box;\r\n\tbackground: rgba(255, 255, 255, 0.8);\r\n\ttext-shadow: 1px 1px #fff;\r\n\t}\r\n.leaflet-control-scale-line:not(:first-child) {\r\n\tborder-top: 2px solid #777;\r\n\tborder-bottom: none;\r\n\tmargin-top: -2px;\r\n\t}\r\n.leaflet-control-scale-line:not(:first-child):not(:last-child) {\r\n\tborder-bottom: 2px solid #777;\r\n\t}\r\n\r\n.leaflet-touch .leaflet-control-attribution,\r\n.leaflet-touch .leaflet-control-layers,\r\n.leaflet-touch .leaflet-bar {\r\n\tbox-shadow: none;\r\n\t}\r\n.leaflet-touch .leaflet-control-layers,\r\n.leaflet-touch .leaflet-bar {\r\n\tborder: 2px solid rgba(0,0,0,0.2);\r\n\tbackground-clip: padding-box;\r\n\t}\r\n\r\n\r\n/* popup */\r\n\r\n.leaflet-popup {\r\n\tposition: absolute;\r\n\ttext-align: center;\r\n\tmargin-bottom: 20px;\r\n\t}\r\n.leaflet-popup-content-wrapper {\r\n\tpadding: 1px;\r\n\ttext-align: left;\r\n\tborder-radius: 12px;\r\n\t}\r\n.leaflet-popup-content {\r\n\tmargin: 13px 24px 13px 20px;\r\n\tline-height: 1.3;\r\n\tfont-size: 13px;\r\n\tfont-size: 1.08333em;\r\n\tmin-height: 1px;\r\n\t}\r\n.leaflet-popup-content p {\r\n\tmargin: 17px 0;\r\n\tmargin: 1.3em 0;\r\n\t}\r\n.leaflet-popup-tip-container {\r\n\twidth: 40px;\r\n\theight: 20px;\r\n\tposition: absolute;\r\n\tleft: 50%;\r\n\tmargin-top: -1px;\r\n\tmargin-left: -20px;\r\n\toverflow: hidden;\r\n\tpointer-events: none;\r\n\t}\r\n.leaflet-popup-tip {\r\n\twidth: 17px;\r\n\theight: 17px;\r\n\tpadding: 1px;\r\n\r\n\tmargin: -10px auto 0;\r\n\tpointer-events: auto;\r\n\r\n\t-webkit-transform: rotate(45deg);\r\n\t   -moz-transform: rotate(45deg);\r\n\t    -ms-transform: rotate(45deg);\r\n\t        transform: rotate(45deg);\r\n\t}\r\n.leaflet-popup-content-wrapper,\r\n.leaflet-popup-tip {\r\n\tbackground: white;\r\n\tcolor: #333;\r\n\tbox-shadow: 0 3px 14px rgba(0,0,0,0.4);\r\n\t}\r\n.leaflet-container a.leaflet-popup-close-button {\r\n\tposition: absolute;\r\n\ttop: 0;\r\n\tright: 0;\r\n\tborder: none;\r\n\ttext-align: center;\r\n\twidth: 24px;\r\n\theight: 24px;\r\n\tfont: 16px/24px Tahoma, Verdana, sans-serif;\r\n\tcolor: #757575;\r\n\ttext-decoration: none;\r\n\tbackground: transparent;\r\n\t}\r\n.leaflet-container a.leaflet-popup-close-button:hover,\r\n.leaflet-container a.leaflet-popup-close-button:focus {\r\n\tcolor: #585858;\r\n\t}\r\n.leaflet-popup-scrolled {\r\n\toverflow: auto;\r\n\t}\r\n\r\n.leaflet-oldie .leaflet-popup-content-wrapper {\r\n\t-ms-zoom: 1;\r\n\t}\r\n.leaflet-oldie .leaflet-popup-tip {\r\n\twidth: 24px;\r\n\tmargin: 0 auto;\r\n\r\n\t-ms-filter: \"progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)\";\r\n\tfilter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678);\r\n\t}\r\n\r\n.leaflet-oldie .leaflet-control-zoom,\r\n.leaflet-oldie .leaflet-control-layers,\r\n.leaflet-oldie .leaflet-popup-content-wrapper,\r\n.leaflet-oldie .leaflet-popup-tip {\r\n\tborder: 1px solid #999;\r\n\t}\r\n\r\n\r\n/* div icon */\r\n\r\n.leaflet-div-icon {\r\n\tbackground: #fff;\r\n\tborder: 1px solid #666;\r\n\t}\r\n\r\n\r\n/* Tooltip */\r\n/* Base styles for the element that has a tooltip */\r\n.leaflet-tooltip {\r\n\tposition: absolute;\r\n\tpadding: 6px;\r\n\tbackground-color: #fff;\r\n\tborder: 1px solid #fff;\r\n\tborder-radius: 3px;\r\n\tcolor: #222;\r\n\twhite-space: nowrap;\r\n\t-webkit-user-select: none;\r\n\t-moz-user-select: none;\r\n\t-ms-user-select: none;\r\n\tuser-select: none;\r\n\tpointer-events: none;\r\n\tbox-shadow: 0 1px 3px rgba(0,0,0,0.4);\r\n\t}\r\n.leaflet-tooltip.leaflet-interactive {\r\n\tcursor: pointer;\r\n\tpointer-events: auto;\r\n\t}\r\n.leaflet-tooltip-top:before,\r\n.leaflet-tooltip-bottom:before,\r\n.leaflet-tooltip-left:before,\r\n.leaflet-tooltip-right:before {\r\n\tposition: absolute;\r\n\tpointer-events: none;\r\n\tborder: 6px solid transparent;\r\n\tbackground: transparent;\r\n\tcontent: \"\";\r\n\t}\r\n\r\n/* Directions */\r\n\r\n.leaflet-tooltip-bottom {\r\n\tmargin-top: 6px;\r\n}\r\n.leaflet-tooltip-top {\r\n\tmargin-top: -6px;\r\n}\r\n.leaflet-tooltip-bottom:before,\r\n.leaflet-tooltip-top:before {\r\n\tleft: 50%;\r\n\tmargin-left: -6px;\r\n\t}\r\n.leaflet-tooltip-top:before {\r\n\tbottom: 0;\r\n\tmargin-bottom: -12px;\r\n\tborder-top-color: #fff;\r\n\t}\r\n.leaflet-tooltip-bottom:before {\r\n\ttop: 0;\r\n\tmargin-top: -12px;\r\n\tmargin-left: -6px;\r\n\tborder-bottom-color: #fff;\r\n\t}\r\n.leaflet-tooltip-left {\r\n\tmargin-left: -6px;\r\n}\r\n.leaflet-tooltip-right {\r\n\tmargin-left: 6px;\r\n}\r\n.leaflet-tooltip-left:before,\r\n.leaflet-tooltip-right:before {\r\n\ttop: 50%;\r\n\tmargin-top: -6px;\r\n\t}\r\n.leaflet-tooltip-left:before {\r\n\tright: 0;\r\n\tmargin-right: -12px;\r\n\tborder-left-color: #fff;\r\n\t}\r\n.leaflet-tooltip-right:before {\r\n\tleft: 0;\r\n\tmargin-left: -12px;\r\n\tborder-right-color: #fff;\r\n\t}\r\n\r\n/* Printing */\r\n\r\n@media print {\r\n\t/* Prevent printers from removing background-images of controls. */\r\n\t.leaflet-control {\r\n\t\t-webkit-print-color-adjust: exact;\r\n\t\tprint-color-adjust: exact;\r\n\t\t}\r\n\t}\r\n";
 
 let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
-    constructor() {
-        super(...arguments);
-        this._initialized = false;
-        this._boundCenterUpdate = (e) => {
-            const ev = e;
-            if (!this._config)
-                return;
-            this._config = Object.assign(Object.assign({}, this._config), { center_latitude: ev.detail.center_latitude, center_longitude: ev.detail.center_longitude, zoom_level: ev.detail.zoom_level });
-            ne(this, 'config-changed', { config: this._config });
-        };
-    }
+    hass;
+    _config;
+    _helpers;
+    _initialized = false;
     setConfig(config) {
         this._config = config;
         this.loadCardHelpers();
     }
+    _boundCenterUpdate = (e) => {
+        const ev = e;
+        if (!this._config)
+            return;
+        this._config = {
+            ...this._config,
+            center_latitude: ev.detail.center_latitude,
+            center_longitude: ev.detail.center_longitude,
+            zoom_level: ev.detail.zoom_level,
+        };
+        ne(this, 'config-changed', { config: this._config });
+    };
     connectedCallback() {
         super.connectedCallback();
         window.addEventListener('weather-radar-center-update', this._boundCenterUpdate);
@@ -14631,31 +14636,24 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
         return true;
     }
     get _name() {
-        var _a;
-        return ((_a = this._config) === null || _a === void 0 ? void 0 : _a.name) || '';
+        return this._config?.name || '';
     }
     get _entity() {
-        var _a;
-        return ((_a = this._config) === null || _a === void 0 ? void 0 : _a.entity) || '';
+        return this._config?.entity || '';
     }
     get _show_warning() {
-        var _a;
-        return ((_a = this._config) === null || _a === void 0 ? void 0 : _a.show_warning) || false;
+        return this._config?.show_warning || false;
     }
     get _show_error() {
-        var _a;
-        return ((_a = this._config) === null || _a === void 0 ? void 0 : _a.show_error) || false;
+        return this._config?.show_error || false;
     }
     get _height() {
-        var _a;
-        return ((_a = this._config) === null || _a === void 0 ? void 0 : _a.height) || '';
+        return this._config?.height || '';
     }
     get _width() {
-        var _a;
-        return ((_a = this._config) === null || _a === void 0 ? void 0 : _a.width) || '';
+        return this._config?.width || '';
     }
     render() {
-        var _a;
         if (!this.hass || !this._helpers) {
             return b ``;
         }
@@ -14718,7 +14716,7 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
                 ],
             },
         }}
-            .value=${((_a = config.zoom_level) === null || _a === void 0 ? void 0 : _a.toString()) || ''}
+            .value=${config.zoom_level?.toString() || ''}
             .label=${'Zoom Level'}
             .configValue=${'zoom_level'}
             @value-changed=${this._handleSelectorNumberChanged}
@@ -15024,12 +15022,15 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
         if (this._config[configValue] === value)
             return;
         if (value === '' || value === null) {
-            const newConfig = Object.assign({}, this._config);
+            const newConfig = { ...this._config };
             delete newConfig[configValue];
             this._config = newConfig;
         }
         else {
-            this._config = Object.assign(Object.assign({}, this._config), { [configValue]: value });
+            this._config = {
+                ...this._config,
+                [configValue]: value,
+            };
         }
         ne(this, 'config-changed', { config: this._config });
     }
@@ -15042,12 +15043,15 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
         if (this._config[configValue] === numValue)
             return;
         if (numValue === null) {
-            const newConfig = Object.assign({}, this._config);
+            const newConfig = { ...this._config };
             delete newConfig[configValue];
             this._config = newConfig;
         }
         else {
-            this._config = Object.assign(Object.assign({}, this._config), { [configValue]: numValue });
+            this._config = {
+                ...this._config,
+                [configValue]: numValue,
+            };
         }
         ne(this, 'config-changed', { config: this._config });
     }
@@ -15056,7 +15060,10 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
         if (!this._config || !this.hass || !target) {
             return;
         }
-        this._config = Object.assign(Object.assign({}, this._config), { [target.configValue]: target.checked });
+        this._config = {
+            ...this._config,
+            [target.configValue]: target.checked,
+        };
         ne(this, 'config-changed', { config: this._config });
     }
     _valueChangedNumber(ev) {
@@ -15071,12 +15078,15 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
         }
         if (configValue) {
             if (value === '' || value === null) {
-                const newConfig = Object.assign({}, this._config);
+                const newConfig = { ...this._config };
                 delete newConfig[configValue];
                 this._config = newConfig;
             }
             else {
-                this._config = Object.assign(Object.assign({}, this._config), { [configValue]: Number(value) });
+                this._config = {
+                    ...this._config,
+                    [configValue]: Number(value),
+                };
             }
         }
         ne(this, 'config-changed', { config: this._config });
@@ -15093,12 +15103,15 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
         }
         if (configValue) {
             if (value === '') {
-                const newConfig = Object.assign({}, this._config);
+                const newConfig = { ...this._config };
                 delete newConfig[configValue];
                 this._config = newConfig;
             }
             else {
-                this._config = Object.assign(Object.assign({}, this._config), { [configValue]: value });
+                this._config = {
+                    ...this._config,
+                    [configValue]: value,
+                };
             }
         }
         ne(this, 'config-changed', { config: this._config });
@@ -15127,13 +15140,12 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
      * Handles coordinate field changes (accepts both numbers and entity IDs)
      */
     _valueChangedCoordinate(ev) {
-        var _a;
         if (!this._config || !this.hass) {
             return;
         }
         const target = ev.target;
         if (target.configValue) {
-            const value = (_a = target.value) === null || _a === void 0 ? void 0 : _a.trim();
+            const value = target.value?.trim();
             if (value === '' || value === null) {
                 // Remove config value
                 delete this._config[target.configValue];
@@ -15143,23 +15155,31 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
                 const numValue = parseFloat(value);
                 if (!isNaN(numValue)) {
                     // Store as number (backwards compatible)
-                    this._config = Object.assign(Object.assign({}, this._config), { [target.configValue]: numValue });
+                    this._config = {
+                        ...this._config,
+                        [target.configValue]: numValue,
+                    };
                 }
                 else if (value.includes('.')) {
                     // Looks like an entity ID (has a dot)
-                    this._config = Object.assign(Object.assign({}, this._config), { [target.configValue]: value });
+                    this._config = {
+                        ...this._config,
+                        [target.configValue]: value,
+                    };
                 }
                 else {
                     // Invalid - show console warning but keep value
                     console.warn(`Weather Radar Card Editor: '${value}' should be a number or entity ID (e.g., device_tracker.phone)`);
-                    this._config = Object.assign(Object.assign({}, this._config), { [target.configValue]: value });
+                    this._config = {
+                        ...this._config,
+                        [target.configValue]: value,
+                    };
                 }
             }
         }
         ne(this, 'config-changed', { config: this._config });
     }
-};
-WeatherRadarCardEditor.styles = i$3 `
+    static styles = i$3 `
     ha-select,
     ha-selector,
     ha-textfield {
@@ -15213,6 +15233,7 @@ WeatherRadarCardEditor.styles = i$3 `
       background: var(--secondary-background-color);
     }
   `;
+};
 __decorate([
     n({ attribute: false })
 ], WeatherRadarCardEditor.prototype, "hass", void 0);
@@ -15302,13 +15323,14 @@ function localize(string, search = '', replace = '') {
  * the rate limit.
  */
 class RateLimiter {
+    _maxPerMinute;
+    _window = [];
+    _cache = new Set();
     constructor(_maxPerMinute) {
         this._maxPerMinute = _maxPerMinute;
-        this._window = [];
-        this._cache = new Set();
     }
     _prune() {
-        const cutoff = Date.now() - 60000;
+        const cutoff = Date.now() - 60_000;
         while (this._window.length && this._window[0].time <= cutoff) {
             this._window.shift();
         }
@@ -15332,7 +15354,7 @@ class RateLimiter {
         this._prune();
         if (!this._window.length)
             return 0;
-        return this._window[0].time + 60000 - Date.now() + 50;
+        return this._window[0].time + 60_000 - Date.now() + 50;
     }
 }
 
@@ -15340,14 +15362,13 @@ class RateLimiter {
 /* eslint-disable @typescript-eslint/no-this-alias */
 const TRANSPARENT = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 function createFetchTile(coords, done) {
-    var _a, _b;
     const layer = this;
     const tile = document.createElement('img');
     tile.setAttribute('role', 'presentation');
     const url = layer.getTileUrl(coords);
     const opts = layer.options;
-    const maxRetries = (_a = opts.maxRetries) !== null && _a !== void 0 ? _a : 3;
-    const retryDelay = (_b = opts.retryDelay) !== null && _b !== void 0 ? _b : 500;
+    const maxRetries = opts.maxRetries ?? 3;
+    const retryDelay = opts.retryDelay ?? 500;
     const limiter = opts.rateLimiter;
     const on429 = opts.on429;
     let attempt = 0;
@@ -15363,7 +15384,7 @@ function createFetchTile(coords, done) {
             setTimeout(tryFetch, limiter.msUntilSlot());
             return;
         }
-        limiter === null || limiter === void 0 ? void 0 : limiter.record(url);
+        limiter?.record(url);
         fetch(url, { referrer: window.location.href, referrerPolicy: 'no-referrer-when-downgrade' })
             .then((r) => {
             if (r.status === 404) {
@@ -15384,7 +15405,7 @@ function createFetchTile(coords, done) {
             const objUrl = URL.createObjectURL(blob);
             tile.onload = () => URL.revokeObjectURL(objUrl);
             tile.src = objUrl;
-            limiter === null || limiter === void 0 ? void 0 : limiter.recordSuccess(url);
+            limiter?.recordSuccess(url);
             layer._tilePending--;
             layer._tileLoaded++;
             done(undefined, tile);
@@ -15397,7 +15418,7 @@ function createFetchTile(coords, done) {
                 // 429 with CORS headers sets err.status; without CORS headers the browser
                 // blocks the response entirely, leaving err.status undefined. If we have a
                 // rate limiter on this source, treat any statusless error as rate-limited.
-                on429 === null || on429 === void 0 ? void 0 : on429();
+                on429?.();
                 const wait = limiter ? Math.max(limiter.msUntilSlot(), 1000) : 5000;
                 setTimeout(tryFetch, wait);
             }
@@ -15413,12 +15434,9 @@ function createFetchTile(coords, done) {
     return tile;
 }
 class FetchTileLayer extends leafletSrcExports.TileLayer {
-    constructor() {
-        super(...arguments);
-        this._tilePending = 0;
-        this._tileFailed = 0;
-        this._tileLoaded = 0;
-    }
+    _tilePending = 0;
+    _tileFailed = 0;
+    _tileLoaded = 0;
     initialize(url, options) {
         this._tilePending = 0;
         this._tileFailed = 0;
@@ -15433,9 +15451,8 @@ class FetchTileLayer extends leafletSrcExports.TileLayer {
     // When animationOwnsOpacity is set we skip (a) but still do (b) — otherwise
     // every tile stays at opacity:0 permanently.
     _updateOpacity() {
-        var _a;
         if (!this.options.animationOwnsOpacity) {
-            (_a = leafletSrcExports.TileLayer.prototype._updateOpacity) === null || _a === void 0 ? void 0 : _a.call(this);
+            leafletSrcExports.TileLayer.prototype._updateOpacity?.call(this);
             return;
         }
         // Set each tile img to fully visible (bypass the 200ms fade-in).
@@ -15443,7 +15460,7 @@ class FetchTileLayer extends leafletSrcExports.TileLayer {
         if (tiles) {
             for (const key in tiles) {
                 const tile = tiles[key];
-                if (tile === null || tile === void 0 ? void 0 : tile.el)
+                if (tile?.el)
                     tile.el.style.opacity = '1';
             }
         }
@@ -15455,12 +15472,9 @@ class FetchTileLayer extends leafletSrcExports.TileLayer {
     }
 }
 class FetchWmsTileLayer extends leafletSrcExports.TileLayer.WMS {
-    constructor() {
-        super(...arguments);
-        this._tilePending = 0;
-        this._tileFailed = 0;
-        this._tileLoaded = 0;
-    }
+    _tilePending = 0;
+    _tileFailed = 0;
+    _tileLoaded = 0;
     initialize(url, options) {
         this._tilePending = 0;
         this._tileFailed = 0;
@@ -15471,16 +15485,15 @@ class FetchWmsTileLayer extends leafletSrcExports.TileLayer.WMS {
         return createFetchTile.call(this, coords, done);
     }
     _updateOpacity() {
-        var _a;
         if (!this.options.animationOwnsOpacity) {
-            (_a = leafletSrcExports.TileLayer.WMS.prototype._updateOpacity) === null || _a === void 0 ? void 0 : _a.call(this);
+            leafletSrcExports.TileLayer.WMS.prototype._updateOpacity?.call(this);
             return;
         }
         const tiles = this._tiles;
         if (tiles) {
             for (const key in tiles) {
                 const tile = tiles[key];
-                if (tile === null || tile === void 0 ? void 0 : tile.el)
+                if (tile?.el)
                     tile.el.style.opacity = '1';
             }
         }
@@ -15495,7 +15508,7 @@ function layerSettled(layer) {
         const timer = setTimeout(() => {
             layer.off('load', onLoad);
             resolve('failed');
-        }, 90000);
+        }, 90_000);
         const onLoad = () => {
             clearTimeout(timer);
             resolve(layer._tileFailed > 0 ? 'failed' : 'loaded');
@@ -15512,28 +15525,28 @@ const ICON_BASE$1 = '/local/community/weather-radar-card/';
  * Leaflet bar control positioned at bottom-right.
  */
 class RadarToolbar extends leafletSrcExports.Control {
+    _opts;
+    _playBtn = null;
+    _playing = true;
     constructor(opts) {
         super({ position: 'bottomright' });
-        this._playBtn = null;
-        this._playing = true;
         this._opts = opts;
     }
     onAdd(_map) {
         const bar = leafletSrcExports.DomUtil.create('div', 'radar-toolbar leaflet-bar');
         leafletSrcExports.DomEvent.disableClickPropagation(bar);
         if (this._opts.showRecenter) {
-            this._addBtn(bar, `${ICON_BASE$1}recenter.png`, 'Re-centre', () => { var _a, _b; return (_b = (_a = this._opts).onRecenter) === null || _b === void 0 ? void 0 : _b.call(_a); });
+            this._addBtn(bar, `${ICON_BASE$1}recenter.png`, 'Re-centre', () => this._opts.onRecenter?.());
         }
         if (this._opts.showPlayback) {
-            this._addBtn(bar, `${ICON_BASE$1}skip-back.png`, 'Previous frame', () => { var _a, _b; return (_b = (_a = this._opts).onSkipBack) === null || _b === void 0 ? void 0 : _b.call(_a); });
+            this._addBtn(bar, `${ICON_BASE$1}skip-back.png`, 'Previous frame', () => this._opts.onSkipBack?.());
             const playImg = this._addBtn(bar, `${ICON_BASE$1}pause.png`, 'Play / Pause', () => {
-                var _a, _b;
                 this._playing = !this._playing;
                 playImg.src = `${ICON_BASE$1}${this._playing ? 'pause' : 'play'}.png`;
-                (_b = (_a = this._opts).onPlay) === null || _b === void 0 ? void 0 : _b.call(_a);
+                this._opts.onPlay?.();
             });
             this._playBtn = playImg;
-            this._addBtn(bar, `${ICON_BASE$1}skip-next.png`, 'Next frame', () => { var _a, _b; return (_b = (_a = this._opts).onSkipNext) === null || _b === void 0 ? void 0 : _b.call(_a); });
+            this._addBtn(bar, `${ICON_BASE$1}skip-next.png`, 'Next frame', () => this._opts.onSkipNext?.());
         }
         return bar;
     }
@@ -15563,33 +15576,39 @@ const NOAA_WMS_URL = 'https://mapservices.weather.noaa.gov/eventdriven/services/
 const NOAA_WMS_LAYER = 'radar_base_reflectivity_time';
 // ── RadarPlayer ──────────────────────────────────────────────────────────────
 class RadarPlayer {
+    // Playback state (readable by card)
+    run = true;
+    navPaused = false;
+    viewPaused = false;
+    // Private radar state
+    _map;
+    _shadowRoot;
+    _getConfig;
+    _rainviewerLimiter;
+    _noaaLimiter;
+    _radarImage = [];
+    _radarTime = [];
+    _radarPaths = [];
+    _loadedSlots = [];
+    _frameStatuses = [];
+    _radarReady = false;
+    _frameGeneration = 0;
+    _configFrameCount = 5;
+    _doRadarUpdate = false;
+    // Frame loop state — _loopGen is incremented to cancel in-flight timers
+    _currentSlot = 0;
+    _loopGen = 0;
+    // Web worker timer (used only for the periodic 5-min radar update)
+    _worker = null;
+    _workerBlobUrl = null;
+    _workerCallbacks = new Map();
+    _workerNextId = 0;
+    // Rate-limit state
+    _rateLimitTimer = null;
+    _isRateLimited = false;
+    // Toolbar reference (set externally after toolbar is created)
+    toolbar = null;
     constructor(opts) {
-        // Playback state (readable by card)
-        this.run = true;
-        this.navPaused = false;
-        this.viewPaused = false;
-        this._radarImage = [];
-        this._radarTime = [];
-        this._radarPaths = [];
-        this._loadedSlots = [];
-        this._frameStatuses = [];
-        this._radarReady = false;
-        this._frameGeneration = 0;
-        this._configFrameCount = 5;
-        this._doRadarUpdate = false;
-        // Frame loop state — _loopGen is incremented to cancel in-flight timers
-        this._currentSlot = 0;
-        this._loopGen = 0;
-        // Web worker timer (used only for the periodic 5-min radar update)
-        this._worker = null;
-        this._workerBlobUrl = null;
-        this._workerCallbacks = new Map();
-        this._workerNextId = 0;
-        // Rate-limit state
-        this._rateLimitTimer = null;
-        this._isRateLimited = false;
-        // Toolbar reference (set externally after toolbar is created)
-        this.toolbar = null;
         this._map = opts.map;
         this._shadowRoot = opts.shadowRoot;
         this._getConfig = opts.getConfig;
@@ -15599,13 +15618,12 @@ class RadarPlayer {
     }
     // ── Config helpers ───────────────────────────────────────────────────────
     get _cfg() { return this._getConfig(); }
-    get _timeout() { var _a; return (_a = this._cfg.frame_delay) !== null && _a !== void 0 ? _a : 500; }
-    get _restartDelay() { var _a; return (_a = this._cfg.restart_delay) !== null && _a !== void 0 ? _a : 1000; }
+    get _timeout() { return this._cfg.frame_delay ?? 500; }
+    get _restartDelay() { return this._cfg.restart_delay ?? 1000; }
     get _fadeMs() {
-        var _a;
         if (this._cfg.animated_transitions === false)
             return 0;
-        return (_a = this._cfg.transition_time) !== null && _a !== void 0 ? _a : Math.floor(this._timeout * 0.4);
+        return this._cfg.transition_time ?? Math.floor(this._timeout * 0.4);
     }
     // ── Lifecycle ────────────────────────────────────────────────────────────
     /** Start loading radar frames for the current map view. */
@@ -15615,14 +15633,13 @@ class RadarPlayer {
     }
     /** Tear down all layers and cancel pending async work. */
     clear() {
-        var _a;
         this._stopLoop();
         this._clearLayers();
         if (this._rateLimitTimer) {
             clearTimeout(this._rateLimitTimer);
             this._rateLimitTimer = null;
         }
-        (_a = this._worker) === null || _a === void 0 ? void 0 : _a.terminate();
+        this._worker?.terminate();
         this._worker = null;
         this._workerCallbacks.clear();
         if (this._workerBlobUrl) {
@@ -15685,7 +15702,6 @@ class RadarPlayer {
         }
     }
     skipNext() {
-        var _a;
         if (!this._radarReady)
             return;
         const n = this._loadedSlots.length;
@@ -15695,10 +15711,9 @@ class RadarPlayer {
         this._showSlot(this._currentSlot);
         this._stopLoop();
         this.run = false;
-        (_a = this.toolbar) === null || _a === void 0 ? void 0 : _a.setPlaying(false);
+        this.toolbar?.setPlaying(false);
     }
     skipBack() {
-        var _a;
         if (!this._radarReady)
             return;
         const n = this._loadedSlots.length;
@@ -15708,7 +15723,7 @@ class RadarPlayer {
         this._showSlot(this._currentSlot);
         this._stopLoop();
         this.run = false;
-        (_a = this.toolbar) === null || _a === void 0 ? void 0 : _a.setPlaying(false);
+        this.toolbar?.setPlaying(false);
     }
     // ── Frame loop ───────────────────────────────────────────────────────────
     _stopLoop() {
@@ -15742,7 +15757,6 @@ class RadarPlayer {
     }
     /** Show one slot: set its container to opacity 1, all others to 0, update UI. */
     _showSlot(slot) {
-        var _a, _b, _c;
         const n = this._loadedSlots.length;
         if (n === 0 || slot < 0 || slot >= n)
             return;
@@ -15751,7 +15765,7 @@ class RadarPlayer {
         for (let s = 0; s < n; s++) {
             const fi = this._loadedSlots[s];
             const layer = this._radarImage[fi];
-            const el = layer && ((_b = (_a = layer).getContainer) === null || _b === void 0 ? void 0 : _b.call(_a));
+            const el = layer && layer.getContainer?.();
             if (el) {
                 el.style.transition = transition;
                 el.style.opacity = s === slot ? '1' : '0';
@@ -15761,7 +15775,7 @@ class RadarPlayer {
         if (fi !== undefined) {
             const ts = this._shadowRoot.getElementById('timestamp');
             if (ts)
-                ts.textContent = (_c = this._radarTime[fi]) !== null && _c !== void 0 ? _c : '';
+                ts.textContent = this._radarTime[fi] ?? '';
             this._highlightSegment(fi);
         }
     }
@@ -15780,16 +15794,15 @@ class RadarPlayer {
         }
     }
     _segColor(status, isCurrent) {
-        var _a, _b, _c, _d;
         const cfg = this._cfg;
-        const mapStyle = (_b = (_a = cfg.map_style) === null || _a === void 0 ? void 0 : _a.toLowerCase()) !== null && _b !== void 0 ? _b : '';
+        const mapStyle = cfg.map_style?.toLowerCase() ?? '';
         const dark = mapStyle === 'dark' || mapStyle === 'satellite';
         const map = dark
             ? { empty: '#444', loading: '#aa7700', loaded: 'steelblue', failed: '#aa1111',
                 cur_empty: '#666', cur_loading: '#cc9900', cur_loaded: '#6baed6', cur_failed: '#cc3333' }
             : { empty: '#e0e0e0', loading: '#ffcc00', loaded: '#ccf2ff', failed: '#ff4444',
                 cur_empty: '#c0c0c0', cur_loading: '#ffe566', cur_loaded: '#66d9ff', cur_failed: '#ff8888' };
-        return isCurrent ? ((_c = map[`cur_${status}`]) !== null && _c !== void 0 ? _c : map.cur_empty) : ((_d = map[status]) !== null && _d !== void 0 ? _d : map.empty);
+        return isCurrent ? (map[`cur_${status}`] ?? map.cur_empty) : (map[status] ?? map.empty);
     }
     _setSegment(fi, status) {
         this._frameStatuses[fi] = status;
@@ -15798,11 +15811,10 @@ class RadarPlayer {
             seg.style.backgroundColor = this._segColor(status, false);
     }
     _highlightSegment(fi) {
-        var _a;
         for (let j = 0; j < this._configFrameCount; j++) {
             const seg = this._shadowRoot.getElementById(`seg-${j}`);
             if (seg)
-                seg.style.backgroundColor = this._segColor((_a = this._frameStatuses[j]) !== null && _a !== void 0 ? _a : 'empty', j === fi);
+                seg.style.backgroundColor = this._segColor(this._frameStatuses[j] ?? 'empty', j === fi);
         }
     }
     // ── Rate limit banner ────────────────────────────────────────────────────
@@ -15818,7 +15830,7 @@ class RadarPlayer {
         this._showRateLimitBanner(true);
         if (this._rateLimitTimer)
             clearTimeout(this._rateLimitTimer);
-        this._rateLimitTimer = setTimeout(() => this._retryAfterRateLimit(), 10000);
+        this._rateLimitTimer = setTimeout(() => this._retryAfterRateLimit(), 10_000);
     }
     _retryAfterRateLimit() {
         this._isRateLimited = false;
@@ -15828,8 +15840,7 @@ class RadarPlayer {
     }
     // ── Layer helpers ────────────────────────────────────────────────────────
     _setLayerZ(layer, z) {
-        var _a, _b;
-        const el = (_b = (_a = layer).getContainer) === null || _b === void 0 ? void 0 : _b.call(_a);
+        const el = layer.getContainer?.();
         if (el)
             el.style.zIndex = String(z);
     }
@@ -15846,8 +15857,7 @@ class RadarPlayer {
     }
     // ── Radar fetching ───────────────────────────────────────────────────────
     async _fetchPaths() {
-        var _a, _b, _c, _d;
-        const dataSource = (_a = this._cfg.data_source) !== null && _a !== void 0 ? _a : 'RainViewer';
+        const dataSource = this._cfg.data_source ?? 'RainViewer';
         if (dataSource === 'NOAA') {
             const now = Date.now();
             const lag = 15 * 60 * 1000;
@@ -15861,15 +15871,14 @@ class RadarPlayer {
         }
         const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
         const data = await res.json();
-        const host = (_b = data.host) !== null && _b !== void 0 ? _b : 'https://tilecache.rainviewer.com';
-        const past = ((_d = (_c = data === null || data === void 0 ? void 0 : data.radar) === null || _c === void 0 ? void 0 : _c.past) !== null && _d !== void 0 ? _d : []).map((f) => ({
+        const host = data.host ?? 'https://tilecache.rainviewer.com';
+        const past = (data?.radar?.past ?? []).map((f) => ({
             time: f.time, path: f.path, host,
         }));
         return past.slice(-Math.min(this._configFrameCount, 13));
     }
     _createLayer(frame) {
-        var _a, _b;
-        const dataSource = (_a = this._cfg.data_source) !== null && _a !== void 0 ? _a : 'RainViewer';
+        const dataSource = this._cfg.data_source ?? 'RainViewer';
         if (dataSource === 'NOAA') {
             const isoTime = new Date(frame.time * 1000).toISOString().split('.')[0] + 'Z';
             return new FetchWmsTileLayer(NOAA_WMS_URL, {
@@ -15885,7 +15894,7 @@ class RadarPlayer {
             });
         }
         const snow = this._cfg.show_snow ? 1 : 0;
-        const host = (_b = frame.host) !== null && _b !== void 0 ? _b : 'https://tilecache.rainviewer.com';
+        const host = frame.host ?? 'https://tilecache.rainviewer.com';
         return new FetchTileLayer(`${host}${frame.path}/512/{z}/{x}/{y}/2/1_${snow}.png`, {
             detectRetina: false,
             tileSize: 512,
@@ -15904,7 +15913,6 @@ class RadarPlayer {
     }
     // ── Radar init ───────────────────────────────────────────────────────────
     async _initRadar() {
-        var _a, _b, _c;
         // Increment generation before the first await so any concurrently-running
         // _initRadar call (same-gen double-start) aborts at its next gen check.
         this._stopLoop();
@@ -15916,7 +15924,7 @@ class RadarPlayer {
         try {
             pastFrames = await this._fetchPaths();
         }
-        catch (_d) {
+        catch {
             return; // network/parse error — card stays blank until next nav or reload
         }
         if (myGen !== this._frameGeneration)
@@ -15927,7 +15935,7 @@ class RadarPlayer {
         const frameCount = pastFrames.length;
         this._configFrameCount = frameCount;
         this._buildSegments();
-        const dataSource = (_a = this._cfg.data_source) !== null && _a !== void 0 ? _a : 'RainViewer';
+        const dataSource = this._cfg.data_source ?? 'RainViewer';
         const colourBar = this._shadowRoot.getElementById('color-bar');
         const colourImg = this._shadowRoot.getElementById('img-color-bar');
         if (colourBar && colourImg) {
@@ -15946,7 +15954,7 @@ class RadarPlayer {
             this._radarTime[fi] = this._getTimeString(this._radarPaths[fi].time * 1000);
             layer.addTo(this._map);
             this._setLayerZ(layer, fi + 1);
-            const el = (_c = (_b = layer).getContainer) === null || _c === void 0 ? void 0 : _c.call(_b);
+            const el = layer.getContainer?.();
             if (el)
                 el.style.opacity = '0';
             const status = await layerSettled(layer);
@@ -15994,9 +16002,8 @@ class RadarPlayer {
     }
     // ── Periodic update ──────────────────────────────────────────────────────
     _scheduleUpdate() {
-        var _a;
-        const framePeriod = 300000;
-        const lag = ((_a = this._cfg.data_source) !== null && _a !== void 0 ? _a : 'RainViewer') === 'NOAA' ? 0 : 60000;
+        const framePeriod = 300_000;
+        const lag = (this._cfg.data_source ?? 'RainViewer') === 'NOAA' ? 0 : 60_000;
         this._workerTimeout(() => {
             if (this._radarReady && !this.navPaused && !this.viewPaused) {
                 this._updateRadar();
@@ -16007,7 +16014,6 @@ class RadarPlayer {
         }, framePeriod + lag);
     }
     async _updateRadar() {
-        var _a, _b;
         if (!this._map)
             return;
         const myGen = this._frameGeneration;
@@ -16015,7 +16021,7 @@ class RadarPlayer {
         try {
             pastFrames = await this._fetchPaths();
         }
-        catch (_c) {
+        catch {
             this._scheduleUpdate(); // retry on next cycle
             return;
         }
@@ -16030,7 +16036,7 @@ class RadarPlayer {
         const newLayer = this._createLayer(latestFrame);
         newLayer.addTo(this._map);
         const newTime = this._getTimeString(latestFrame.time * 1000);
-        (_a = this._radarImage[0]) === null || _a === void 0 ? void 0 : _a.remove();
+        this._radarImage[0]?.remove();
         for (let i = 0; i < frameCount - 1; i++) {
             this._radarImage[i] = this._radarImage[i + 1];
             this._radarTime[i] = this._radarTime[i + 1];
@@ -16042,7 +16048,7 @@ class RadarPlayer {
         for (let i = 0; i < frameCount - 1; i++) {
             const seg = this._shadowRoot.getElementById(`seg-${i}`);
             if (seg)
-                seg.style.backgroundColor = this._segColor((_b = this._frameStatuses[i]) !== null && _b !== void 0 ? _b : 'empty', false);
+                seg.style.backgroundColor = this._segColor(this._frameStatuses[i] ?? 'empty', false);
         }
         this._setSegment(frameCount - 1, 'loading');
         newLayer.once('load', () => {
@@ -16104,13 +16110,12 @@ function isMobileDevice() {
         /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua));
 }
 function getCurrentUserInfo(hass) {
-    var _a, _b, _c;
-    const userId = (_a = hass === null || hass === void 0 ? void 0 : hass.user) === null || _a === void 0 ? void 0 : _a.id;
+    const userId = hass?.user?.id;
     if (!userId)
         return null;
-    for (const [entityId, state] of Object.entries((hass === null || hass === void 0 ? void 0 : hass.states) || {})) {
-        if (entityId.startsWith('person.') && ((_b = state.attributes) === null || _b === void 0 ? void 0 : _b.user_id) === userId) {
-            const trackers = (_c = state.attributes) === null || _c === void 0 ? void 0 : _c.device_trackers;
+    for (const [entityId, state] of Object.entries(hass?.states || {})) {
+        if (entityId.startsWith('person.') && state.attributes?.user_id === userId) {
+            const trackers = state.attributes?.device_trackers;
             const deviceTracker = Array.isArray(trackers)
                 ? trackers[0]
                 : typeof trackers === 'string'
@@ -16129,13 +16134,12 @@ function getCoordinateConfig(baseConfig, mobileConfig, isMobile, userDeviceTrack
     return baseConfig;
 }
 function resolveCoordinate(config, coordType, fallback, hass) {
-    var _a, _b, _c, _d;
     if (config === undefined || config === null)
         return fallback;
     if (typeof config === 'number')
         return config;
     if (typeof config === 'string') {
-        const val = (_b = (_a = hass === null || hass === void 0 ? void 0 : hass.states[config]) === null || _a === void 0 ? void 0 : _a.attributes) === null || _b === void 0 ? void 0 : _b[coordType];
+        const val = hass?.states[config]?.attributes?.[coordType];
         if (val === undefined)
             return fallback;
         const num = parseFloat(val);
@@ -16145,7 +16149,7 @@ function resolveCoordinate(config, coordType, fallback, hass) {
         const attr = coordType === 'latitude'
             ? config.latitude_attribute || 'latitude'
             : config.longitude_attribute || 'longitude';
-        const val = (_d = (_c = hass === null || hass === void 0 ? void 0 : hass.states[config.entity]) === null || _c === void 0 ? void 0 : _c.attributes) === null || _d === void 0 ? void 0 : _d[attr];
+        const val = hass?.states[config.entity]?.attributes?.[attr];
         if (val === undefined)
             return fallback;
         const num = parseFloat(val);
@@ -16154,12 +16158,11 @@ function resolveCoordinate(config, coordType, fallback, hass) {
     return fallback;
 }
 function resolveCoordinatePair(latConfig, lonConfig, fallbackLat, fallbackLon, hass) {
-    var _a, _b;
     if (typeof latConfig === 'string' &&
         typeof lonConfig === 'string' &&
         latConfig === lonConfig) {
-        const entity = hass === null || hass === void 0 ? void 0 : hass.states[latConfig];
-        if (((_a = entity === null || entity === void 0 ? void 0 : entity.attributes) === null || _a === void 0 ? void 0 : _a.latitude) && ((_b = entity === null || entity === void 0 ? void 0 : entity.attributes) === null || _b === void 0 ? void 0 : _b.longitude)) {
+        const entity = hass?.states[latConfig];
+        if (entity?.attributes?.latitude && entity?.attributes?.longitude) {
             const lat = parseFloat(entity.attributes.latitude);
             const lon = parseFloat(entity.attributes.longitude);
             if (!isNaN(lat) && !isNaN(lon))
@@ -16184,31 +16187,27 @@ const MDI_PATHS = {
     'home-circle': 'M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M10,17V13H8L12,7L16,13H14V17H10Z',
 };
 function findPersonEntityForDeviceTracker(deviceTrackerId, hass) {
-    var _a;
-    for (const [entityId, state] of Object.entries((hass === null || hass === void 0 ? void 0 : hass.states) || {})) {
+    for (const [entityId, state] of Object.entries(hass?.states || {})) {
         if (!entityId.startsWith('person.'))
             continue;
-        const trackers = (_a = state.attributes) === null || _a === void 0 ? void 0 : _a.device_trackers;
+        const trackers = state.attributes?.device_trackers;
         if (Array.isArray(trackers) && trackers.includes(deviceTrackerId))
             return entityId;
     }
     return undefined;
 }
 function resolveToPersonEntity(entityId, hass) {
-    var _a;
     if (entityId.startsWith('device_tracker.')) {
-        return (_a = findPersonEntityForDeviceTracker(entityId, hass)) !== null && _a !== void 0 ? _a : entityId;
+        return findPersonEntityForDeviceTracker(entityId, hass) ?? entityId;
     }
     return entityId;
 }
 function resolveEntityPicture(entityId, hass) {
-    var _a, _b, _c;
     if (!entityId)
         return null;
-    return (_c = (_b = (_a = hass === null || hass === void 0 ? void 0 : hass.states[entityId]) === null || _a === void 0 ? void 0 : _a.attributes) === null || _b === void 0 ? void 0 : _b.entity_picture) !== null && _c !== void 0 ? _c : null;
+    return hass?.states[entityId]?.attributes?.entity_picture ?? null;
 }
 function getMarkerIconConfig(config, hass, isMobile, userInfo) {
-    var _a, _b;
     // Mobile falls back to the desktop icon type (not entity_picture) when unset.
     // Use || so that the editor's empty-string "Same as desktop" sentinel also falls through.
     const iconType = isMobile
@@ -16217,18 +16216,18 @@ function getMarkerIconConfig(config, hass, isMobile, userInfo) {
     let iconEntity = isMobile ? config.mobile_marker_icon_entity : config.marker_icon_entity;
     if (iconType === 'entity_picture' && !iconEntity) {
         const latCfg = isMobile
-            ? ((_a = config.mobile_marker_latitude) !== null && _a !== void 0 ? _a : config.marker_latitude)
+            ? (config.mobile_marker_latitude ?? config.marker_latitude)
             : config.marker_latitude;
         if (typeof latCfg === 'string')
             iconEntity = resolveToPersonEntity(latCfg, hass);
         if (!iconEntity) {
             const cLat = isMobile
-                ? ((_b = config.mobile_center_latitude) !== null && _b !== void 0 ? _b : config.center_latitude)
+                ? (config.mobile_center_latitude ?? config.center_latitude)
                 : config.center_latitude;
             if (typeof cLat === 'string')
                 iconEntity = resolveToPersonEntity(cLat, hass);
         }
-        if (!iconEntity && (userInfo === null || userInfo === void 0 ? void 0 : userInfo.personEntity))
+        if (!iconEntity && userInfo?.personEntity)
             iconEntity = userInfo.personEntity;
     }
     return { type: iconType, entity: iconEntity };
@@ -16269,41 +16268,41 @@ window.customCards.push({
     description: 'A rain radar card using tiled imagery from RainViewer and NOAA/NWS',
 });
 let WeatherRadarCard = class WeatherRadarCard extends i {
-    constructor() {
-        super(...arguments);
-        // ── HA properties ────────────────────────────────────────────────────────
-        this.isPanel = false;
-        // ── Map / player state ────────────────────────────────────────────────────
-        this._map = null;
-        this._townLayer = null;
-        this._toolbar = null;
-        this._marker = null;
-        this._rangeRings = [];
-        this._player = null;
-        this._pendingCenter = null;
-        this._userMoveInProgress = false;
-        this._navReloadTimer = null;
-        this._visObserver = null;
-        this._resizeObserver = null;
-        this._visibilityHandler = null;
-        this._navContainer = null;
-        this._markUserMove = null;
-        this._darkModeQuery = null;
-        this._darkModeHandler = null;
-        this._rainviewerLimiter = new RateLimiter(500);
-        this._noaaLimiter = new RateLimiter(120);
-    }
     static async getConfigElement() {
         return document.createElement('weather-radar-card-editor');
     }
     static getStubConfig() { return {}; }
+    // ── HA properties ────────────────────────────────────────────────────────
+    isPanel = false;
+    hass;
+    _config;
+    editMode;
+    // ── Map / player state ────────────────────────────────────────────────────
+    _map = null;
+    _townLayer = null;
+    _toolbar = null;
+    _marker = null;
+    _rangeRings = [];
+    _dynamicStyleEl;
+    _player = null;
+    _pendingCenter = null;
+    _userMoveInProgress = false;
+    _navReloadTimer = null;
+    _visObserver = null;
+    _resizeObserver = null;
+    _visibilityHandler = null;
+    _navContainer = null;
+    _markUserMove = null;
+    _darkModeQuery = null;
+    _darkModeHandler = null;
+    _rainviewerLimiter = new RateLimiter(500);
+    _noaaLimiter = new RateLimiter(120);
     // ── Helpers ───────────────────────────────────────────────────────────────
     _effectiveMapStyle() {
-        var _a, _b, _c, _d;
-        const configured = (_b = (_a = this._config) === null || _a === void 0 ? void 0 : _a.map_style) === null || _b === void 0 ? void 0 : _b.toLowerCase();
+        const configured = this._config?.map_style?.toLowerCase();
         if (configured && configured !== 'auto')
             return configured;
-        const isEnglish = ((_d = (_c = this.hass) === null || _c === void 0 ? void 0 : _c.language) !== null && _d !== void 0 ? _d : 'en').startsWith('en');
+        const isEnglish = (this.hass?.language ?? 'en').startsWith('en');
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (prefersDark)
             return 'dark';
@@ -16396,17 +16395,16 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
     }
     // ── Map init / teardown ───────────────────────────────────────────────────
     _initMap() {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
-        const mapEl = (_a = this.shadowRoot) === null || _a === void 0 ? void 0 : _a.getElementById('mapid');
+        const mapEl = this.shadowRoot?.getElementById('mapid');
         if (!mapEl || this._map)
             return;
         const cfg = this._config;
         const mapStyle = this._effectiveMapStyle();
         const isMobile = isMobileDevice();
         const userInfo = getCurrentUserInfo(this.hass);
-        const haLat = (_d = (_c = (_b = this.hass) === null || _b === void 0 ? void 0 : _b.config) === null || _c === void 0 ? void 0 : _c.latitude) !== null && _d !== void 0 ? _d : 0;
-        const haLon = (_g = (_f = (_e = this.hass) === null || _e === void 0 ? void 0 : _e.config) === null || _f === void 0 ? void 0 : _f.longitude) !== null && _g !== void 0 ? _g : 0;
-        const center = resolveCoordinatePair(getCoordinateConfig(cfg.center_latitude, cfg.mobile_center_latitude, isMobile, userInfo === null || userInfo === void 0 ? void 0 : userInfo.deviceTracker), getCoordinateConfig(cfg.center_longitude, cfg.mobile_center_longitude, isMobile, userInfo === null || userInfo === void 0 ? void 0 : userInfo.deviceTracker), haLat, haLon, this.hass);
+        const haLat = this.hass?.config?.latitude ?? 0;
+        const haLon = this.hass?.config?.longitude ?? 0;
+        const center = resolveCoordinatePair(getCoordinateConfig(cfg.center_latitude, cfg.mobile_center_latitude, isMobile, userInfo?.deviceTracker), getCoordinateConfig(cfg.center_longitude, cfg.mobile_center_longitude, isMobile, userInfo?.deviceTracker), haLat, haLon, this.hass);
         const isStatic = cfg.static_map === true;
         const hasDoubleTapAction = cfg.double_tap_action && cfg.double_tap_action !== 'none';
         this._map = leafletSrcExports.map(mapEl, {
@@ -16416,12 +16414,12 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             boxZoom: !isStatic, dragging: !isStatic, keyboard: !isStatic, touchZoom: !isStatic,
             wheelPxPerZoomLevel: 120, attributionControl: false,
             minZoom: 3, maxZoom: 10,
-        }).setView([center.lat, center.lon], (_h = cfg.zoom_level) !== null && _h !== void 0 ? _h : 7);
+        }).setView([center.lat, center.lon], cfg.zoom_level ?? 7);
         if (cfg.disable_scroll === true && !isStatic) {
             this._map.dragging.disable();
         }
         if (cfg.show_scale === true) {
-            const metric = ((_m = (_l = (_k = (_j = this.hass) === null || _j === void 0 ? void 0 : _j.config) === null || _k === void 0 ? void 0 : _k.unit_system) === null || _l === void 0 ? void 0 : _l.length) !== null && _m !== void 0 ? _m : 'km') === 'km';
+            const metric = (this.hass?.config?.unit_system?.length ?? 'km') === 'km';
             leafletSrcExports.control.scale({ imperial: !metric, metric }).addTo(this._map);
         }
         this._setupBasemap(mapStyle);
@@ -16446,10 +16444,9 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             noaaLimiter: this._noaaLimiter,
         });
         this._player.toolbar = this._toolbar;
-        this._player.start((_o = cfg.frame_count) !== null && _o !== void 0 ? _o : 5);
+        this._player.start(cfg.frame_count ?? 5);
     }
     _teardown() {
-        var _a;
         if (this._navReloadTimer)
             clearTimeout(this._navReloadTimer);
         if (this._visObserver) {
@@ -16475,7 +16472,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             this._darkModeQuery = null;
             this._darkModeHandler = null;
         }
-        (_a = this._player) === null || _a === void 0 ? void 0 : _a.clear();
+        this._player?.clear();
         this._player = null;
         if (this._map) {
             this._map.remove();
@@ -16530,11 +16527,10 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         }
     }
     _setupAttribution(mapStyle) {
-        var _a, _b;
-        const el = (_a = this.shadowRoot) === null || _a === void 0 ? void 0 : _a.getElementById('attribution');
+        const el = this.shadowRoot?.getElementById('attribution');
         if (!el)
             return;
-        const ds = (_b = this._config.data_source) !== null && _b !== void 0 ? _b : 'RainViewer';
+        const ds = this._config.data_source ?? 'RainViewer';
         const radarCredit = ds === 'NOAA'
             ? 'Radar: <a href="https://www.weather.gov" target="_blank">NOAA/NWS</a>'
             : 'Radar: <a href="https://rainviewer.com" target="_blank">RainViewer</a>';
@@ -16547,22 +16543,21 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
     }
     // ── Marker ────────────────────────────────────────────────────────────────
     _setupMarker(isMobile, userInfo, mapStyle) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
         if (!this._map)
             return;
         const cfg = this._config;
         // Marker falls back to HA's home location, not the map center, so that
         // changing the map center via "Save as map center" doesn't move the marker.
-        const haLat = (_c = (_b = (_a = this.hass) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.latitude) !== null && _c !== void 0 ? _c : 0;
-        const haLon = (_f = (_e = (_d = this.hass) === null || _d === void 0 ? void 0 : _d.config) === null || _e === void 0 ? void 0 : _e.longitude) !== null && _f !== void 0 ? _f : 0;
-        const markerCoords = resolveCoordinatePair(getCoordinateConfig(cfg.marker_latitude, cfg.mobile_marker_latitude, isMobile, userInfo === null || userInfo === void 0 ? void 0 : userInfo.deviceTracker), getCoordinateConfig(cfg.marker_longitude, cfg.mobile_marker_longitude, isMobile, userInfo === null || userInfo === void 0 ? void 0 : userInfo.deviceTracker), haLat, haLon, this.hass);
+        const haLat = this.hass?.config?.latitude ?? 0;
+        const haLon = this.hass?.config?.longitude ?? 0;
+        const markerCoords = resolveCoordinatePair(getCoordinateConfig(cfg.marker_latitude, cfg.mobile_marker_latitude, isMobile, userInfo?.deviceTracker), getCoordinateConfig(cfg.marker_longitude, cfg.mobile_marker_longitude, isMobile, userInfo?.deviceTracker), haLat, haLon, this.hass);
         if (cfg.show_marker) {
             const icon = createMarkerIcon(cfg, this.hass, isMobile, userInfo, mapStyle);
             this._marker = leafletSrcExports.marker([markerCoords.lat, markerCoords.lon], { icon, interactive: false })
                 .addTo(this._map);
         }
         if (cfg.show_range) {
-            const metric = ((_k = (_j = (_h = (_g = this.hass) === null || _g === void 0 ? void 0 : _g.config) === null || _h === void 0 ? void 0 : _h.unit_system) === null || _j === void 0 ? void 0 : _j.length) !== null && _k !== void 0 ? _k : 'km') === 'km';
+            const metric = (this.hass?.config?.unit_system?.length ?? 'km') === 'km';
             for (const r of (metric ? [50000, 100000, 200000] : [48280, 96561, 193121])) {
                 this._rangeRings.push(leafletSrcExports.circle([markerCoords.lat, markerCoords.lon], { radius: r, weight: 1, fill: false, opacity: 0.3, interactive: false })
                     .addTo(this._map));
@@ -16582,9 +16577,9 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             showRecenter,
             showPlayback,
             onRecenter: () => this._recenter(),
-            onPlay: () => { var _a; return (_a = this._player) === null || _a === void 0 ? void 0 : _a.togglePlay(); },
-            onSkipBack: () => { var _a; return (_a = this._player) === null || _a === void 0 ? void 0 : _a.skipBack(); },
-            onSkipNext: () => { var _a; return (_a = this._player) === null || _a === void 0 ? void 0 : _a.skipNext(); },
+            onPlay: () => this._player?.togglePlay(),
+            onSkipBack: () => this._player?.skipBack(),
+            onSkipNext: () => this._player?.skipNext(),
         });
         this._toolbar.addTo(this._map);
     }
@@ -16611,14 +16606,13 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         if (!action || action === 'none')
             return;
         this._map.on('dblclick', (e) => {
-            var _a;
             leafletSrcExports.DomEvent.stopPropagation(e);
             if (action === 'recenter') {
                 this._recenter();
                 return;
             }
             if (action === 'toggle_play') {
-                (_a = this._player) === null || _a === void 0 ? void 0 : _a.togglePlay();
+                this._player?.togglePlay();
                 return;
             }
             // HA action object — e.g. {action: 'navigate', navigation_path: '/lovelace/1'}
@@ -16628,18 +16622,16 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         });
     }
     _recenter() {
-        var _a, _b, _c, _d, _e, _f, _g;
         if (!this._map)
             return;
         const cfg = this._config;
         const isMobile = isMobileDevice();
-        const c = resolveCoordinatePair(getCoordinateConfig(cfg.center_latitude, cfg.mobile_center_latitude, isMobile), getCoordinateConfig(cfg.center_longitude, cfg.mobile_center_longitude, isMobile), (_c = (_b = (_a = this.hass) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.latitude) !== null && _c !== void 0 ? _c : 0, (_f = (_e = (_d = this.hass) === null || _d === void 0 ? void 0 : _d.config) === null || _e === void 0 ? void 0 : _e.longitude) !== null && _f !== void 0 ? _f : 0, this.hass);
-        this._map.setView([c.lat, c.lon], (_g = cfg.zoom_level) !== null && _g !== void 0 ? _g : 7);
+        const c = resolveCoordinatePair(getCoordinateConfig(cfg.center_latitude, cfg.mobile_center_latitude, isMobile), getCoordinateConfig(cfg.center_longitude, cfg.mobile_center_longitude, isMobile), this.hass?.config?.latitude ?? 0, this.hass?.config?.longitude ?? 0, this.hass);
+        this._map.setView([c.lat, c.lon], cfg.zoom_level ?? 7);
     }
     // ── Navigation pause ──────────────────────────────────────────────────────
     _setupProgressBarScrub() {
-        var _a;
-        const bar = (_a = this.shadowRoot) === null || _a === void 0 ? void 0 : _a.getElementById('div-progress-bar');
+        const bar = this.shadowRoot?.getElementById('div-progress-bar');
         if (!bar)
             return;
         let active = false;
@@ -16658,16 +16650,14 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         bar.addEventListener('pointermove', (e) => { if (active)
             seek(e); });
         bar.addEventListener('pointerup', () => {
-            var _a;
             if (!active)
                 return;
             active = false;
-            (_a = this._player) === null || _a === void 0 ? void 0 : _a.scrubEnd();
+            this._player?.scrubEnd();
         });
         bar.addEventListener('pointercancel', () => {
-            var _a;
             active = false;
-            (_a = this._player) === null || _a === void 0 ? void 0 : _a.scrubEnd();
+            this._player?.scrubEnd();
         });
     }
     _setupNavListeners() {
@@ -16680,17 +16670,15 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         this._navContainer.addEventListener('pointerdown', this._markUserMove, { passive: true });
         this._navContainer.addEventListener('wheel', this._markUserMove, { passive: true });
         this._map.on('movestart zoomstart', () => {
-            var _a;
             if (this._navReloadTimer)
                 clearTimeout(this._navReloadTimer);
-            (_a = this._player) === null || _a === void 0 ? void 0 : _a.onNavPaused();
+            this._player?.onNavPaused();
         });
         this._map.on('moveend zoomend', () => {
             if (this._navReloadTimer)
                 clearTimeout(this._navReloadTimer);
             this._navReloadTimer = setTimeout(() => {
-                var _a, _b;
-                (_a = this._player) === null || _a === void 0 ? void 0 : _a.onNavSettled((_b = this._config.frame_count) !== null && _b !== void 0 ? _b : 5);
+                this._player?.onNavSettled(this._config.frame_count ?? 5);
             }, 100);
             if (this._userMoveInProgress && this.editMode && this._map) {
                 const c = this._map.getCenter();
@@ -16702,35 +16690,31 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
     // ── Visibility / resize observers ─────────────────────────────────────────
     _setupVisibilityObserver() {
         this._visObserver = new IntersectionObserver((entries) => {
-            var _a, _b;
             if (entries[0].isIntersecting)
-                (_a = this._player) === null || _a === void 0 ? void 0 : _a.onVisibilityVisible();
+                this._player?.onVisibilityVisible();
             else
-                (_b = this._player) === null || _b === void 0 ? void 0 : _b.onVisibilityHidden();
+                this._player?.onVisibilityHidden();
         }, { threshold: 0.1 });
         this._visObserver.observe(this);
         this._visibilityHandler = () => {
-            var _a, _b;
             if (document.hidden)
-                (_a = this._player) === null || _a === void 0 ? void 0 : _a.onVisibilityHidden();
+                this._player?.onVisibilityHidden();
             else
-                (_b = this._player) === null || _b === void 0 ? void 0 : _b.onVisibilityVisible();
+                this._player?.onVisibilityVisible();
         };
         document.addEventListener('visibilitychange', this._visibilityHandler);
     }
     _setupResizeObserver() {
-        var _a;
-        const mapEl = (_a = this.shadowRoot) === null || _a === void 0 ? void 0 : _a.getElementById('mapid');
+        const mapEl = this.shadowRoot?.getElementById('mapid');
         if (!mapEl)
             return;
-        this._resizeObserver = new ResizeObserver(() => { var _a; return (_a = this._map) === null || _a === void 0 ? void 0 : _a.invalidateSize(); });
+        this._resizeObserver = new ResizeObserver(() => this._map?.invalidateSize());
         this._resizeObserver.observe(mapEl);
     }
-};
-// ── Styles ────────────────────────────────────────────────────────────────
-WeatherRadarCard.styles = [
-    r$5(leafletCss),
-    i$3 `
+    // ── Styles ────────────────────────────────────────────────────────────────
+    static styles = [
+        r$5(leafletCss),
+        i$3 `
       :host { display: block; }
       ha-card { overflow: hidden; position: relative; }
       #mapid { width: 100%; position: relative; }
@@ -16762,7 +16746,8 @@ WeatherRadarCard.styles = [
         white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
       }
     `,
-];
+    ];
+};
 __decorate([
     n({ type: Boolean, reflect: true })
 ], WeatherRadarCard.prototype, "isPanel", void 0);
