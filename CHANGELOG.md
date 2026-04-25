@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-04-24
+
+### Added
+
+- `disable_scroll` option — disables map pan/drag (mouse and touch) while keeping pinch-to-zoom active; lets mobile users swipe through the HA dashboard without moving the map
+
+### Fixed
+
+- `show_scale` had no effect — the Leaflet scale control was never added to the map despite the option being present in config and the editor toggle being wired. Now correctly renders the scale bar, respecting the HA instance unit system (metric / imperial).
+
 ## [3.0.0] - 2026-04-24
 
 ### Added
@@ -120,7 +130,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 For changes in versions prior to 2.0.4, please refer to the git commit history.
 
-[Unreleased]: https://github.com/jpettitt/weather-radar-card/compare/v2.1.1...HEAD
+[Unreleased]: https://github.com/jpettitt/weather-radar-card/compare/v3.0.1...HEAD
+[3.0.1]: https://github.com/jpettitt/weather-radar-card/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/jpettitt/weather-radar-card/compare/v2.2.0...v3.0.0
 [2.2.0]: https://github.com/jpettitt/weather-radar-card/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/jpettitt/weather-radar-card/compare/v2.1.0...v2.1.1
