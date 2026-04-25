@@ -100,7 +100,7 @@ export function resolveTracking(
   hass: HomeAssistant | undefined,
   fallbackLat: number,
   fallbackLon: number,
-): { lat: number; lon: number } | null {
+): { lat: number; lon: number; markerIndex: number } | null {
   const userId = hass?.user?.id;
   let winnerIdx = -1;
   let winnerPriority = 0;
@@ -134,5 +134,5 @@ export function resolveTracking(
   const pos = resolveMarkerPosition(markers[winnerIdx], hass, fallbackLat, fallbackLon);
   // Don't pan to the winner if it's at home — same rule as rendering suppression.
   if (isAtHome(markers[winnerIdx], pos.lat, pos.lon, fallbackLat, fallbackLon, hass)) return null;
-  return pos;
+  return { ...pos, markerIndex: winnerIdx };
 }

@@ -371,6 +371,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         rangeRingsSet = true;
       }
     }
+
+    // Set initial z-index so the tracked marker starts on top.
+    const initialWinner = resolveTracking(markers, this.hass, haLat, haLon);
+    for (const [i, lMarker] of this._markers.entries()) {
+      lMarker.setZIndexOffset(initialWinner?.markerIndex === i ? 1000 : 0);
+    }
   }
 
   private _updateMarkerPositions(): void {
@@ -392,6 +398,10 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     const haLat = this.hass?.config?.latitude ?? 0;
     const haLon = this.hass?.config?.longitude ?? 0;
     const result = resolveTracking(markers, this.hass, haLat, haLon);
+    // Keep the tracked marker above all others.
+    for (const [i, lMarker] of this._markers.entries()) {
+      lMarker.setZIndexOffset(result?.markerIndex === i ? 1000 : 0);
+    }
     if (result) this._map.panTo([result.lat, result.lon]);
   }
 

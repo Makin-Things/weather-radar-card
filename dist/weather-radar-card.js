@@ -16533,7 +16533,7 @@ function resolveTracking(markers, hass, fallbackLat, fallbackLon) {
     // Don't pan to the winner if it's at home — same rule as rendering suppression.
     if (isAtHome(markers[winnerIdx], pos.lat, pos.lon, fallbackLat, fallbackLon, hass))
         return null;
-    return pos;
+    return { ...pos, markerIndex: winnerIdx };
 }
 
 /* eslint no-console: 0 */
@@ -16858,6 +16858,11 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
                 rangeRingsSet = true;
             }
         }
+        // Set initial z-index so the tracked marker starts on top.
+        const initialWinner = resolveTracking(markers, this.hass, haLat, haLon);
+        for (const [i, lMarker] of this._markers.entries()) {
+            lMarker.setZIndexOffset(initialWinner?.markerIndex === i ? 1000 : 0);
+        }
     }
     _updateMarkerPositions() {
         const markers = this._config?.markers ?? [];
@@ -16879,6 +16884,10 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         const haLat = this.hass?.config?.latitude ?? 0;
         const haLon = this.hass?.config?.longitude ?? 0;
         const result = resolveTracking(markers, this.hass, haLat, haLon);
+        // Keep the tracked marker above all others.
+        for (const [i, lMarker] of this._markers.entries()) {
+            lMarker.setZIndexOffset(result?.markerIndex === i ? 1000 : 0);
+        }
         if (result)
             this._map.panTo([result.lat, result.lon]);
     }
