@@ -506,7 +506,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   static styles = [
     unsafeCSS(leafletCss),
     css`
-      :host { display: block; }
+      :host { display: block; isolation: isolate; }
       ha-card { overflow: hidden; position: relative; }
       #mapid { width: 100%; position: relative; }
       .status-banner {

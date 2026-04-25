@@ -16715,7 +16715,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
     static styles = [
         r$5(leafletCss),
         i$3 `
-      :host { display: block; }
+      :host { display: block; isolation: isolate; }
       ha-card { overflow: hidden; position: relative; }
       #mapid { width: 100%; position: relative; }
       .status-banner {
