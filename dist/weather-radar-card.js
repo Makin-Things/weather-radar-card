@@ -15226,7 +15226,7 @@ WeatherRadarCardEditor = __decorate([
     t$1('weather-radar-card-editor')
 ], WeatherRadarCardEditor);
 
-const CARD_VERSION = '2.4.1';
+const CARD_VERSION = '3.0.1';
 
 var common$2 = {
 	version: "Version",
