@@ -106,9 +106,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _calculateHeight(): string {
     const cfg = this._config;
     if (cfg.height && this._validateCssSize(cfg.height)) return cfg.height;
-    if (cfg.square_map) {
-      return cfg.width && this._validateCssSize(cfg.width) ? cfg.width : '100%';
-    }
     return '400px';
   }
 
@@ -185,7 +182,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
             Save as map center
           </button>
         ` : ''}
-        <div id="mapid" style="height:${this._calculateHeight()}"></div>
+        <div id="mapid" style="${this._config.square_map && !this._config.height ? 'aspect-ratio:1/1' : `height:${this._calculateHeight()}`}"></div>
         <div id="div-progress-bar" style="height:8px;cursor:pointer;display:${this._config.show_progress_bar === false ? 'none' : 'flex'};background:${dark ? '#1c1c1c' : '#fff'}"></div>
         <div id="bottom-container" class="${dark ? 'dark-links' : 'light-links'}"
              style="height:32px;background:${dark ? '#1c1c1c' : '#fff'};color:${dark ? '#ddd' : ''}">
