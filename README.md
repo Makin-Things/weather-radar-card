@@ -59,7 +59,7 @@ All options can be configured using the GUI editor — there is no need to edit 
 | ---- | ---- | ----------- | ----------- | ------- |
 | type | string | **Required** | | must be `'custom:weather-radar-card'` |
 | data_source | string | **Optional** | Radar tile source (see [Data Source](#data-source)) | `'RainViewer'` |
-| map_style | string | **Optional** | Map style (see [Map Style](#map-style)) | `'Light'` (English) / `'OSM'` (other languages) |
+| map_style | string | **Optional** | Map style (see [Map Style](#map-style)) | `'Auto'` (follows OS dark/light mode) |
 | zoom_level | number | **Optional** | Initial zoom level, 3–10 | `7` |
 | center_latitude | number / string | **Optional** | Initial map center latitude — number or entity ID | HA instance location |
 | center_longitude | number / string | **Optional** | Initial map center longitude — number or entity ID | HA instance location |
@@ -75,7 +75,7 @@ All options can be configured using the GUI editor — there is no need to edit 
 | show_scale | boolean | **Optional** | Show a distance scale bar on the map | `false` |
 | double_tap_action | string / object | **Optional** | Action on double-tap: `'recenter'`, `'toggle_play'`, `'none'`, or any HA action object | `'none'` |
 | disable_scroll | boolean | **Optional** | Disable map pan/drag while keeping pinch-to-zoom; lets mobile users swipe the page past the map | `false` |
-| cluster_markers | boolean | **Optional** | Cluster nearby markers into a badge; tap/click the badge to spiderfy (fan out) individual markers. The tracked marker always renders outside the cluster. Clusters containing a home marker show the home icon in the badge. | `false` |
+| cluster_markers | boolean | **Optional** | Cluster nearby markers into a badge; tap/click the badge to spiderfy (fan out) individual markers. The tracked marker always renders outside the cluster. Clusters containing a home marker render the home icon with a small superscript count badge. | `true` |
 | static_map | boolean | **Optional** | Disable all panning and zooming | `false` |
 | show_zoom | boolean | **Optional** | Show zoom controls | `false` |
 | square_map | boolean | **Optional** | Keep the map square | `false` |
@@ -176,8 +176,9 @@ The `markers` option accepts a list. Each entry can have:
 | `entity` | string | Entity ID (`device_tracker.*`, `person.*`, `zone.*`). Position is read from the entity's `latitude`/`longitude` attributes and updated live on every HA state change. |
 | `latitude` | number | Static latitude (used when `entity` is not set or unavailable) |
 | `longitude` | number | Static longitude |
-| `icon` | string | `'default'` (home SVG), `'entity_picture'`, or `'mdi:icon-name'` |
-| `icon_entity` | string | Entity ID for the picture when `icon: entity_picture`. Auto-detected from `entity` if blank. |
+| `icon` | string | Any `mdi:*` icon name (autocomplete in the editor) or `'entity_picture'` to use the entity's photo. If blank, auto-detected from the entity (HA `attributes.icon`, then `device_class` / `source_type`, then a domain default). When unset and there is no entity, the default home SVG is used. |
+| `icon_entity` | string | Entity ID to read the photo from when `icon: entity_picture`. Defaults to `entity` if blank. |
+| `color` | string | CSS colour for `mdi:*` and default icons (e.g. `#ff0000`, `red`). Ignored for `entity_picture`. |
 | `track` | string / bool | `'entity'` — pan the map to follow this marker; `true` — lowest-priority always-on fallback |
 | `mobile_only` | boolean | Only show this marker on mobile devices |
 
@@ -190,6 +191,10 @@ When multiple markers have `track` set, the card picks one to centre the map on 
 3. **`track: true`** — lowest always-on fallback; overridden by any `track: entity` match.
 
 Multiple markers at the same priority level log a console warning and use the first one in the list.
+
+#### Default marker
+
+If `markers` is not set in the config, the card automatically creates a single `zone.home` marker so the map always shows your home location. To opt out entirely, set `markers: []` (an explicit empty array).
 
 #### Migration from single-marker config
 
@@ -274,7 +279,6 @@ frame_delay: 100
 markers:
   - latitude: -33.857058
     longitude: 151.215179
-    icon: default
 ```
 
 Custom card dimensions:

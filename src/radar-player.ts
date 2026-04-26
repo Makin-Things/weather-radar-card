@@ -400,15 +400,6 @@ export class RadarPlayer {
 
     this._buildSegments();
 
-    const dataSource = this._cfg.data_source ?? 'RainViewer';
-    const colourBar = this._shadowRoot.getElementById('color-bar');
-    const colourImg = this._shadowRoot.getElementById('img-color-bar') as HTMLImageElement | null;
-    if (colourBar && colourImg) {
-      const showBar = this._cfg.show_color_bar !== false && dataSource !== 'NOAA';
-      colourBar.style.display = showBar ? '' : 'none';
-      if (showBar) colourImg.src = '/local/community/weather-radar-card/radar-colour-bar-universalblue.png';
-    }
-
     let newestShown = false;
 
     for (let fi = frameCount - 1; fi >= 0; fi--) {

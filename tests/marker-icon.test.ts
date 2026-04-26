@@ -77,27 +77,28 @@ describe('createMarkerIconForMarker', () => {
     expect(result.iconUrl).toContain('home-circle');
   });
 
-  it('returns MDI divIcon for a known icon name on a light map', () => {
-    const result = createMarkerIconForMarker({ icon: 'mdi:home' }, mockHass(), 'light') as any;
+  it('renders <ha-icon> divIcon with the configured icon name on a light map', () => {
+    const result = createMarkerIconForMarker({ icon: 'mdi:car-pickup' }, mockHass(), 'light') as any;
     expect(result._type).toBe('divIcon');
-    expect(result.html).toContain('<svg');
-    expect(result.html).toContain('#333333');
+    expect(result.html).toContain('<ha-icon');
+    expect(result.html).toContain('icon="mdi:car-pickup"');
+    expect(result.html).toContain('color: #333333');
   });
 
-  it('uses light fill colour on dark map style for MDI icon', () => {
+  it('uses light text colour on dark map style for MDI icon', () => {
     const result = createMarkerIconForMarker({ icon: 'mdi:home' }, mockHass(), 'dark') as any;
-    expect(result.html).toContain('#EEEEEE');
+    expect(result.html).toContain('color: #EEEEEE');
   });
 
-  it('uses light fill colour on satellite map style for MDI icon', () => {
+  it('uses light text colour on satellite map style for MDI icon', () => {
     const result = createMarkerIconForMarker({ icon: 'mdi:home' }, mockHass(), 'satellite') as any;
-    expect(result.html).toContain('#EEEEEE');
+    expect(result.html).toContain('color: #EEEEEE');
   });
 
-  it('falls back to default for an unknown MDI icon name', () => {
+  it('passes any MDI icon name through to <ha-icon> (no hardcoded allow-list)', () => {
     const result = createMarkerIconForMarker({ icon: 'mdi:totally-unknown-xyz' }, mockHass(), 'light') as any;
-    expect(result._type).toBe('icon');
-    expect(result.iconUrl).toContain('home-circle');
+    expect(result._type).toBe('divIcon');
+    expect(result.html).toContain('icon="mdi:totally-unknown-xyz"');
   });
 
   it('falls back to default for an mdi: prefix with empty name', () => {
@@ -110,13 +111,13 @@ describe('createMarkerIconForMarker', () => {
   it('uses custom color on MDI icon instead of map-style default', () => {
     const result = createMarkerIconForMarker({ icon: 'mdi:home', color: '#ff0000' }, mockHass(), 'light') as any;
     expect(result._type).toBe('divIcon');
-    expect(result.html).toContain('#ff0000');
+    expect(result.html).toContain('color: #ff0000');
     expect(result.html).not.toContain('#333333');
   });
 
   it('custom color overrides dark map style default on MDI icon', () => {
     const result = createMarkerIconForMarker({ icon: 'mdi:home', color: '#00ff00' }, mockHass(), 'dark') as any;
-    expect(result.html).toContain('#00ff00');
+    expect(result.html).toContain('color: #00ff00');
     expect(result.html).not.toContain('#EEEEEE');
   });
 

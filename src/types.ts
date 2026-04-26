@@ -9,7 +9,6 @@ export interface Marker {
   color?: string;      // CSS colour for default/MDI icons; ignored for entity_picture
   track?: 'entity' | true;
   mobile_only?: boolean;
-  home_radius?: number; // metres — suppress marker when entity is within this distance of home (default 500)
 }
 
 // Entity coordinate configuration for dynamic location from entity attributes

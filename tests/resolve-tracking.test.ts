@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { resolveTracking } from '../src/marker-utils';
-import { mockHass, entityState, entityStateHome } from './helpers/mock-hass';
+import { mockHass, entityState } from './helpers/mock-hass';
 import { Marker } from '../src/types';
 
 const FB_LAT = -33.86;
@@ -136,27 +136,13 @@ describe('resolveTracking', () => {
     expect(resolveTracking(markers, hass, FB_LAT, FB_LON)).toMatchObject({ lat: -34, lon: 151 });
   });
 
-  it('returns null when tracked entity has no lat/lon and falls back to home coords (suppressed)', () => {
-    // Entity has no position → falls back to home → within 500 m of home → suppressed
+  it('returns home fallback position when tracked entity has no lat/lon', () => {
     const hass = mockHass({ states: { 'sensor.temp': { state: '22', attributes: {} } } });
     const markers: Marker[] = [{ entity: 'sensor.temp', track: 'entity' }];
-    expect(resolveTracking(markers, hass, FB_LAT, FB_LON)).toBeNull();
+    expect(resolveTracking(markers, hass, FB_LAT, FB_LON)).toMatchObject({ lat: FB_LAT, lon: FB_LON });
   });
 
-  // ── Home suppression ──────────────────────────────────────────────────────
-
-  it('returns null when winning entity marker is within 500 m of home', () => {
-    // ~300 m north of home
-    const nearHomeLat = FB_LAT + 0.003;
-    const hass = mockHass({
-      states: { 'device_tracker.van': entityState(nearHomeLat, FB_LON) },
-    });
-    const markers: Marker[] = [{ entity: 'device_tracker.van', track: 'entity' }];
-    expect(resolveTracking(markers, hass, FB_LAT, FB_LON)).toBeNull();
-  });
-
-  it('returns position when winning entity marker is outside 500 m of home', () => {
-    // ~1 km north of home
+  it('returns position when winning entity marker is at any location (no home suppression)', () => {
     const farLat = FB_LAT + 0.009;
     const hass = mockHass({
       states: { 'device_tracker.van': entityState(farLat, FB_LON) },
@@ -167,19 +153,9 @@ describe('resolveTracking', () => {
     expect(result!.lat).toBeCloseTo(farLat, 4);
   });
 
-  it('does not suppress static track:true markers at home coords', () => {
-    // Static marker (no entity) at exactly home — should NOT be suppressed
+  it('returns position even when winning marker is at home coords', () => {
     const markers: Marker[] = [{ latitude: FB_LAT, longitude: FB_LON, track: true }];
     expect(resolveTracking(markers, mockHass(), FB_LAT, FB_LON)).toMatchObject({ lat: FB_LAT, lon: FB_LON });
-  });
-
-  it("suppresses tracking when entity state is 'home' even with GPS drift outside 500 m", () => {
-    // The real bug: person is home but GPS reports 1 km off — without state check
-    // the map would jump; with it, tracking is correctly suppressed.
-    const driftLat = FB_LAT + 0.009;
-    const hass = mockHass({ states: { 'device_tracker.phone': entityStateHome(driftLat, FB_LON) } });
-    const markers: Marker[] = [{ entity: 'device_tracker.phone', track: 'entity' }];
-    expect(resolveTracking(markers, hass, FB_LAT, FB_LON)).toBeNull();
   });
 
   it('returns result when hass is undefined (uses static position)', () => {

@@ -19,13 +19,21 @@ describe('migrateConfig', () => {
     expect(migrateConfig(cfg)).toBe(cfg);
   });
 
-  it('returns the same object reference when no old fields and show_marker not set', () => {
-    expect(migrateConfig(base)).toBe(base);
+  it('respects an explicitly empty markers array — user removed all markers', () => {
+    const cfg = { ...base, markers: [] };
+    expect(migrateConfig(cfg)).toBe(cfg);
   });
 
-  it('returns the same object reference when show_marker is false with no marker coords', () => {
+  it('synthesises a zone.home marker when markers is undefined and no legacy fields', () => {
+    const result = migrateConfig(base);
+    expect(result).not.toBe(base);
+    expect(result.markers).toEqual([{ entity: 'zone.home' }]);
+  });
+
+  it('returns empty markers when show_marker:false with no other fields — explicit opt-out', () => {
     const cfg = { ...base, show_marker: false };
-    expect(migrateConfig(cfg)).toBe(cfg);
+    const result = migrateConfig(cfg);
+    expect(result.markers).toEqual([]);
   });
 
   it('migrates numeric lat/lon to static marker', () => {

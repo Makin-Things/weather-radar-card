@@ -23,8 +23,8 @@ import {
   getCoordinateConfig,
   resolveCoordinatePair,
 } from './coordinate-utils';
-import { createMarkerIconForMarker, MDI_PATHS } from './marker-icon';
-import { migrateConfig, resolveMarkerPosition, resolveTracking, isAtHome } from './marker-utils';
+import { createMarkerIconForMarker, HOME_PATH } from './marker-icon';
+import { migrateConfig, resolveMarkerPosition, resolveTracking } from './marker-utils';
 
 /* eslint no-console: 0 */
 console.info(
@@ -94,9 +94,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     return isEnglish ? 'light' : 'osm';
   }
 
-  private get _isDark(): boolean {
-    const s = this._effectiveMapStyle();
-    return s === 'dark' || s === 'satellite';
+  // Tracks the surrounding UI theme (footer, progress bar) — independent of
+  // map style. Follows HA's theme setting when available, OS dark-mode otherwise.
+  private get _isUIDark(): boolean {
+    const haDark = (this.hass as any)?.themes?.darkMode;
+    if (typeof haDark === 'boolean') return haDark;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
   private _validateCssSize(value: string): boolean {
@@ -122,7 +125,20 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _migrateConfig(config: WeatherRadarCardConfig): WeatherRadarCardConfig {
     const result = migrateConfig(config);
     if (result !== config) {
-      console.warn('Weather Radar Card: single-marker config fields are deprecated. Migrate to the markers[] array format.');
+      // Only warn when legacy fields were actually present — not for the
+      // synthesised default zone.home marker on a brand-new config.
+      const hadLegacy = config.show_marker !== undefined
+        || config.marker_latitude !== undefined
+        || config.marker_longitude !== undefined
+        || config.mobile_marker_latitude !== undefined
+        || config.mobile_marker_longitude !== undefined
+        || config.marker_icon !== undefined
+        || config.marker_icon_entity !== undefined
+        || config.mobile_marker_icon !== undefined
+        || config.mobile_marker_icon_entity !== undefined;
+      if (hadLegacy) {
+        console.warn('Weather Radar Card: single-marker config fields are deprecated. Migrate to the markers[] array format.');
+      }
     }
     return result;
   }
@@ -168,11 +184,16 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   protected render(): TemplateResult | void {
     if (!this._config) return html``;
-    const dark = this._isDark;
+    const dark = this._isUIDark;
+    const dataSource = this._config.data_source ?? 'RainViewer';
+    const showColourBar = this._config.show_color_bar !== false;
+    const colourBarSrc = dataSource === 'NOAA'
+      ? '/local/community/weather-radar-card/radar-colour-bar-nws.png'
+      : '/local/community/weather-radar-card/radar-colour-bar-universalblue.png';
     return html`
       <ha-card class=${dark ? 'radar-dark' : ''} style="${this._config.width && this._validateCssSize(this._config.width) ? `width:${this._config.width}` : ''}">
-        <div id="color-bar" style="height:8px;display:${this._config.show_color_bar === false ? 'none' : ''}">
-          <img id="img-color-bar" height="8" style="vertical-align:top" />
+        <div id="color-bar" style="height:8px;display:${showColourBar ? '' : 'none'}">
+          <img id="img-color-bar" height="8" style="vertical-align:top" src=${colourBarSrc} />
         </div>
         <div id="rate-limit-banner" class="status-banner" style="display:none">
           Rate limited — waiting for quota to reset
@@ -240,12 +261,16 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     this._setupDoubleTapAction();
     this._setupVisibilityObserver();
     this._setupResizeObserver();
-    // When map_style is auto (or unset), reinit the map if the OS colour scheme changes.
-    if (!cfg.map_style || cfg.map_style.toLowerCase() === 'auto') {
-      this._darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      this._darkModeHandler = () => { this._teardown(); this.requestUpdate(); };
-      this._darkModeQuery.addEventListener('change', this._darkModeHandler);
-    }
+    // Re-render when the OS colour scheme changes so the footer/progress-bar
+    // chrome follows the theme. When map_style is auto (or unset) we also
+    // reinit the map so the basemap tiles swap to the dark/light variant.
+    const isAuto = !cfg.map_style || cfg.map_style.toLowerCase() === 'auto';
+    this._darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    this._darkModeHandler = () => {
+      if (isAuto) this._teardown();
+      this.requestUpdate();
+    };
+    this._darkModeQuery.addEventListener('change', this._darkModeHandler);
 
     this._player = new RadarPlayer({
       map: this._map,
@@ -357,19 +382,28 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       return cfg?.entity === 'zone.home' || !cfg?.icon || cfg?.icon === 'default';
     });
 
+    if (hasHome) {
+      const iconSize = 28;
+      const iconColor = isDark ? '#EEEEEE' : '#333333';
+      const badgeBg = isDark ? '#EEEEEE' : '#222222';
+      const badgeFg = isDark ? '#222222' : '#FFFFFF';
+      const badgeSize = count < 10 ? 14 : count < 100 ? 17 : 20;
+      const badgeFs = count < 10 ? 10 : count < 100 ? 9 : 8;
+      return L.divIcon({
+        html: `<div style="position:relative;width:${iconSize}px;height:${iconSize}px"><svg viewBox="0 0 24 24" width="${iconSize}" height="${iconSize}"><path fill="${iconColor}" d="${HOME_PATH}"/></svg><div style="position:absolute;top:-4px;right:-4px;min-width:${badgeSize}px;height:${badgeSize}px;padding:0 3px;box-sizing:border-box;background:${badgeBg};color:${badgeFg};border-radius:${badgeSize}px;display:flex;align-items:center;justify-content:center;font:bold ${badgeFs}px/1 'Helvetica Neue',Arial,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,0.4)">${count}</div></div>`,
+        className: 'weather-radar-cluster',
+        iconSize: [iconSize, iconSize] as L.PointExpression,
+      });
+    }
+
     const bg = isDark ? '#1a1a2e' : '#ffffff';
     const fg = isDark ? '#e0e0e0' : '#333333';
     const ring = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)';
     const size = count < 10 ? 32 : count < 100 ? 38 : 44;
     const fs = count < 10 ? 12 : count < 100 ? 11 : 10;
-    const iconSz = Math.round(size * 0.45);
-
-    const inner = hasHome
-      ? `<svg viewBox="0 0 24 24" width="${iconSz}" height="${iconSz}"><path fill="${fg}" d="${MDI_PATHS['home-circle']}"/></svg><span style="font:${fs}px/1 'Helvetica Neue',Arial,sans-serif;font-weight:bold">${count}</span>`
-      : `<span style="font:${fs}px/1 'Helvetica Neue',Arial,sans-serif;font-weight:bold">${count}</span>`;
 
     return L.divIcon({
-      html: `<div style="width:${size}px;height:${size}px;background:${bg};border:2px solid ${ring};border-radius:50%;display:flex;align-items:center;justify-content:center;gap:2px;color:${fg};box-shadow:0 2px 6px rgba(0,0,0,0.35)">${inner}</div>`,
+      html: `<div style="width:${size}px;height:${size}px;background:${bg};border:2px solid ${ring};border-radius:50%;display:flex;align-items:center;justify-content:center;color:${fg};box-shadow:0 2px 6px rgba(0,0,0,0.35);font:bold ${fs}px/1 'Helvetica Neue',Arial,sans-serif">${count}</div>`,
       className: 'weather-radar-cluster',
       iconSize: [size, size] as L.PointExpression,
     });
@@ -382,7 +416,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     const isMobile = isMobileDevice();
     const haLat = this.hass?.config?.latitude ?? 0;
     const haLon = this.hass?.config?.longitude ?? 0;
-    const useClustering = cfg.cluster_markers === true && markers.length > 1;
+    const useClustering = cfg.cluster_markers !== false && markers.length > 1;
     let rangeRingsSet = false;
 
     // Determine tracking winner upfront — the tracked marker bypasses the cluster.
@@ -422,16 +456,13 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       const icon = createMarkerIconForMarker(markerCfg, this.hass, mapStyle);
       const lMarker = L.marker([lat, lon], { icon, interactive: false });
       (lMarker as any)._wrcCfg = markerCfg;
-      const atHome = isAtHome(markerCfg, lat, lon, haLat, haLon, this.hass);
       this._markers.set(i, lMarker);
       lMarker.setZIndexOffset(i === this._trackedMarkerIdx ? 1000 : 0);
 
       if (useClustering && i !== this._trackedMarkerIdx) {
-        // Non-tracked markers go into the cluster group unless at home.
-        if (!atHome) this._clusterGroup!.addLayer(lMarker);
+        this._clusterGroup!.addLayer(lMarker);
       } else {
         lMarker.addTo(this._map);
-        lMarker.setOpacity(atHome ? 0 : 1);
       }
 
       if (!rangeRingsSet && cfg.show_range) {
@@ -455,7 +486,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       const markerCfg = markers[i];
       if (!markerCfg) continue;
       const { lat, lon } = resolveMarkerPosition(markerCfg, this.hass, haLat, haLon);
-      const atHome = isAtHome(markerCfg, lat, lon, haLat, haLon, this.hass);
 
       // Skip setLatLng for clustered markers while spiderfied. During spiderfy,
       // markercluster calls setLatLng(spiderPosition) on each marker to place it
@@ -466,17 +496,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       if (!inSpiderfy) {
         const cur = lMarker.getLatLng();
         if (cur.lat !== lat || cur.lng !== lon) lMarker.setLatLng([lat, lon]);
-      }
-
-      if (this._clusterGroup && i !== this._trackedMarkerIdx) {
-        const inCluster = this._clusterGroup.hasLayer(lMarker);
-        if (atHome && inCluster) {
-          this._clusterGroup.removeLayer(lMarker);
-        } else if (!atHome && !inCluster) {
-          this._clusterGroup.addLayer(lMarker);
-        }
-      } else {
-        lMarker.setOpacity(atHome ? 0 : 1);
       }
     }
   }
@@ -523,20 +542,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   }
 
   private _moveTrackedMarker(newWinnerIdx: number): void {
-    const markers = this._config?.markers ?? [];
-    const haLat = this.hass?.config?.latitude ?? 0;
-    const haLon = this.hass?.config?.longitude ?? 0;
-
-    // Return old tracked marker to the cluster group (unless it's at home).
+    // Return old tracked marker to the cluster group.
     if (this._trackedMarkerIdx >= 0) {
       const old = this._markers.get(this._trackedMarkerIdx);
-      const oldCfg = markers[this._trackedMarkerIdx];
-      if (old && oldCfg && this._map?.hasLayer(old)) {
+      if (old && this._map?.hasLayer(old)) {
         this._map.removeLayer(old);
-        const pos = resolveMarkerPosition(oldCfg, this.hass, haLat, haLon);
-        if (!isAtHome(oldCfg, pos.lat, pos.lon, haLat, haLon, this.hass)) {
-          this._clusterGroup!.addLayer(old);
-        }
+        this._clusterGroup!.addLayer(old);
       }
     }
 

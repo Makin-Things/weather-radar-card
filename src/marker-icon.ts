@@ -5,20 +5,16 @@ import { Marker } from './types';
 
 const ICON_BASE = '/local/community/weather-radar-card/';
 
-export const MDI_PATHS: Record<string, string> = {
-  account:
-    'M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z',
-  'account-circle':
-    'M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z',
-  'map-marker':
-    'M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z',
-  home: 'M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z',
-  car: 'M5,11L6.5,6.5H17.5L19,11M17.5,16A1.5,1.5 0 0,1 16,14.5A1.5,1.5 0 0,1 17.5,13A1.5,1.5 0 0,1 19,14.5A1.5,1.5 0 0,1 17.5,16M6.5,16A1.5,1.5 0 0,1 5,14.5A1.5,1.5 0 0,1 6.5,13A1.5,1.5 0 0,1 8,14.5A1.5,1.5 0 0,1 6.5,16M18.92,6C18.72,5.42 18.16,5 17.5,5H6.5C5.84,5 5.28,5.42 5.08,6L3,12V20A1,1 0 0,0 4,21H5A1,1 0 0,0 6,20V19H18V20A1,1 0 0,0 19,21H20A1,1 0 0,0 21,20V12L18.92,6Z',
-  cellphone:
-    'M17,19H7V5H17M17,1H7C5.89,1 5,1.89 5,3V21A2,2 0 0,0 7,23H17A2,2 0 0,0 19,21V3C19,1.89 18.1,1 17,1Z',
-  'home-circle':
-    'M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M10,17V13H8L12,7L16,13H14V17H10Z',
-};
+// Used only for the default home-circle marker when a custom colour is set,
+// and inside cluster badges (where embedding <ha-icon> would race with cluster
+// re-renders). Other MDI icons are rendered via <ha-icon> which can resolve
+// any name from HA's bundled icon database — no hardcoded path table needed.
+export const HOME_CIRCLE_PATH =
+  'M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M10,17V13H8L12,7L16,13H14V17H10Z';
+
+// Plain mdi:home (house silhouette, no surrounding circle) — used for the
+// home-cluster badge representation.
+export const HOME_PATH = 'M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z';
 
 export function findPersonEntityForDeviceTracker(
   deviceTrackerId: string,
@@ -61,9 +57,8 @@ export function createMarkerIconForMarker(
   // For default icon: use inline SVG when a custom colour is set, external file otherwise.
   if (iconType === 'default') {
     if (markerCfg.color) {
-      const path = MDI_PATHS['home-circle'];
       return L.divIcon({
-        html: `<svg viewBox="0 0 24 24" width="16" height="16"><path fill="${colour}" d="${path}"/></svg>`,
+        html: `<svg viewBox="0 0 24 24" width="16" height="16"><path fill="${colour}" d="${HOME_CIRCLE_PATH}"/></svg>`,
         iconSize: [16, 16],
         className: 'marker-mdi-icon',
       });
@@ -79,12 +74,11 @@ export function createMarkerIconForMarker(
     return L.icon({ iconUrl: pictureUrl, iconSize: [32, 32], className: 'marker-entity-picture' });
   }
 
-  if (iconType.startsWith('mdi:')) {
-    const name = iconType.substring(4);
-    const path = MDI_PATHS[name];
-    if (!path) return L.icon({ iconUrl: `${ICON_BASE}${svgFile}`, iconSize: [16, 16] });
+  if (iconType.startsWith('mdi:') && iconType.length > 4) {
+    // <ha-icon> is registered globally by HA frontend and resolves any MDI
+    // icon from HA's bundled database — no need to ship our own path table.
     return L.divIcon({
-      html: `<svg viewBox="0 0 24 24" width="24" height="24"><path fill="${colour}" d="${path}"/></svg>`,
+      html: `<ha-icon icon="${iconType}" style="--mdc-icon-size: 24px; color: ${colour};"></ha-icon>`,
       iconSize: [24, 24],
       className: 'marker-mdi-icon',
     });

@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Default home marker** — when `markers` is absent from the config, the card automatically synthesises a single `zone.home` marker so the map always shows your home location. Set `markers: []` (explicit empty array) to opt out.
+- **Smart icon auto-detect on entity selection** — when picking an entity in the editor, the icon is auto-filled from the entity's `attributes.icon`, then `device_class` (binary_sensor / sensor lookup), `source_type` (device_tracker → router/bluetooth/gps), and finally a domain default (`mdi:account`, `mdi:home`, `mdi:map-marker-radius`, `mdi:map-marker`). Person entities default to their picture if available.
+- **Icon picker autocomplete** — the editor's marker icon field now uses HA's `ha-icon-picker`, giving full MDI autocomplete and live previews.
+- **Use entity picture toggle** — person markers get a dedicated switch to choose between the entity photo and an MDI icon.
+
+### Changed
+
+- **Cluster default flipped to `true`** — `cluster_markers` is now on by default. Set `cluster_markers: false` to opt out.
+- **Home cluster representation redesigned** — clusters that include a home marker now render as the plain home icon with a small superscript count badge in the upper-right, instead of a pill containing both icon and number.
+- **Any MDI icon supported** — markers now render via HA's `<ha-icon>` element, so any name in HA's icon database works (e.g. `mdi:car-pickup`, `mdi:rocket`). Previous releases shipped a hardcoded path table that only knew about a handful of icons.
+- **Editor map style default** — the editor now correctly displays `Auto` (matching the runtime default) when `map_style` is unset; previously showed `Light`.
+
+### Removed
+
+- **Home suppression** — `home_radius`, the `isAtHome` check, and the home-suppress logic are gone. Entity markers always render at their reported location regardless of how close they are to the HA home coordinates. Existing configs with `home_radius` are silently ignored.
+- **`mobile_center_*` fields** — undocumented and unused; removed entirely.
+- **Editor `card_title` control** — the field was orphaned (never read anywhere).
+
+### Fixed
+
+- `width` config field is now applied to the card.
+- `square_map: true` no longer collapses the map to zero height.
+- NOAA animation playback direction (was newest → oldest).
+
 ## [3.1.0] - 2026-04-25
 
 ### Added
@@ -16,12 +42,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Track resolution** — set `track: entity` or `track: true` on a marker to auto-centre the map. Priority: (1) `track: entity` on a `person.*` whose `user_id` matches the logged-in HA user, (2) `track: entity` on any other entity, (3) `track: true`. Ties at the same level warn to console and use the first marker.
 - **`mobile_only` marker flag** — a marker with `mobile_only: true` is only shown on mobile devices (HA Companion app, mobile user agent, or screen width ≤ 768 px). Replaces the old `mobile_marker_*` fields.
 - **Auto-migration** — if `markers` is absent but old single-marker fields (`marker_latitude`, `marker_longitude`, `mobile_marker_*`, `marker_icon`, etc.) are present, the card synthesises a `markers[]` in memory on load so existing YAML continues to work without changes. A deprecation warning is logged to the browser console.
-- **Marker clustering** (`cluster_markers: true`) — nearby markers collapse into a count badge. Tap/click the badge to spiderfy (fan out) individual markers in place. The tracked marker always renders outside the cluster so panning and z-index remain precise. Clusters containing a home marker show the home icon in the badge. Cluster icon colours match the current map style (dark/light).
+- **Marker clustering** (`cluster_markers`, default `true`) — nearby markers collapse into a count badge. Tap/click the badge to spiderfy (fan out) individual markers in place. The tracked marker always renders outside the cluster so panning and z-index remain precise. Clusters containing a home marker show the home icon in the badge. Cluster icon colours match the current map style (dark/light). Set `cluster_markers: false` to opt out.
 - **Icon colour** (`color` field per marker) — CSS colour for `default` and `mdi:*` icons. The default home icon renders as inline SVG when a colour is set, enabling any hex or named colour without extra asset files. Has no effect on `entity_picture`.
-- **Configurable home suppression** (`home_radius` per marker, default 500 m) — entity-based markers are hidden when HA reports `state: home` (authoritative) or the entity is within `home_radius` metres of the HA home location. Set `home_radius: 0` to always show. `zone.*` entities and static lat/lon markers are never suppressed. When `show_marker: true` is migrated with no position, a `zone.home` marker is created automatically so the home icon is always visible.
 - **Tracked marker always on top** — the tracking winner gets `zIndexOffset: 1000` so it renders above all other markers.
 - **`map_style: Satellite` home marker** — default home icon now correctly uses the light SVG on satellite maps (was using dark SVG).
-- **Unit test suite** — 128 Vitest tests covering migration, position resolution, track priority, home suppression, distance/haversine, and icon rendering. Tests run in CI before every build.
+- **Unit test suite** — 128 Vitest tests covering migration, position resolution, track priority, and icon rendering. Tests run in CI before every build.
 
 ### Changed
 

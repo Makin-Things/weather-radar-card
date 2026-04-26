@@ -3,7 +3,56 @@ import { LitElement, html, TemplateResult, css, CSSResultGroup } from 'lit';
 import { HomeAssistant, fireEvent, LovelaceCardEditor } from 'custom-card-helpers';
 
 import { WeatherRadarCardConfig, CoordinateConfig, Marker } from './types';
+import { migrateConfig } from './marker-utils';
 import { customElement, property, state } from 'lit/decorators.js';
+
+// Subset of HA's device_class → default icon mapping.
+// Sourced from the HA frontend (entity_components/*) — only the classes likely
+// to appear on a marker (entities with lat/lon attributes) are included.
+const DEVICE_CLASS_ICONS: Record<string, string> = {
+  // binary_sensor
+  battery: 'mdi:battery',
+  battery_charging: 'mdi:battery-charging',
+  cold: 'mdi:snowflake',
+  connectivity: 'mdi:server-network',
+  door: 'mdi:door-open',
+  garage_door: 'mdi:garage-open',
+  gas: 'mdi:gas-cylinder',
+  heat: 'mdi:fire',
+  light: 'mdi:brightness-7',
+  lock: 'mdi:lock-open',
+  moisture: 'mdi:water',
+  motion: 'mdi:motion-sensor',
+  moving: 'mdi:car',
+  occupancy: 'mdi:home',
+  opening: 'mdi:square-outline',
+  plug: 'mdi:power-plug',
+  power: 'mdi:power-plug',
+  presence: 'mdi:home',
+  problem: 'mdi:alert-circle',
+  running: 'mdi:play',
+  safety: 'mdi:shield-check',
+  smoke: 'mdi:smoke-detector',
+  sound: 'mdi:music-note',
+  tamper: 'mdi:hand-pointing-up',
+  vibration: 'mdi:vibrate',
+  window: 'mdi:window-open',
+  // sensor
+  carbon_dioxide: 'mdi:molecule-co2',
+  carbon_monoxide: 'mdi:molecule-co',
+  current: 'mdi:current-ac',
+  date: 'mdi:calendar',
+  duration: 'mdi:timer-outline',
+  energy: 'mdi:lightning-bolt',
+  humidity: 'mdi:water-percent',
+  illuminance: 'mdi:brightness-5',
+  monetary: 'mdi:cash',
+  pressure: 'mdi:gauge',
+  signal_strength: 'mdi:wifi',
+  temperature: 'mdi:thermometer',
+  timestamp: 'mdi:clock',
+  voltage: 'mdi:sine-wave',
+};
 
 @customElement('weather-radar-card-editor')
 export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEditor {
@@ -16,7 +65,10 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
   private _initialized = false;
 
   public setConfig(config: WeatherRadarCardConfig): void {
-    this._config = config;
+    // Run the same migration as the card so synthesised defaults (e.g. an
+    // auto-created zone.home marker) and legacy single-marker fields appear
+    // in the editor UI.
+    this._config = migrateConfig(config);
     this.loadCardHelpers();
   }
 
@@ -94,7 +146,7 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
                 ],
               },
             }}
-            .value=${config.map_style || 'Light'}
+            .value=${config.map_style || 'Auto'}
             .label=${'Map Style'}
             .configValue=${'map_style'}
             @value-changed=${this._handleSelectorChanged}
@@ -178,7 +230,7 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             <ha-switch .checked=${config.square_map === true} .configValue=${'square_map'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
           <label>Cluster Markers
-            <ha-switch .checked=${config.cluster_markers === true} .configValue=${'cluster_markers'} @change=${this._valueChangedSwitch}></ha-switch>
+            <ha-switch .checked=${config.cluster_markers !== false} .configValue=${'cluster_markers'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
         </div>
         <div class="side-by-side">
@@ -281,17 +333,6 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
   }
 
   private _renderMarkerRow(m: Marker, i: number) {
-    const iconOptions = [
-      { value: 'default', label: 'Home (default)' },
-      { value: 'entity_picture', label: 'Entity Picture' },
-      { value: 'mdi:account', label: 'MDI: Account' },
-      { value: 'mdi:account-circle', label: 'MDI: Account Circle' },
-      { value: 'mdi:map-marker', label: 'MDI: Map Marker' },
-      { value: 'mdi:home', label: 'MDI: Home' },
-      { value: 'mdi:car', label: 'MDI: Car' },
-      { value: 'mdi:bicycle', label: 'MDI: Bicycle' },
-      { value: 'mdi:cellphone', label: 'MDI: Cellphone' },
-    ];
     const trackOptions = [
       { value: '', label: 'Off' },
       { value: 'entity', label: 'Track entity (person = current user priority)' },
@@ -340,16 +381,25 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             ></ha-textfield>
           </div>
         ` : ''}
-        <ha-selector
-          .hass=${this.hass}
-          .selector=${{ select: { options: iconOptions } }}
-          .value=${m.icon || 'default'}
-          .label=${'Icon'}
-          .markerIndex=${i}
-          .markerField=${'icon'}
-          @value-changed=${this._updateMarkerSelector}
-        ></ha-selector>
-        ${m.icon === 'entity_picture' ? html`
+        ${m.entity && m.entity.startsWith('person.') ? html`
+          <label class="marker-mobile-only">Use entity picture
+            <ha-switch
+              .checked=${m.icon === 'entity_picture'}
+              .markerIndex=${i}
+              @change=${this._toggleEntityPicture}
+            ></ha-switch>
+          </label>
+        ` : ''}
+        ${m.icon !== 'entity_picture' ? html`
+          <ha-icon-picker
+            .hass=${this.hass}
+            .label=${'Icon'}
+            .value=${m.icon || ''}
+            .markerIndex=${i}
+            .markerField=${'icon'}
+            @value-changed=${this._updateMarkerSelector}
+          ></ha-icon-picker>
+        ` : html`
           <ha-textfield
             label="Icon Entity (auto-detected if blank)"
             .value=${m.icon_entity || ''}
@@ -357,7 +407,7 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             .markerField=${'icon_entity'}
             @input=${this._updateMarkerField}
           ></ha-textfield>
-        ` : ''}
+        `}
         <ha-selector
           .hass=${this.hass}
           .selector=${{ select: { options: trackOptions } }}
@@ -380,16 +430,6 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
               <button class="clear-color-btn" @click=${() => this._clearMarkerColor(i)}>Reset</button>
             ` : ''}
           </div>
-        ` : ''}
-        ${m.entity && m.entity !== 'zone.home' && m.icon !== 'entity_picture' ? html`
-          <ha-textfield
-            label="Home suppression radius (m)"
-            .value=${m.home_radius !== undefined ? String(m.home_radius) : ''}
-            .markerIndex=${i}
-            .markerField=${'home_radius'}
-            @input=${this._updateMarkerFieldNumber}
-            helper="Default 500 m — entity hidden when within this distance of home (0 = always show)"
-          ></ha-textfield>
         ` : ''}
         <label class="marker-mobile-only">Mobile only
           <ha-switch
@@ -454,7 +494,55 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
       value = undefined;
     }
     const markers = [...(this._config.markers ?? [])];
-    markers[i] = { ...markers[i], [field]: value };
+    const updated: Marker = { ...markers[i], [field]: value };
+
+    // When the user picks an entity and no icon is set yet, default the icon
+    // to the entity's natural representation: a photo for person.*, otherwise
+    // the entity's HA icon attribute (e.g. mdi:home for zone.home).
+    if (field === 'entity' && value && !updated.icon) {
+      const derived = this._defaultIconForEntity(value as string);
+      if (derived) updated.icon = derived;
+    }
+
+    markers[i] = updated;
+    this._config = { ...this._config, markers };
+    fireEvent(this, 'config-changed', { config: this._config });
+  }
+
+  private _defaultIconForEntity(entityId: string): string | undefined {
+    const state = this.hass?.states[entityId];
+    const haIcon = state?.attributes?.icon;
+    if (typeof haIcon === 'string' && haIcon) return haIcon;
+    if (entityId.startsWith('person.')) {
+      return state?.attributes?.entity_picture ? 'entity_picture' : 'mdi:account';
+    }
+    if (entityId.startsWith('zone.')) {
+      return entityId === 'zone.home' ? 'mdi:home' : 'mdi:map-marker-radius';
+    }
+    // device_tracker uses source_type, not device_class
+    if (entityId.startsWith('device_tracker.')) {
+      const src = state?.attributes?.source_type;
+      if (src === 'router') return 'mdi:router-wireless';
+      if (src === 'bluetooth' || src === 'bluetooth_le') return 'mdi:bluetooth';
+      return 'mdi:crosshairs-gps';
+    }
+    const cls = state?.attributes?.device_class;
+    if (typeof cls === 'string' && cls) {
+      const icon = DEVICE_CLASS_ICONS[cls];
+      if (icon) return icon;
+    }
+    return 'mdi:map-marker';
+  }
+
+  private _toggleEntityPicture(ev: Event): void {
+    if (!this._config) return;
+    const target = ev.target as HTMLInputElement & { markerIndex: number };
+    const i = target.markerIndex;
+    const markers = [...(this._config.markers ?? [])];
+    const cur = markers[i];
+    markers[i] = target.checked
+      ? { ...cur, icon: 'entity_picture' }
+      : { ...cur, icon: this._defaultIconForEntity(cur.entity ?? '') };
     this._config = { ...this._config, markers };
     fireEvent(this, 'config-changed', { config: this._config });
   }
