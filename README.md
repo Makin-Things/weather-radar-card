@@ -13,11 +13,30 @@ This card displays animated weather radar loops within Home Assistant. It suppor
 
 ![Weather Radar card](weather-radar-card.gif)
 
-## What's New in 3.0
+## What's New
 
-Version 3.0 is a complete rewrite of the card internals. The user-visible behaviour is unchanged, but the implementation is fundamentally different.
+The 3.x series is a complete rewrite of the card. Version 3.0 swapped the iframe for a native LitElement and rebuilt the radar engine; version 3.1 then overhauled the marker system. If you're upgrading from 2.x, both apply — read both sections.
 
-### No more iframe
+### Version 3.1 — Multi-marker overhaul
+
+The single-marker config is replaced by a `markers[]` array. Each marker is a static lat/lon or an `entity` (`device_tracker.*`, `person.*`, `zone.*`, or anything with `latitude`/`longitude` attributes). Positions update live on every Home Assistant state change.
+
+**Auto-migration:** Existing 2.x / 3.0 configs continue to work — the card converts the old single-marker fields to a `markers[]` entry in memory on load and logs a deprecation warning. No YAML changes required to upgrade. (See [Migration from single-marker config](#migration-from-single-marker-config).)
+
+Highlights:
+
+- **Default home marker** — when `markers` is absent, the card auto-creates a `zone.home` marker. `markers: []` opts out.
+- **Map tracking** — set `track: entity` or `track: true` per marker. Priority: a `person.*` matching the logged-in HA user → any other entity → `track: true`.
+- **Clustering** (`cluster_markers`, on by default) — nearby markers collapse into a count badge; tap to spiderfy. Home clusters render as the home icon with a small superscript count.
+- **Icon overhaul** — any `mdi:*` icon works. The editor uses HA's icon picker with autocomplete and live preview. Picking an entity auto-fills the icon from `attributes.icon`, `device_class`, `source_type`, or a domain default.
+- **Per-marker `color`** for default and MDI icons.
+- **`mobile_only: true`** flag replaces the old `mobile_marker_*` fields.
+- **Theme-aware footer** — the footer / progress-bar chrome follows HA's theme (or OS dark mode), independent of map style.
+- **NOAA / NWS colour bar** — the NWS reflectivity scale is shown when `data_source: NOAA`.
+
+### Version 3.0 — Complete rewrite
+
+#### No more iframe
 
 Previous versions rendered the map inside a hidden `<iframe>` to work around Leaflet's incompatibility with Home Assistant's Shadow DOM. Version 3.0 is a native LitElement web component — the map lives directly in the card's Shadow DOM alongside the rest of your dashboard. This means:
 
@@ -26,23 +45,22 @@ Previous versions rendered the map inside a hidden `<iframe>` to work around Lea
 - Faster initial render and lower memory overhead
 - Full browser DevTools visibility into card state
 
-### Leaflet is now bundled
+#### Leaflet is now bundled
 
 Leaflet is imported as an npm module and compiled into `weather-radar-card.js`. You no longer need to manually copy `leaflet.js`, `leaflet.css`, `leaflet.toolbar.min.js`, or `leaflet.toolbar.min.css` into your `www` folder. **If upgrading from v2, delete those files** — they are unused and waste space.
 
-The only files still distributed alongside `weather-radar-card.js` are the toolbar icon PNGs, the marker SVGs, and the colour-bar image.
+The only files still distributed alongside `weather-radar-card.js` are the toolbar icon PNGs, the marker SVGs, and the colour-bar images.
 
-### Save map center from the card
+#### Save map center from the card
 
 In Home Assistant edit mode, pan and zoom the map to your desired position and a **Save as map center** button appears. Clicking it writes the new `center_latitude`, `center_longitude`, and `zoom_level` directly into the card config — no need to look up or type coordinates manually.
 
-### Other improvements
+#### Other improvements
 
 - NOAA/NWS radar source (US only, experimental)
 - Show Snow toggle (RainViewer only) — includes or excludes snow in the precipitation display
 - Rate-limit banner — visible indicator when the API quota is temporarily exhausted
 - Animated crossfades via CSS `transition` on layer containers (simpler and more reliable than the previous CSS keyframe engine)
-- Marker defaults to HA home location rather than the map center, so changing the map center no longer moves the marker
 - **Scrubbable timeline** — click or drag the progress bar to jump to any frame
 - **Locale-aware timestamps** — the frame time display uses the browser's locale automatically, showing 12 h (AM/PM) for US users and 24 h for everyone else, with locale-appropriate date ordering
 - **Auto map style** — `map_style: Auto` follows the OS light/dark mode preference; switches the map automatically when the system theme changes

@@ -7,23 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-04-26
+
+Multi-marker overhaul. **Breaking:** single-marker config fields (`show_marker`, `marker_latitude`, `marker_longitude`, `marker_icon`, `marker_icon_entity`, `mobile_marker_*`) are deprecated. Existing YAML auto-migrates in memory on load with a console warning; the editor only writes the new `markers[]` format.
+
 ### Added
 
-- **Default home marker** — when `markers` is absent from the config, the card automatically synthesises a single `zone.home` marker so the map always shows your home location. Set `markers: []` (explicit empty array) to opt out.
-- **Smart icon auto-detect on entity selection** — when picking an entity in the editor, the icon is auto-filled from the entity's `attributes.icon`, then `device_class` (binary_sensor / sensor lookup), `source_type` (device_tracker → router/bluetooth/gps), and finally a domain default (`mdi:account`, `mdi:home`, `mdi:map-marker-radius`, `mdi:map-marker`). Person entities default to their picture if available.
-- **Icon picker autocomplete** — the editor's marker icon field now uses HA's `ha-icon-picker`, giving full MDI autocomplete and live previews.
+- **Multi-marker support** — `markers[]` array replaces the old single-marker fields. Each entry supports `entity`, `latitude`, `longitude`, `icon`, `icon_entity`, `color`, `track`, and `mobile_only`.
+- **Live entity tracking** — markers with an `entity` field update their position on every HA state change. Works with `device_tracker.*`, `person.*`, `zone.*`, or any entity with `latitude`/`longitude` attributes.
+- **Track resolution** — set `track: entity` or `track: true` on a marker to auto-centre the map. Priority: (1) `track: entity` on a `person.*` whose `user_id` matches the logged-in HA user, (2) `track: entity` on any other entity, (3) `track: true`. The tracking winner always renders on top (`zIndexOffset: 1000`).
+- **Default home marker** — when `markers` is absent, the card auto-creates a single `zone.home` marker. `markers: []` opts out.
+- **Auto-migration** — old single-marker fields are converted to `markers[]` in memory on load; existing YAML continues to work.
+- **Marker clustering** (`cluster_markers`, default `true`) — nearby markers collapse into a count badge; tap/click to spiderfy. The tracked marker always renders outside the cluster. Home clusters render as the home icon with a small superscript count badge.
+- **`mobile_only` marker flag** — a marker with `mobile_only: true` only renders on mobile devices (HA Companion app, mobile UA, or screen width ≤ 768 px). Replaces the old `mobile_marker_*` fields.
+- **Any MDI icon supported** — markers render via HA's `<ha-icon>` element so any name in HA's icon database works (e.g. `mdi:car-pickup`, `mdi:rocket`). No hardcoded allow-list.
+- **Icon picker autocomplete** — the editor's marker icon field uses HA's `ha-icon-picker` with full MDI autocomplete and live preview.
+- **Smart icon auto-detect on entity selection** — picking an entity in the editor auto-fills the icon from `attributes.icon` → `device_class` lookup → `source_type` (device_tracker: router / bluetooth / gps) → domain default (`mdi:account`, `mdi:home`, `mdi:map-marker-radius`, `mdi:map-marker`). Person entities default to their photo when one is available.
 - **Use entity picture toggle** — person markers get a dedicated switch to choose between the entity photo and an MDI icon.
+- **Per-marker `color`** — CSS colour for `mdi:*` and default icons.
+- **Theme-aware footer** — the footer / progress-bar chrome now follows HA's theme setting (or OS `prefers-color-scheme`), independent of map style. Re-renders automatically on theme change.
+- **NWS colour bar** — `data_source: NOAA` renders the NWS reflectivity scale (`radar-colour-bar-nws.png`) instead of RainViewer's universal-blue scale.
+- **Unit test suite** — 128 Vitest tests covering migration, position resolution, track priority, icon rendering, rate limiting, and mobile detection. Runs in CI on every push and PR.
+- **CI builds dist for every branch** — feature branches get an auto-built bundle committed back; bundle marked `linguist-generated` so PR diffs hide it.
 
 ### Changed
 
-- **Cluster default flipped to `true`** — `cluster_markers` is now on by default. Set `cluster_markers: false` to opt out.
-- **Home cluster representation redesigned** — clusters that include a home marker now render as the plain home icon with a small superscript count badge in the upper-right, instead of a pill containing both icon and number.
-- **Any MDI icon supported** — markers now render via HA's `<ha-icon>` element, so any name in HA's icon database works (e.g. `mdi:car-pickup`, `mdi:rocket`). Previous releases shipped a hardcoded path table that only knew about a handful of icons.
-- **Editor map style default** — the editor now correctly displays `Auto` (matching the runtime default) when `map_style` is unset; previously showed `Light`.
+- **Editor Location section** only contains map-center coordinates; marker configuration is in the new Markers section with per-marker rows.
+- **Editor Mobile Overrides section removed** — use `mobile_only: true` on a marker instead.
+- **Editor map-style default** — selector correctly shows `Auto` when `map_style` is unset (previously showed `Light`).
+- **Production build minified** — terser added back. Bundle ~707 kB → ~278 kB; gzip ~143 kB → ~77 kB. Watch mode skipped for fast iteration.
 
 ### Removed
 
-- **Home suppression** — `home_radius`, the `isAtHome` check, and the home-suppress logic are gone. Entity markers always render at their reported location regardless of how close they are to the HA home coordinates. Existing configs with `home_radius` are silently ignored.
 - **`mobile_center_*` fields** — undocumented and unused; removed entirely.
 - **Editor `card_title` control** — the field was orphaned (never read anywhere).
 
@@ -32,27 +47,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `width` config field is now applied to the card.
 - `square_map: true` no longer collapses the map to zero height.
 - NOAA animation playback direction (was newest → oldest).
+- Colour bar `src` and visibility hoisted into the lit template — previously a rate-limit or fetch failure could leave the bar empty with no `src`.
+- `map_style: Satellite` home marker now uses the light SVG (was using dark).
+- Map z-index isolation, timestamp wrapping, and LitElement rendering carried forward from v3.0.2.
 
-## [3.1.0] - 2026-04-25
+## [3.0.2] - 2026-04-25
 
-### Added
+### Fixed
 
-- **Multi-marker support** — `markers` array replaces the old single-marker fields. Each entry supports `entity`, `latitude`, `longitude`, `icon`, `icon_entity`, `track`, and `mobile_only`.
-- **Live entity tracking** — markers with an `entity` field update their position on every HA state change. Works with `device_tracker.*`, `person.*`, `zone.*`, or any entity with `latitude`/`longitude` attributes.
-- **Track resolution** — set `track: entity` or `track: true` on a marker to auto-centre the map. Priority: (1) `track: entity` on a `person.*` whose `user_id` matches the logged-in HA user, (2) `track: entity` on any other entity, (3) `track: true`. Ties at the same level warn to console and use the first marker.
-- **`mobile_only` marker flag** — a marker with `mobile_only: true` is only shown on mobile devices (HA Companion app, mobile user agent, or screen width ≤ 768 px). Replaces the old `mobile_marker_*` fields.
-- **Auto-migration** — if `markers` is absent but old single-marker fields (`marker_latitude`, `marker_longitude`, `mobile_marker_*`, `marker_icon`, etc.) are present, the card synthesises a `markers[]` in memory on load so existing YAML continues to work without changes. A deprecation warning is logged to the browser console.
-- **Marker clustering** (`cluster_markers`, default `true`) — nearby markers collapse into a count badge. Tap/click the badge to spiderfy (fan out) individual markers in place. The tracked marker always renders outside the cluster so panning and z-index remain precise. Clusters containing a home marker show the home icon in the badge. Cluster icon colours match the current map style (dark/light). Set `cluster_markers: false` to opt out.
-- **Icon colour** (`color` field per marker) — CSS colour for `default` and `mdi:*` icons. The default home icon renders as inline SVG when a colour is set, enabling any hex or named colour without extra asset files. Has no effect on `entity_picture`.
-- **Tracked marker always on top** — the tracking winner gets `zIndexOffset: 1000` so it renders above all other markers.
-- **`map_style: Satellite` home marker** — default home icon now correctly uses the light SVG on satellite maps (was using dark SVG).
-- **Unit test suite** — 128 Vitest tests covering migration, position resolution, track priority, and icon rendering. Tests run in CI before every build.
-
-### Changed
-
-- **Breaking: single-marker config fields deprecated.** `show_marker`, `marker_latitude`, `marker_longitude`, `marker_icon`, `marker_icon_entity`, `mobile_marker_latitude`, `mobile_marker_longitude`, `mobile_marker_icon`, `mobile_marker_icon_entity` are no longer written by the editor and will be removed in a future version. Existing YAML still works via auto-migration.
-- Editor Location section now only contains map center coordinates; marker configuration is in the new Markers section with per-marker rows.
-- Editor Mobile Overrides section removed — use `mobile_only: true` on a marker instead.
+- Map floating above HA navigation drawer / sidebar — added `isolation: isolate` to `:host` to cap Leaflet's z-index:1000 controls inside the card's stacking context (#95).
+- Locale-aware timestamp wrapping to a second line in the bottom bar — added `white-space: nowrap`.
+- Card producing no DOM after the TS target moved to ES2022 — set `useDefineForClassFields: false` so native class field semantics no longer shadow LitElement's `@property()` accessors. `moduleResolution` updated from deprecated `node` to `bundler`.
 
 ## [3.0.1] - 2026-04-24
 
@@ -177,11 +182,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 For changes in versions prior to 2.0.4, please refer to the git commit history.
 
-[Unreleased]: https://github.com/jpettitt/weather-radar-card/compare/v3.1.0...HEAD
-[3.1.0]: https://github.com/jpettitt/weather-radar-card/compare/v3.0.1...v3.1.0
-[3.0.1]: https://github.com/jpettitt/weather-radar-card/compare/v3.0.0...v3.0.1
-[3.0.0]: https://github.com/jpettitt/weather-radar-card/compare/v2.2.0...v3.0.0
-[2.2.0]: https://github.com/jpettitt/weather-radar-card/compare/v2.1.1...v2.2.0
-[2.1.1]: https://github.com/jpettitt/weather-radar-card/compare/v2.1.0...v2.1.1
-[2.1.0]: https://github.com/jpettitt/weather-radar-card/compare/v2.0.4...v2.1.0
-[2.0.4]: https://github.com/jpettitt/weather-radar-card/releases/tag/v2.0.4
+[Unreleased]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/Makin-Things/weather-radar-card/compare/v3.0.2...v3.1.0
+[3.0.2]: https://github.com/Makin-Things/weather-radar-card/compare/v3.0.1...v3.0.2
+[3.0.1]: https://github.com/Makin-Things/weather-radar-card/compare/v3.0.0...v3.0.1
+[3.0.0]: https://github.com/Makin-Things/weather-radar-card/compare/v2.2.0...v3.0.0
+[2.2.0]: https://github.com/Makin-Things/weather-radar-card/compare/v2.1.1...v2.2.0
+[2.1.1]: https://github.com/Makin-Things/weather-radar-card/compare/v2.1.0...v2.1.1
+[2.1.0]: https://github.com/Makin-Things/weather-radar-card/compare/v2.0.4...v2.1.0
+[2.0.4]: https://github.com/Makin-Things/weather-radar-card/releases/tag/v2.0.4
