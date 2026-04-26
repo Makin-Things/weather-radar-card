@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as L from 'leaflet';
 import { HomeAssistant } from 'custom-card-helpers';
-import { WeatherRadarCardConfig, Marker } from './types';
+import { Marker } from './types';
 
 const ICON_BASE = '/local/community/weather-radar-card/';
 
@@ -45,36 +45,6 @@ export function resolveEntityPicture(
 ): string | null {
   if (!entityId) return null;
   return hass?.states[entityId]?.attributes?.entity_picture ?? null;
-}
-
-export function getMarkerIconConfig(
-  config: WeatherRadarCardConfig,
-  hass: HomeAssistant,
-  isMobile: boolean,
-  userInfo: { personEntity: string; deviceTracker?: string } | null,
-): { type: string; entity?: string } {
-  // Mobile falls back to the desktop icon type (not entity_picture) when unset.
-  // Use || so that the editor's empty-string "Same as desktop" sentinel also falls through.
-  const iconType = isMobile
-    ? (config.mobile_marker_icon || config.marker_icon || 'default')
-    : (config.marker_icon || 'default');
-  let iconEntity = isMobile ? config.mobile_marker_icon_entity : config.marker_icon_entity;
-
-  if (iconType === 'entity_picture' && !iconEntity) {
-    const latCfg = isMobile
-      ? (config.mobile_marker_latitude ?? config.marker_latitude)
-      : config.marker_latitude;
-    if (typeof latCfg === 'string') iconEntity = resolveToPersonEntity(latCfg, hass);
-
-    if (!iconEntity) {
-      const cLat = isMobile
-        ? (config.mobile_center_latitude ?? config.center_latitude)
-        : config.center_latitude;
-      if (typeof cLat === 'string') iconEntity = resolveToPersonEntity(cLat, hass);
-    }
-    if (!iconEntity && userInfo?.personEntity) iconEntity = userInfo.personEntity;
-  }
-  return { type: iconType, entity: iconEntity };
 }
 
 export function createMarkerIconForMarker(
@@ -123,36 +93,3 @@ export function createMarkerIconForMarker(
   return L.icon({ iconUrl: `${ICON_BASE}${svgFile}`, iconSize: [16, 16] });
 }
 
-export function createMarkerIcon(
-  config: WeatherRadarCardConfig,
-  hass: HomeAssistant,
-  isMobile: boolean,
-  userInfo: { personEntity: string; deviceTracker?: string } | null,
-  mapStyle: string,
-): L.Icon | L.DivIcon {
-  const iconCfg = getMarkerIconConfig(config, hass, isMobile, userInfo);
-  const svgFile = mapStyle === 'dark' ? 'home-circle-light.svg' : 'home-circle-dark.svg';
-  const defaultIcon = () => L.icon({ iconUrl: `${ICON_BASE}${svgFile}`, iconSize: [16, 16] });
-
-  if (!iconCfg.type || iconCfg.type === 'default') return defaultIcon();
-
-  if (iconCfg.type === 'entity_picture') {
-    const pictureUrl = resolveEntityPicture(iconCfg.entity, hass);
-    if (!pictureUrl) return defaultIcon();
-    return L.icon({ iconUrl: pictureUrl, iconSize: [32, 32], className: 'marker-entity-picture' });
-  }
-
-  if (iconCfg.type.startsWith('mdi:')) {
-    const name = iconCfg.type.substring(4);
-    const path = MDI_PATHS[name];
-    if (!path) return defaultIcon();
-    const colour = mapStyle === 'dark' || mapStyle === 'satellite' ? '#EEEEEE' : '#333333';
-    return L.divIcon({
-      html: `<svg viewBox="0 0 24 24" width="24" height="24"><path fill="${colour}" d="${path}"/></svg>`,
-      iconSize: [24, 24],
-      className: 'marker-mdi-icon',
-    });
-  }
-
-  return defaultIcon();
-}

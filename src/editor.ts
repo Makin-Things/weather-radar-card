@@ -50,30 +50,6 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
     return true;
   }
 
-  get _name(): string {
-    return this._config?.name || '';
-  }
-
-  get _entity(): string {
-    return this._config?.entity || '';
-  }
-
-  get _show_warning(): boolean {
-    return this._config?.show_warning || false;
-  }
-
-  get _show_error(): boolean {
-    return this._config?.show_error || false;
-  }
-
-  get _height(): string {
-    return this._config?.height || '';
-  }
-
-  get _width(): string {
-    return this._config?.width || '';
-  }
-
   protected render(): TemplateResult | void {
     if (!this.hass || !this._helpers) {
       return html``;

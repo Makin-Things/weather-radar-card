@@ -17368,24 +17368,6 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
         }
         return true;
     }
-    get _name() {
-        return this._config?.name || '';
-    }
-    get _entity() {
-        return this._config?.entity || '';
-    }
-    get _show_warning() {
-        return this._config?.show_warning || false;
-    }
-    get _show_error() {
-        return this._config?.show_error || false;
-    }
-    get _height() {
-        return this._config?.height || '';
-    }
-    get _width() {
-        return this._config?.width || '';
-    }
     render() {
         if (!this.hass || !this._helpers) {
             return b ``;
@@ -18138,9 +18120,7 @@ WeatherRadarCardEditor = __decorate([
 const CARD_VERSION = '3.1.0';
 
 var common$2 = {
-	version: "Version",
-	invalid_configuration: "Invalid configuration",
-	show_warning: "Show Warning"
+	version: "Version"
 };
 var en = {
 	common: common$2
@@ -18153,9 +18133,7 @@ var en$1 = /*#__PURE__*/Object.freeze({
 });
 
 var common$1 = {
-	version: "Versjon",
-	invalid_configuration: "Ikke gyldig konfiguration",
-	show_warning: "Vis advarsel"
+	version: "Versjon"
 };
 var nb = {
 	common: common$1
@@ -18168,9 +18146,7 @@ var nb$1 = /*#__PURE__*/Object.freeze({
 });
 
 var common = {
-	version: "Verzia",
-	invalid_configuration: "Neplatná konfigurácia",
-	show_warning: "Zobraziť upozornenie"
+	version: "Verzia"
 };
 var sk = {
 	common: common
