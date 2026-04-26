@@ -18757,7 +18757,7 @@ class RadarPlayer {
             const snap = Math.trunc((now - lag) / step) * step;
             const frames = [];
             for (let i = this._configFrameCount - 1; i >= 0; i--) {
-                frames.unshift({ time: (snap - i * step) / 1000, path: '' });
+                frames.push({ time: (snap - i * step) / 1000, path: '' });
             }
             return frames;
         }
