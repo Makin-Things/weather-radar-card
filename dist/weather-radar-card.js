@@ -17593,12 +17593,6 @@ let WeatherRadarCardEditor = class WeatherRadarCardEditor extends i {
 
         <!-- APPEARANCE -->
         <h3 class="section-header">Appearance</h3>
-        <ha-textfield
-          label="Card Title"
-          .value=${config.card_title ? config.card_title : ''}
-          .configValue=${'card_title'}
-          @input=${this._valueChangedString}
-        ></ha-textfield>
         <div class="side-by-side">
           <ha-textfield
             label="Height"
@@ -19019,8 +19013,6 @@ function getCurrentUserInfo(hass) {
     return null;
 }
 function getCoordinateConfig(baseConfig, mobileConfig, isMobile, userDeviceTracker) {
-    if (isMobile && mobileConfig !== undefined)
-        return mobileConfig;
     if (isMobile && !baseConfig && userDeviceTracker)
         return userDeviceTracker;
     return baseConfig;
@@ -19395,7 +19387,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             return b ``;
         const dark = this._isDark;
         return b `
-      <ha-card class=${dark ? 'radar-dark' : ''}>
+      <ha-card class=${dark ? 'radar-dark' : ''} style="${this._config.width && this._validateCssSize(this._config.width) ? `width:${this._config.width}` : ''}">
         <div id="color-bar" style="height:8px;display:${this._config.show_color_bar === false ? 'none' : ''}">
           <img id="img-color-bar" height="8" style="vertical-align:top" />
         </div>
@@ -19430,7 +19422,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
         const userInfo = getCurrentUserInfo(this.hass);
         const haLat = this.hass?.config?.latitude ?? 0;
         const haLon = this.hass?.config?.longitude ?? 0;
-        const center = resolveCoordinatePair(getCoordinateConfig(cfg.center_latitude, cfg.mobile_center_latitude, isMobile, userInfo?.deviceTracker), getCoordinateConfig(cfg.center_longitude, cfg.mobile_center_longitude, isMobile, userInfo?.deviceTracker), haLat, haLon, this.hass);
+        const center = resolveCoordinatePair(getCoordinateConfig(cfg.center_latitude, undefined, isMobile, userInfo?.deviceTracker), getCoordinateConfig(cfg.center_longitude, undefined, isMobile, userInfo?.deviceTracker), haLat, haLon, this.hass);
         const isStatic = cfg.static_map === true;
         const hasDoubleTapAction = cfg.double_tap_action && cfg.double_tap_action !== 'none';
         this._map = leafletSrcExports.map(mapEl, {
@@ -19830,7 +19822,7 @@ let WeatherRadarCard = class WeatherRadarCard extends i {
             return;
         const cfg = this._config;
         const isMobile = isMobileDevice();
-        const c = resolveCoordinatePair(getCoordinateConfig(cfg.center_latitude, cfg.mobile_center_latitude, isMobile), getCoordinateConfig(cfg.center_longitude, cfg.mobile_center_longitude, isMobile), this.hass?.config?.latitude ?? 0, this.hass?.config?.longitude ?? 0, this.hass);
+        const c = resolveCoordinatePair(getCoordinateConfig(cfg.center_latitude, undefined, isMobile), getCoordinateConfig(cfg.center_longitude, undefined, isMobile), this.hass?.config?.latitude ?? 0, this.hass?.config?.longitude ?? 0, this.hass);
         this._map.setView([c.lat, c.lon], cfg.zoom_level ?? 7);
     }
     // ── Navigation pause ──────────────────────────────────────────────────────

@@ -48,8 +48,6 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   /** @deprecated use markers[] */  marker_longitude?: CoordinateConfig;
   /** @deprecated use markers[] */  mobile_marker_latitude?: CoordinateConfig;
   /** @deprecated use markers[] */  mobile_marker_longitude?: CoordinateConfig;
-  /** @deprecated use markers[] */  mobile_center_latitude?: CoordinateConfig;
-  /** @deprecated use markers[] */  mobile_center_longitude?: CoordinateConfig;
   /** @deprecated use markers[] */  marker_icon?: string;
   /** @deprecated use markers[] */  marker_icon_entity?: string;
   /** @deprecated use markers[] */  mobile_marker_icon?: string;

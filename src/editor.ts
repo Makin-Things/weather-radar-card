@@ -283,12 +283,6 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
 
         <!-- APPEARANCE -->
         <h3 class="section-header">Appearance</h3>
-        <ha-textfield
-          label="Card Title"
-          .value=${config.card_title ? config.card_title : ''}
-          .configValue=${'card_title'}
-          @input=${this._valueChangedString}
-        ></ha-textfield>
         <div class="side-by-side">
           <ha-textfield
             label="Height"

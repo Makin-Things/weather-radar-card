@@ -58,7 +58,6 @@ All options can be configured using the GUI editor — there is no need to edit 
 | Name | Type | Requirement | Description | Default |
 | ---- | ---- | ----------- | ----------- | ------- |
 | type | string | **Required** | | must be `'custom:weather-radar-card'` |
-| card_title | string | **Optional** | Title displayed on the card | no title |
 | data_source | string | **Optional** | Radar tile source (see [Data Source](#data-source)) | `'RainViewer'` |
 | map_style | string | **Optional** | Map style (see [Map Style](#map-style)) | `'Light'` (English) / `'OSM'` (other languages) |
 | zoom_level | number | **Optional** | Initial zoom level, 3–10 | `7` |

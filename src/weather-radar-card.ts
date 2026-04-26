@@ -170,7 +170,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     if (!this._config) return html``;
     const dark = this._isDark;
     return html`
-      <ha-card class=${dark ? 'radar-dark' : ''}>
+      <ha-card class=${dark ? 'radar-dark' : ''} style="${this._config.width && this._validateCssSize(this._config.width) ? `width:${this._config.width}` : ''}">
         <div id="color-bar" style="height:8px;display:${this._config.show_color_bar === false ? 'none' : ''}">
           <img id="img-color-bar" height="8" style="vertical-align:top" />
         </div>
@@ -209,8 +209,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     const haLon = this.hass?.config?.longitude ?? 0;
 
     const center = resolveCoordinatePair(
-      getCoordinateConfig(cfg.center_latitude, cfg.mobile_center_latitude, isMobile, userInfo?.deviceTracker),
-      getCoordinateConfig(cfg.center_longitude, cfg.mobile_center_longitude, isMobile, userInfo?.deviceTracker),
+      getCoordinateConfig(cfg.center_latitude, undefined, isMobile, userInfo?.deviceTracker),
+      getCoordinateConfig(cfg.center_longitude, undefined, isMobile, userInfo?.deviceTracker),
       haLat, haLon, this.hass,
     );
 
@@ -606,8 +606,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     const cfg = this._config;
     const isMobile = isMobileDevice();
     const c = resolveCoordinatePair(
-      getCoordinateConfig(cfg.center_latitude, cfg.mobile_center_latitude, isMobile),
-      getCoordinateConfig(cfg.center_longitude, cfg.mobile_center_longitude, isMobile),
+      getCoordinateConfig(cfg.center_latitude, undefined, isMobile),
+      getCoordinateConfig(cfg.center_longitude, undefined, isMobile),
       this.hass?.config?.latitude ?? 0, this.hass?.config?.longitude ?? 0, this.hass,
     );
     this._map.setView([c.lat, c.lon], cfg.zoom_level ?? 7);
