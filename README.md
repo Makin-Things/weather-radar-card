@@ -11,7 +11,7 @@ A Home Assistant rain radar card using tiled radar imagery from RainViewer and N
 
 This card displays animated weather radar loops within Home Assistant. It supports multiple radar data sources and map styles, and can be zoomed and panned seamlessly.
 
-![Weather Radar card](https://raw.githubusercontent.com/makin-things/weather-radar-card/master/weather-radar-card.gif)
+![Weather Radar card](weather-radar-card.gif)
 
 ## What's New in 3.0
 
