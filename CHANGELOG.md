@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-04-27
+
+### Fixed
+
+- Home cluster badge now counts only non-home markers (e.g. home + 3 others shows `3`, not `4`). Badge is hidden entirely when a cluster contains only home markers.
+
 ## [3.1.0] - 2026-04-26
 
 Multi-marker overhaul. **Breaking:** single-marker config fields (`show_marker`, `marker_latitude`, `marker_longitude`, `marker_icon`, `marker_icon_entity`, `mobile_marker_*`) are deprecated. Existing YAML auto-migrates in memory on load with a console warning; the editor only writes the new `markers[]` format.
@@ -182,7 +188,8 @@ Multi-marker overhaul. **Breaking:** single-marker config fields (`show_marker`,
 
 For changes in versions prior to 2.0.4, please refer to the git commit history.
 
-[Unreleased]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.1...HEAD
+[3.1.1]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/Makin-Things/weather-radar-card/compare/v3.0.2...v3.1.0
 [3.0.2]: https://github.com/Makin-Things/weather-radar-card/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/Makin-Things/weather-radar-card/compare/v3.0.0...v3.0.1

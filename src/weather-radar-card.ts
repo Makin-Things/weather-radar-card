@@ -377,20 +377,25 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _createClusterIcon(cluster: L.MarkerCluster, isDark: boolean): L.DivIcon {
     const count = cluster.getChildCount();
     const children = cluster.getAllChildMarkers() as any[];
-    const hasHome = children.some(m => {
+    const homeCount = children.filter(m => {
       const cfg = m._wrcCfg as Marker | undefined;
       return cfg?.entity === 'zone.home' || !cfg?.icon || cfg?.icon === 'default';
-    });
+    }).length;
+    const hasHome = homeCount > 0;
 
     if (hasHome) {
       const iconSize = 28;
       const iconColor = isDark ? '#EEEEEE' : '#333333';
-      const badgeBg = isDark ? '#EEEEEE' : '#222222';
-      const badgeFg = isDark ? '#222222' : '#FFFFFF';
-      const badgeSize = count < 10 ? 14 : count < 100 ? 17 : 20;
-      const badgeFs = count < 10 ? 10 : count < 100 ? 9 : 8;
+      const otherCount = count - homeCount;
+      const badge = otherCount > 0 ? (() => {
+        const badgeBg = isDark ? '#EEEEEE' : '#222222';
+        const badgeFg = isDark ? '#222222' : '#FFFFFF';
+        const badgeSize = otherCount < 10 ? 14 : otherCount < 100 ? 17 : 20;
+        const badgeFs = otherCount < 10 ? 10 : otherCount < 100 ? 9 : 8;
+        return `<div style="position:absolute;top:-4px;right:-4px;min-width:${badgeSize}px;height:${badgeSize}px;padding:0 3px;box-sizing:border-box;background:${badgeBg};color:${badgeFg};border-radius:${badgeSize}px;display:flex;align-items:center;justify-content:center;font:bold ${badgeFs}px/1 'Helvetica Neue',Arial,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,0.4)">${otherCount}</div>`;
+      })() : '';
       return L.divIcon({
-        html: `<div style="position:relative;width:${iconSize}px;height:${iconSize}px"><svg viewBox="0 0 24 24" width="${iconSize}" height="${iconSize}"><path fill="${iconColor}" d="${HOME_PATH}"/></svg><div style="position:absolute;top:-4px;right:-4px;min-width:${badgeSize}px;height:${badgeSize}px;padding:0 3px;box-sizing:border-box;background:${badgeBg};color:${badgeFg};border-radius:${badgeSize}px;display:flex;align-items:center;justify-content:center;font:bold ${badgeFs}px/1 'Helvetica Neue',Arial,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,0.4)">${count}</div></div>`,
+        html: `<div style="position:relative;width:${iconSize}px;height:${iconSize}px"><svg viewBox="0 0 24 24" width="${iconSize}" height="${iconSize}"><path fill="${iconColor}" d="${HOME_PATH}"/></svg>${badge}</div>`,
         className: 'weather-radar-cluster',
         iconSize: [iconSize, iconSize] as L.PointExpression,
       });
