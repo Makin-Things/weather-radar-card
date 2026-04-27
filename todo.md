@@ -1,10 +1,13 @@
 # Weather Radar Card — Backlog
 
-## Multi-marker Support
+Backlog of design notes for shipped and proposed work. Items marked ✅ are
+released; remaining unchecked items are open ideas.
 
-Complete redesign of the marker system to support multiple markers, entity-based
-positions, and automatic map tracking. This is a **breaking change** — the existing
-single-marker config fields will be removed.
+## Multi-marker Support ✅ — shipped in 3.1.0
+
+Complete redesign of the marker system supporting multiple markers, entity-based
+positions, and automatic map tracking. **Breaking change** — single-marker
+config fields are deprecated and auto-migrated in memory on load.
 
 ### Track resolution rules
 
@@ -14,15 +17,15 @@ order:
 
 1. **`track: entity` on a `person.*` entity** whose `user_id` matches the current
    logged-in HA user → highest priority. "I am this person, follow me."
-2. **`track: entity` on a `device_tracker.*` entity** → second priority. The device
-   is tracked for all viewers regardless of who is using it or logged in. Overridden
-   only by a matching person in rule 1.
+2. **`track: entity` on any other entity** (e.g. `device_tracker.*`) → second
+   priority. The device is tracked for all viewers regardless of who is using it
+   or logged in. Overridden only by a matching person in rule 1.
 3. **`track: true`** → lowest always-on fallback. Any `track: entity` match from
    rules 1 or 2 overrides this.
-4. Multiple markers at the **same priority level** → log a console warning and use
-   the first one in the array.
+4. Multiple markers at the **same priority level** → log a console warning and
+   use the first one in the array.
 
-### Proposed YAML format
+### YAML format
 
 ```yaml
 markers:
@@ -45,81 +48,51 @@ markers:
 
 ### Tasks
 
-- [ ] **Design marker config schema** — markers array; track: entity|true;
-  resolution priority: (1) track:entity on person matching current user,
-  (2) track:entity on device_tracker (viewer-independent), (3) track:true;
-  multiple at same level = warn + first wins
-
-- [ ] **Define new types** — `Marker` interface with `latitude?`, `longitude?`,
-  `entity?`, `icon?`, `track?: 'entity' | true`; update `WeatherRadarCardConfig`
-  replacing all single-marker fields with a `markers?` array
-
-- [ ] **Implement multi-marker rendering** — replace single `_marker: L.Marker`
-  with `_markers: L.Marker[]`; render all markers on map init and update positions
-  on each `hass` update
-
-- [ ] **Implement entity-based marker positions** — resolve `device_tracker.*`,
-  `person.*`, `zone.*` entities to lat/lon on each `hass` update; handle missing
-  or unavailable entities gracefully
-
-- [ ] **Implement track resolution** — on each `hass` update: evaluate the priority
-  stack above; re-centre the map to the winning marker's current position; warn to
-  console on ties at the same priority level
-
-- [ ] **Auto-migrate old config** — in `setConfig()`, if `markers` is absent but old
-  single-marker fields (`marker_latitude`, `mobile_marker_latitude`, etc.) are
-  present, synthesise a `markers` array in memory so old configs continue to work
-  without touching the user's YAML. Log a deprecation warning. When `editMode` is
-  active, optionally fire `config-changed` with the translated config so the editor
-  writes the new format back automatically. Notes: collapse same-string lat/lon
-  entity pairs to a single `entity` field; add `mobile_only: true` to any marker
-  synthesised from mobile fields; do not migrate `center_latitude` / mobile center
-  (those are map-centering fields, not markers).
-
-- [ ] **Remove conflicting mobile support** — deprecate and remove
-  `marker_latitude`, `marker_longitude`, `mobile_marker_latitude`,
-  `mobile_marker_longitude`, `marker_icon`, `mobile_marker_icon`,
-  `marker_icon_entity`, `mobile_marker_icon_entity`, `mobile_center_latitude`,
-  `mobile_center_longitude`, `mobile_marker_latitude`, `mobile_marker_longitude`
-  (breaking change — provide migration guide)
-
-- [ ] **Update editor** — list-based markers section replacing the single-marker
-  block; each row has entity/lat/lon pickers, icon selector, and a track selector
-  (off / entity / always)
-
-- [ ] **Update README and CHANGELOG** — document the new `markers` array format,
-  track resolution rules, the complete list of removed config fields, and a
-  migration guide for users upgrading from the old single-marker config
+- [x] Marker config schema — `markers[]` array; `track: entity | true`;
+  resolution priority described above
+- [x] `Marker` interface (`latitude?`, `longitude?`, `entity?`, `icon?`,
+  `icon_entity?`, `color?`, `track?`, `mobile_only?`); legacy fields kept on
+  `WeatherRadarCardConfig` for migration only
+- [x] Multi-marker rendering with live position updates on every hass change
+- [x] Entity-based marker positions (`device_tracker.*`, `person.*`, `zone.*`,
+  any entity with `latitude`/`longitude` attributes)
+- [x] Track resolution with priority + tie-warning
+- [x] Auto-migration in `setConfig()` — synthesises a `markers[]` from the old
+  fields in memory; deprecation warning logged; same-string lat/lon entity pairs
+  collapsed to a single `entity` field; `mobile_only: true` added to mobile
+  variants
+- [x] Default `zone.home` marker when `markers` is absent; `markers: []` opts out
+- [x] Editor — list-based markers section; per-row entity / lat-lon / icon /
+  track / colour / mobile-only controls; HA `ha-icon-picker` for icon
+  autocomplete; auto-detect icon from selected entity
+- [x] Marker clustering with spiderfy and home-cluster badge representation
+- [x] README and CHANGELOG updates
 
 ---
 
-## Scroll / Swipe Passthrough
+## Scroll / Swipe Passthrough ✅ — shipped in 3.0.1
 
-On mobile, the map consumes all touch gestures — swiping to scroll the HA dashboard moves the map instead of the page. A `disable_scroll` option should suppress single-finger pan on the map while preserving pinch-zoom so the user can still zoom the radar view.
-
-Implementation notes:
-
-- Use Leaflet's built-in options: `dragging: false, touchZoom: true`. This disables single-finger pan (and mouse drag) on both mobile and desktop consistently, while preserving pinch-to-zoom. Behaviour is the same regardless of device.
-- Apply by calling `this._map.dragging.disable()` after map init when the option is on (and `enable()` when off), so the map object is already constructed.
-- The option should default to `false` (current behaviour — drag and pinch both active).
+`disable_scroll` config option suppresses single-finger pan / mouse drag while
+preserving pinch-to-zoom, so mobile users can scroll past the card.
 
 ### Tasks
 
-- [x] **Add `disable_scroll` config option** — `boolean`, default `false`; document in README options table
-
-- [x] **Disable dragging, keep pinch** — after map init, if `disable_scroll` is true call `this._map.dragging.disable()`; `touchZoom` remains enabled so pinch still works. No extra event listeners needed.
-
-- [x] **Add toggle to editor** — in the Interaction section
-
-- [ ] **Update README and CHANGELOG**
+- [x] `disable_scroll` config option (boolean, default `false`)
+- [x] Disable Leaflet `dragging` on map init when option is on
+- [x] Editor toggle in the Interaction section
+- [x] README and CHANGELOG updates
 
 ---
 
 ## Other Backlog Items
 
-- Clickable / draggable timeline — already implemented ✅
-- AM/PM vs 24 h time display — already implemented (browser locale) ✅
-- Configurable double-tap action — already implemented ✅
-- Hide progress bar option — already implemented ✅
-- Hide / show colour bar option — already implemented ✅
-- Dynamic map style (Auto) — already implemented ✅
+All historically tracked items are now shipped:
+
+- Clickable / draggable timeline ✅
+- AM / PM vs 24 h time display (browser locale) ✅
+- Configurable double-tap action ✅
+- Hide progress bar option ✅
+- Hide / show colour bar option ✅
+- Dynamic map style (Auto) ✅
+- Marker clustering ✅
+- Multi-marker support ✅

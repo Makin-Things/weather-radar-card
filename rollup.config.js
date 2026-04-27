@@ -3,6 +3,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import babel from '@rollup/plugin-babel';
 import serve from 'rollup-plugin-serve';
+import terser from '@rollup/plugin-terser';
 import json from '@rollup/plugin-json';
 import { string } from 'rollup-plugin-string';
 
@@ -28,6 +29,12 @@ const plugins = [
   babel({
     exclude: 'node_modules/**',
     babelHelpers: 'bundled',
+  }),
+  // Minify production builds; skip in watch mode for fast iteration.
+  !dev && terser({
+    format: { comments: false },
+    compress: { passes: 2, drop_console: false },
+    mangle: { keep_classnames: /^WeatherRadar/ },
   }),
   dev && serve(serveopts),
 ];

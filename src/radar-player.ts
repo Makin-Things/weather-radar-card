@@ -326,7 +326,7 @@ export class RadarPlayer {
       const snap = Math.trunc((now - lag) / step) * step;
       const frames: RadarFrame[] = [];
       for (let i = this._configFrameCount - 1; i >= 0; i--) {
-        frames.unshift({ time: (snap - i * step) / 1000, path: '' });
+        frames.push({ time: (snap - i * step) / 1000, path: '' });
       }
       return frames;
     }
@@ -399,15 +399,6 @@ export class RadarPlayer {
     this._configFrameCount = frameCount;
 
     this._buildSegments();
-
-    const dataSource = this._cfg.data_source ?? 'RainViewer';
-    const colourBar = this._shadowRoot.getElementById('color-bar');
-    const colourImg = this._shadowRoot.getElementById('img-color-bar') as HTMLImageElement | null;
-    if (colourBar && colourImg) {
-      const showBar = this._cfg.show_color_bar !== false && dataSource !== 'NOAA';
-      colourBar.style.display = showBar ? '' : 'none';
-      if (showBar) colourImg.src = '/local/community/weather-radar-card/radar-colour-bar-universalblue.png';
-    }
 
     let newestShown = false;
 
