@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.1.1] - 2026-04-27
 
+### Changed
+
+- Footer / progress bar / links now use HA theme CSS variables (`--card-background-color`, `--primary-text-color`, `--primary-color`) — custom themes are picked up automatically. The previous hard-coded two-tone scheme is gone.
+- `map_style: auto` follows `hass.themes.darkMode` (so the map matches HA's dark-mode setting whether the user picks it manually or has HA follow the browser); falls back to OS `prefers-color-scheme` only when HA hasn't exposed a value. The map rebuilds automatically when the flag flips.
+
 ### Fixed
 
 - Home cluster badge now counts only non-home markers (e.g. home + 3 others shows `3`, not `4`). Badge is hidden entirely when a cluster contains only home markers.

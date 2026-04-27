@@ -57,6 +57,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   // ── Map / player state ────────────────────────────────────────────────────
 
   private _map: L.Map | null = null;
+  private _currentMapStyle: string | null = null;
   private _townLayer: FetchTileLayer | null = null;
   private _toolbar: RadarToolbar | null = null;
   private _markers: Map<number, L.Marker> = new Map();
@@ -89,17 +90,15 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     const configured = this._config?.map_style?.toLowerCase();
     if (configured && configured !== 'auto') return configured;
     const isEnglish = (this.hass?.language ?? 'en').startsWith('en');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (prefersDark) return 'dark';
-    return isEnglish ? 'light' : 'osm';
-  }
-
-  // Tracks the surrounding UI theme (footer, progress bar) — independent of
-  // map style. Follows HA's theme setting when available, OS dark-mode otherwise.
-  private get _isUIDark(): boolean {
+    // Follow HA's dark-mode flag when available — the user can set it directly
+    // or have HA follow the browser. Fall back to OS prefs only if HA hasn't
+    // exposed a value yet.
     const haDark = (this.hass as any)?.themes?.darkMode;
-    if (typeof haDark === 'boolean') return haDark;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = typeof haDark === 'boolean'
+      ? haDark
+      : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (isDark) return 'dark';
+    return isEnglish ? 'light' : 'osm';
   }
 
   private _validateCssSize(value: string): boolean {
@@ -168,10 +167,18 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     } else if (changedProps.has('_config') && this._map) {
       this._teardown();
       this._initMap();
-    } else if (changedProps.has('hass') && this._map && this._markers.size > 0) {
-      this._updateMarkerPositions();
-      const hasTracking = (this._config?.markers ?? []).some(m => m.track);
-      if (hasTracking) this._resolveTracking();
+    } else if (changedProps.has('hass') && this._map) {
+      // HA dark-mode flip can change the effective map style — rebuild if so.
+      if (this._effectiveMapStyle() !== this._currentMapStyle) {
+        this._teardown();
+        this._initMap();
+        return;
+      }
+      if (this._markers.size > 0) {
+        this._updateMarkerPositions();
+        const hasTracking = (this._config?.markers ?? []).some(m => m.track);
+        if (hasTracking) this._resolveTracking();
+      }
     }
   }
 
@@ -184,14 +191,15 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   protected render(): TemplateResult | void {
     if (!this._config) return html``;
-    const dark = this._isUIDark;
+    const mapStyle = this._effectiveMapStyle();
+    const isMapDark = mapStyle === 'dark' || mapStyle === 'satellite';
     const dataSource = this._config.data_source ?? 'RainViewer';
     const showColourBar = this._config.show_color_bar !== false;
     const colourBarSrc = dataSource === 'NOAA'
       ? '/local/community/weather-radar-card/radar-colour-bar-nws.png'
       : '/local/community/weather-radar-card/radar-colour-bar-universalblue.png';
     return html`
-      <ha-card class=${dark ? 'radar-dark' : ''} style="${this._config.width && this._validateCssSize(this._config.width) ? `width:${this._config.width}` : ''}">
+      <ha-card class=${isMapDark ? 'map-dark' : ''} style="${this._config.width && this._validateCssSize(this._config.width) ? `width:${this._config.width}` : ''}">
         <div id="color-bar" style="height:8px;display:${showColourBar ? '' : 'none'}">
           <img id="img-color-bar" height="8" style="vertical-align:top" src=${colourBarSrc} />
         </div>
@@ -204,9 +212,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
           </button>
         ` : ''}
         <div id="mapid" style="${this._config.square_map && !this._config.height ? 'aspect-ratio:1/1' : `height:${this._calculateHeight()}`}"></div>
-        <div id="div-progress-bar" style="height:8px;cursor:pointer;display:${this._config.show_progress_bar === false ? 'none' : 'flex'};background:${dark ? '#1c1c1c' : '#fff'}"></div>
-        <div id="bottom-container" class="${dark ? 'dark-links' : 'light-links'}"
-             style="height:32px;background:${dark ? '#1c1c1c' : '#fff'};color:${dark ? '#ddd' : ''}">
+        <div id="div-progress-bar" style="height:8px;cursor:pointer;display:${this._config.show_progress_bar === false ? 'none' : 'flex'}"></div>
+        <div id="bottom-container">
           <div id="timestampid" style="height:32px;float:left;position:absolute">
             <p id="timestamp" style="margin:0;padding:4px 8px;font-size:12px;white-space:nowrap"></p>
           </div>
@@ -224,6 +231,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
     const cfg = this._config;
     const mapStyle = this._effectiveMapStyle();
+    this._currentMapStyle = mapStyle;
     const isMobile = isMobileDevice();
     const userInfo = getCurrentUserInfo(this.hass);
     const haLat = this.hass?.config?.latitude ?? 0;
@@ -261,16 +269,18 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     this._setupDoubleTapAction();
     this._setupVisibilityObserver();
     this._setupResizeObserver();
-    // Re-render when the OS colour scheme changes so the footer/progress-bar
-    // chrome follows the theme. When map_style is auto (or unset) we also
-    // reinit the map so the basemap tiles swap to the dark/light variant.
+    // For map_style: auto, reinit the map when the OS colour scheme changes so
+    // the basemap tiles and scale-control styling swap. Chrome (footer, links)
+    // follows HA theme variables and updates automatically.
     const isAuto = !cfg.map_style || cfg.map_style.toLowerCase() === 'auto';
-    this._darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    this._darkModeHandler = () => {
-      if (isAuto) this._teardown();
-      this.requestUpdate();
-    };
-    this._darkModeQuery.addEventListener('change', this._darkModeHandler);
+    if (isAuto) {
+      this._darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      this._darkModeHandler = () => {
+        this._teardown();
+        this.requestUpdate();
+      };
+      this._darkModeQuery.addEventListener('change', this._darkModeHandler);
+    }
 
     this._player = new RadarPlayer({
       map: this._map,
@@ -307,6 +317,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     if (this._clusterGroup) { this._clusterGroup.clearLayers(); this._clusterGroup = null; }
     this._clusterSpiderfied = false;
     if (this._map) { this._map.remove(); this._map = null; }
+    this._currentMapStyle = null;
     this._townLayer = null;
     this._toolbar = null;
     this._markers.clear();
@@ -731,10 +742,16 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       .marker-mdi-icon { background: none; border: none; }
       .radar-toolbar { background: white; border-radius: 4px; }
       .radar-toolbar li { list-style: none; }
-      .light-links a { color: #0078a8; }
-      .dark-links a { color: #88ccff; }
-      #bottom-container { font-size: 10px; position: relative; }
-      .radar-dark .leaflet-control-scale-line {
+      #div-progress-bar {
+        background: var(--ha-card-background, var(--card-background-color));
+      }
+      #bottom-container {
+        height: 32px; font-size: 10px; position: relative;
+        background: var(--ha-card-background, var(--card-background-color));
+        color: var(--primary-text-color);
+      }
+      #bottom-container a { color: var(--primary-color); }
+      .map-dark .leaflet-control-scale-line {
         color: #bbb; border-color: #bbb; background: rgba(0,0,0,0.5);
       }
       .save-center-btn {
