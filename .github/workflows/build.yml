@@ -58,13 +58,17 @@ jobs:
       - name: Build
         run: npm run rollup
 
-      - name: Compress dist
+      - name: Compress dist (master only)
+        if: github.ref == 'refs/heads/master'
         run: gzip -kf dist/weather-radar-card.js
 
-      - name: Commit dist files
+      - name: Commit dist file(s)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f dist/weather-radar-card.js dist/weather-radar-card.js.gz
+          git add -f dist/weather-radar-card.js
+          if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            git add -f dist/weather-radar-card.js.gz
+          fi
           git diff --staged --quiet || git commit -m "chore: update dist [skip ci]"
           git push
