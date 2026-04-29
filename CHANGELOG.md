@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.2] - 2026-04-29
+
+### Changed
+
+- Map `maxZoom` raised from 10 to 16. Basemaps will sharpen up to their native resolution; the radar overlay (capped at `maxNativeZoom: 7`) will upscale and look pixelated past zoom 7. User-requested tradeoff.
+
 ## [3.1.1] - 2026-04-27
 
 ### Changed (build / release)
@@ -197,7 +203,8 @@ Multi-marker overhaul. **Breaking:** single-marker config fields (`show_marker`,
 
 For changes in versions prior to 2.0.4, please refer to the git commit history.
 
-[Unreleased]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.1...HEAD
+[Unreleased]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.2...HEAD
+[3.1.2]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.1...v3.1.2
 [3.1.1]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/Makin-Things/weather-radar-card/compare/v3.0.2...v3.1.0
 [3.0.2]: https://github.com/Makin-Things/weather-radar-card/compare/v3.0.1...v3.0.2

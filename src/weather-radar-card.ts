@@ -251,7 +251,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       scrollWheelZoom: !isStatic, doubleClickZoom: !isStatic && !hasDoubleTapAction,
       boxZoom: !isStatic, dragging: !isStatic, keyboard: !isStatic, touchZoom: !isStatic,
       wheelPxPerZoomLevel: 120, attributionControl: false,
-      minZoom: 3, maxZoom: 10,
+      minZoom: 3, maxZoom: 16,
     }).setView([center.lat, center.lon], cfg.zoom_level ?? 7);
 
     if (cfg.disable_scroll === true && !isStatic) {
