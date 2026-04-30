@@ -73,45 +73,45 @@ In Home Assistant edit mode, pan and zoom the map to your desired position and a
 
 All options can be configured using the GUI editor — there is no need to edit YAML directly.
 
-| Name | Type | Requirement | Description | Default |
-| ---- | ---- | ----------- | ----------- | ------- |
-| type | string | **Required** | | must be `'custom:weather-radar-card'` |
-| data_source | string | **Optional** | Radar tile source (see [Data Source](#data-source)) | `'RainViewer'` |
-| map_style | string | **Optional** | Map style (see [Map Style](#map-style)) | `'Auto'` (follows OS dark/light mode) |
-| zoom_level | number | **Optional** | Initial zoom level, 3–10 | `7` |
-| center_latitude | number / string | **Optional** | Initial map center latitude — number or entity ID | HA instance location |
-| center_longitude | number / string | **Optional** | Initial map center longitude — number or entity ID | HA instance location |
-| markers | list | **Optional** | List of map markers (see [Markers](#markers)) | none |
-| frame_count | number | **Optional** | Number of frames in the loop | `5` |
-| frame_delay | number | **Optional** | Milliseconds to display each frame | `500` |
-| restart_delay | number | **Optional** | Extra milliseconds to hold the last frame before looping | `1000` |
-| animated_transitions | boolean | **Optional** | Enable crossfade transitions between frames | `true` |
-| transition_time | number | **Optional** | Crossfade duration in ms. Default is 40% of frame_delay | auto |
-| show_snow | boolean | **Optional** | Include snow in the precipitation display (RainViewer only) | `false` |
-| show_color_bar | boolean | **Optional** | Show the radar colour scale bar (RainViewer only) | `true` |
-| show_progress_bar | boolean | **Optional** | Show the frame progress / timeline bar | `true` |
-| show_scale | boolean | **Optional** | Show a distance scale bar on the map | `false` |
-| double_tap_action | string / object | **Optional** | Action on double-tap: `'recenter'`, `'toggle_play'`, `'none'`, or any HA action object | `'none'` |
-| disable_scroll | boolean | **Optional** | Disable map pan/drag while keeping pinch-to-zoom; lets mobile users swipe the page past the map | `false` |
-| cluster_markers | boolean | **Optional** | Cluster nearby markers into a badge; tap/click the badge to spiderfy (fan out) individual markers. The tracked marker always renders outside the cluster. Clusters containing a home marker render the home icon with a small superscript count badge. | `true` |
-| static_map | boolean | **Optional** | Disable all panning and zooming | `false` |
-| show_zoom | boolean | **Optional** | Show zoom controls | `false` |
-| square_map | boolean | **Optional** | Keep the map square | `false` |
-| show_playback | boolean | **Optional** | Show playback controls toolbar | `false` |
-| show_recenter | boolean | **Optional** | Show re-center button in toolbar | `false` |
-| show_range | boolean | **Optional** | Show range rings around the first marker | `false` |
-| extra_labels | boolean | **Optional** | Show more place labels (labels become smaller) | `false` |
-| height | string | **Optional** | Custom card height using CSS units e.g. `'400px'`, `'50vh'` | `'400px'` |
-| width | string | **Optional** | Custom card width using CSS units e.g. `'500px'`, `'80%'` | `'100%'` |
+| Name                 | Type            | Requirement  | Description                                                                                                                                                                                                                                                  | Default                               |
+| -------------------- | --------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
+| type                 | string          | **Required** |                                                                                                                                                                                                                                                              | must be `'custom:weather-radar-card'` |
+| data_source          | string          | **Optional** | Radar tile source (see [Data Source](#data-source))                                                                                                                                                                                                          | `'RainViewer'`                        |
+| map_style            | string          | **Optional** | Map style (see [Map Style](#map-style))                                                                                                                                                                                                                      | `'Auto'` (follows OS dark/light mode) |
+| zoom_level           | number          | **Optional** | Initial zoom level, 3–10                                                                                                                                                                                                                                     | `7`                                   |
+| center_latitude      | number / string | **Optional** | Initial map center latitude — number or entity ID                                                                                                                                                                                                            | HA instance location                  |
+| center_longitude     | number / string | **Optional** | Initial map center longitude — number or entity ID                                                                                                                                                                                                           | HA instance location                  |
+| markers              | list            | **Optional** | List of map markers (see [Markers](#markers))                                                                                                                                                                                                                | none                                  |
+| frame_count          | number          | **Optional** | Number of frames in the loop                                                                                                                                                                                                                                 | `5`                                   |
+| frame_delay          | number          | **Optional** | Milliseconds to display each frame                                                                                                                                                                                                                           | `500`                                 |
+| restart_delay        | number          | **Optional** | Extra milliseconds to hold the last frame before looping                                                                                                                                                                                                     | `1000`                                |
+| animated_transitions | boolean         | **Optional** | Enable crossfade transitions between frames                                                                                                                                                                                                                  | `true`                                |
+| transition_time      | number          | **Optional** | Crossfade duration in ms. Default is 40% of frame_delay                                                                                                                                                                                                      | auto                                  |
+| show_snow            | boolean         | **Optional** | Include snow in the precipitation display (RainViewer only)                                                                                                                                                                                                  | `false`                               |
+| show_color_bar       | boolean         | **Optional** | Show the radar colour scale bar (RainViewer only)                                                                                                                                                                                                            | `true`                                |
+| show_progress_bar    | boolean         | **Optional** | Show the frame progress / timeline bar                                                                                                                                                                                                                       | `true`                                |
+| show_scale           | boolean         | **Optional** | Show a distance scale bar on the map                                                                                                                                                                                                                         | `false`                               |
+| double_tap_action    | string / object | **Optional** | Action on double-tap: `'recenter'`, `'toggle_play'`, `'none'`, or any HA action object                                                                                                                                                                       | `'none'`                              |
+| disable_scroll       | boolean         | **Optional** | Disable map pan/drag while keeping pinch-to-zoom; lets mobile users swipe the page past the map                                                                                                                                                              | `false`                               |
+| cluster_markers      | boolean         | **Optional** | Cluster nearby markers into a badge; tap/click the badge to spiderfy (fan out) individual markers.<br>The tracked marker always renders outside the cluster.<br>Clusters containing a home marker render the home icon with a small superscript count badge. | `true`                                |
+| static_map           | boolean         | **Optional** | Disable all panning and zooming                                                                                                                                                                                                                              | `false`                               |
+| show_zoom            | boolean         | **Optional** | Show zoom controls                                                                                                                                                                                                                                           | `false`                               |
+| square_map           | boolean         | **Optional** | Keep the map square                                                                                                                                                                                                                                          | `false`                               |
+| show_playback        | boolean         | **Optional** | Show playback controls toolbar                                                                                                                                                                                                                               | `false`                               |
+| show_recenter        | boolean         | **Optional** | Show re-center button in toolbar                                                                                                                                                                                                                             | `false`                               |
+| show_range           | boolean         | **Optional** | Show range rings around the first marker                                                                                                                                                                                                                     | `false`                               |
+| extra_labels         | boolean         | **Optional** | Show more place labels (labels become smaller)                                                                                                                                                                                                               | `false`                               |
+| height               | string          | **Optional** | Custom card height using CSS units e.g. `'400px'`, `'50vh'`                                                                                                                                                                                                  | `'400px'`                             |
+| width                | string          | **Optional** | Custom card width using CSS units e.g. `'500px'`, `'80%'`                                                                                                                                                                                                    | `'100%'`                              |
 
 ### Data Source
 
 Selects where radar tile data comes from.
 
-| Value | Coverage | Notes |
-| ----- | -------- | ----- |
-| `RainViewer` | Global | Default. Updated every 5 minutes, ~1–6 minute lag. No API key required. Personal/educational use only per RainViewer terms. |
-| `NOAA` | US only | Experimental. Uses NOAA/NWS MRMS base reflectivity composite via `mapservices.weather.noaa.gov`. Government data — free, no API key. 15-minute lag, 5-minute frame steps. |
+| Value        | Coverage | Notes                                                                                                                                                                     |
+| ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RainViewer` | Global   | Default. Updated every 5 minutes, ~1–6 minute lag. No API key required. Personal/educational use only per RainViewer terms.                                               |
+| `NOAA`       | US only  | Experimental. Uses NOAA/NWS MRMS base reflectivity composite via `mapservices.weather.noaa.gov`. Government data — free, no API key. 15-minute lag, 5-minute frame steps. |
 
 > **NOAA note:** This is an experimental feature using a public government service with no documented rate limits. It is US-only. Radar tiles are fetched at a maximum of zoom 7 (the native 1 km MRMS resolution) and upscaled for display.
 
@@ -119,14 +119,14 @@ Selects where radar tile data comes from.
 
 Specifies the base map style. All CARTO-based styles render labels in English only. Use OpenStreetMap for localized labels.
 
-| Value | Description |
-| ----- | ----------- |
-| `Auto` | Follows OS dark/light mode — Dark when system is dark, Light (English) or OSM (other) when light |
-| `Light` | CARTO Light — English only |
-| `Dark` | CARTO Dark — English only |
-| `Voyager` | CARTO Voyager — English only |
-| `Satellite` | ESRI World Imagery — English only |
-| `OSM` | OpenStreetMap — labels rendered in local language |
+| Value       | Description                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------ |
+| `Auto`      | Follows OS dark/light mode — Dark when system is dark, Light (English) or OSM (other) when light |
+| `Light`     | CARTO Light — English only                                                                       |
+| `Dark`      | CARTO Dark — English only                                                                        |
+| `Voyager`   | CARTO Voyager — English only                                                                     |
+| `Satellite` | ESRI World Imagery — English only                                                                |
+| `OSM`       | OpenStreetMap — labels rendered in local language                                                |
 
 When `map_style` is not set or set to `Auto`, the card picks Dark when the OS is in dark mode, `Light` for English-language instances in light mode, and `OSM` for all other languages in light mode. The map updates automatically if the OS theme changes.
 
@@ -163,11 +163,11 @@ Opacity changes are instant — no transition property is applied.
 
 Simple shortcut values:
 
-| Value | Behaviour |
-| ----- | --------- |
-| `none` | No action (default) |
-| `recenter` | Return the map to the configured center and zoom |
-| `toggle_play` | Toggle radar playback on/off |
+| Value         | Behaviour                                        |
+| ------------- | ------------------------------------------------ |
+| `none`        | No action (default)                              |
+| `recenter`    | Return the map to the configured center and zoom |
+| `toggle_play` | Toggle radar playback on/off                     |
 
 For advanced use, any standard HA action object is accepted in YAML:
 
@@ -189,16 +189,16 @@ double_tap_action:
 
 The `markers` option accepts a list. Each entry can have:
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `entity` | string | Entity ID (`device_tracker.*`, `person.*`, `zone.*`). Position is read from the entity's `latitude`/`longitude` attributes and updated live on every HA state change. |
-| `latitude` | number | Static latitude (used when `entity` is not set or unavailable) |
-| `longitude` | number | Static longitude |
-| `icon` | string | Any `mdi:*` icon name (autocomplete in the editor) or `'entity_picture'` to use the entity's photo. If blank, auto-detected from the entity (HA `attributes.icon`, then `device_class` / `source_type`, then a domain default). When unset and there is no entity, the default home SVG is used. |
-| `icon_entity` | string | Entity ID to read the photo from when `icon: entity_picture`. Defaults to `entity` if blank. |
-| `color` | string | CSS colour for `mdi:*` and default icons (e.g. `#ff0000`, `red`). Ignored for `entity_picture`. |
-| `track` | string / bool | `'entity'` — pan the map to follow this marker; `true` — lowest-priority always-on fallback |
-| `mobile_only` | boolean | Only show this marker on mobile devices |
+| Field         | Type          | Description                                                                                                                                                                                                                                                                                      |
+| ------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `entity`      | string        | Entity ID (`device_tracker.*`, `person.*`, `zone.*`). Position is read from the entity's `latitude`/`longitude` attributes and updated live on every HA state change.                                                                                                                            |
+| `latitude`    | number        | Static latitude (used when `entity` is not set or unavailable)                                                                                                                                                                                                                                   |
+| `longitude`   | number        | Static longitude                                                                                                                                                                                                                                                                                 |
+| `icon`        | string        | Any `mdi:*` icon name (autocomplete in the editor) or `'entity_picture'` to use the entity's photo. If blank, auto-detected from the entity (HA `attributes.icon`, then `device_class` / `source_type`, then a domain default). When unset and there is no entity, the default home SVG is used. |
+| `icon_entity` | string        | Entity ID to read the photo from when `icon: entity_picture`. Defaults to `entity` if blank.                                                                                                                                                                                                     |
+| `color`       | string        | CSS colour for `mdi:*` and default icons (e.g. `#ff0000`, `red`). Ignored for `entity_picture`.                                                                                                                                                                                                  |
+| `track`       | string / bool | `'entity'` — pan the map to follow this marker; `true` — lowest-priority always-on fallback                                                                                                                                                                                                      |
+| `mobile_only` | boolean       | Only show this marker on mobile devices                                                                                                                                                                                                                                                          |
 
 #### Track resolution
 
