@@ -251,7 +251,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       scrollWheelZoom: !isStatic, doubleClickZoom: !isStatic && !hasDoubleTapAction,
       boxZoom: !isStatic, dragging: !isStatic, keyboard: !isStatic, touchZoom: !isStatic,
       wheelPxPerZoomLevel: 120, attributionControl: false,
-      minZoom: 3, maxZoom: 10,
+      minZoom: 3, maxZoom: 16,
     }).setView([center.lat, center.lon], cfg.zoom_level ?? 7);
 
     if (cfg.disable_scroll === true && !isStatic) {
@@ -388,16 +388,30 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _createClusterIcon(cluster: L.MarkerCluster, isDark: boolean): L.DivIcon {
     const count = cluster.getChildCount();
     const children = cluster.getAllChildMarkers() as any[];
-    const homeCount = children.filter(m => {
+    const zoneChildren = children.filter(m => {
       const cfg = m._wrcCfg as Marker | undefined;
-      return cfg?.entity === 'zone.home' || !cfg?.icon || cfg?.icon === 'default';
-    }).length;
-    const hasHome = homeCount > 0;
+      return cfg?.entity?.startsWith('zone.') || !cfg?.icon || cfg?.icon === 'default';
+    });
+    const zoneCount = zoneChildren.length;
 
-    if (hasHome) {
+    if (zoneCount > 0) {
+      // Prefer zone.home as the representative; otherwise the first zone-like marker.
+      const homeChild = zoneChildren.find(m => (m._wrcCfg as Marker | undefined)?.entity === 'zone.home');
+      const repCfg = ((homeChild ?? zoneChildren[0])._wrcCfg) as Marker | undefined;
+      const repIcon = repCfg?.icon || (
+        repCfg?.entity === 'zone.home' ? 'mdi:home'
+          : repCfg?.entity?.startsWith('zone.') ? 'mdi:map-marker-radius'
+            : undefined
+      );
+
       const iconSize = 28;
-      const iconColor = isDark ? '#EEEEEE' : '#333333';
-      const otherCount = count - homeCount;
+      const defaultColor = isDark ? '#EEEEEE' : '#333333';
+      const iconColor = repCfg?.color ?? defaultColor;
+      const iconHtml = repIcon?.startsWith('mdi:')
+        ? `<ha-icon icon="${repIcon}" style="--mdc-icon-size:${iconSize}px;color:${iconColor};display:block"></ha-icon>`
+        : `<svg viewBox="0 0 24 24" width="${iconSize}" height="${iconSize}"><path fill="${iconColor}" d="${HOME_PATH}"/></svg>`;
+
+      const otherCount = count - zoneCount;
       const badge = otherCount > 0 ? (() => {
         const badgeBg = isDark ? '#EEEEEE' : '#222222';
         const badgeFg = isDark ? '#222222' : '#FFFFFF';
@@ -406,7 +420,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         return `<div style="position:absolute;top:-4px;right:-4px;min-width:${badgeSize}px;height:${badgeSize}px;padding:0 3px;box-sizing:border-box;background:${badgeBg};color:${badgeFg};border-radius:${badgeSize}px;display:flex;align-items:center;justify-content:center;font:bold ${badgeFs}px/1 'Helvetica Neue',Arial,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,0.4)">${otherCount}</div>`;
       })() : '';
       return L.divIcon({
-        html: `<div style="position:relative;width:${iconSize}px;height:${iconSize}px"><svg viewBox="0 0 24 24" width="${iconSize}" height="${iconSize}"><path fill="${iconColor}" d="${HOME_PATH}"/></svg>${badge}</div>`,
+        html: `<div style="position:relative;width:${iconSize}px;height:${iconSize}px">${iconHtml}${badge}</div>`,
         className: 'weather-radar-cluster',
         iconSize: [iconSize, iconSize] as L.PointExpression,
       });
