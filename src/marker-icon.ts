@@ -12,8 +12,9 @@ const ICON_BASE = '/local/community/weather-radar-card/';
 export const HOME_CIRCLE_PATH =
   'M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M10,17V13H8L12,7L16,13H14V17H10Z';
 
-// Plain mdi:home (house silhouette, no surrounding circle) — used for the
-// home-cluster badge representation.
+// Plain mdi:home (house silhouette, no surrounding circle) — fallback for the
+// zone-cluster badge representation when no MDI icon is available on the
+// representative marker (e.g. legacy default markers with no entity).
 export const HOME_PATH = 'M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z';
 
 export function findPersonEntityForDeviceTracker(

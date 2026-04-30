@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Map `maxZoom` raised from 10 to 16. Basemaps will sharpen up to their native resolution; the radar overlay (capped at `maxNativeZoom: 7`) will upscale and look pixelated past zoom 7. User-requested tradeoff.
+- Cluster badge count fix (3.1.1) now applies to **all** `zone.*` markers, not just `zone.home`. A cluster with `zone.work + 3 device_trackers` shows badge `3`. The cluster icon is rendered from the user-configured icon on the representative zone marker (preferring `zone.home` if present, otherwise the first zone in the cluster), falling back to `mdi:home` / `mdi:map-marker-radius` when no icon is set.
 
 ## [3.1.1] - 2026-04-27
 
