@@ -6,7 +6,7 @@ on:
       - '**'
   pull_request:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 jobs:
@@ -58,8 +58,8 @@ jobs:
       - name: Build
         run: npm run rollup
 
-      - name: Compress dist (master only)
-        if: github.ref == 'refs/heads/master'
+      - name: Compress dist (main only)
+        if: github.ref == 'refs/heads/main'
         run: gzip -kf dist/weather-radar-card.js
 
       - name: Commit dist file(s)
@@ -67,7 +67,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -f dist/weather-radar-card.js
-          if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             git add -f dist/weather-radar-card.js.gz
           fi
           git diff --staged --quiet || git commit -m "chore: update dist [skip ci]"

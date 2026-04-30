@@ -1,7 +1,7 @@
 /node_modules/
 /.rpt2_cache/
 
-# Generated dist files (built by CI and auto-committed to master)
+# Generated dist files (built by CI and auto-committed to main)
 dist/weather-radar-card.js
 dist/weather-radar-card.js.gz
 
