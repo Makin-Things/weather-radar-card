@@ -458,6 +458,11 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       this._clusterGroup = L.markerClusterGroup({
         iconCreateFunction: (c) => this._createClusterIcon(c, isDark),
         maxClusterRadius: 60,
+        // Cap markercluster's internal zoom range (issue #110). With map maxZoom
+        // raised to 16 in 3.1.2, the deeper cluster tree exposed a markercluster
+        // bug where _bounds becomes undefined during _zoomEnd, leaving the
+        // marker pane empty. Beyond zoom 11 markers naturally separate anyway.
+        disableClusteringAtZoom: 11,
         showCoverageOnHover: false,
         zoomToBoundsOnClick: false,  // zoom-to-bounds re-clusters immediately at the same zoom
         spiderfyOnMaxZoom: false,    // handled by clusterclick below
