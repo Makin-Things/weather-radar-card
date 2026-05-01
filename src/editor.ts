@@ -327,6 +327,15 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             helper="e.g. 100%, 500px"
           ></ha-textfield>
         </div>
+        <ha-selector
+          .hass=${this.hass}
+          .selector=${{ number: { min: 0.1, max: 1.0, step: 0.05, mode: 'slider' } }}
+          .value=${config.radar_opacity ?? 1.0}
+          .label=${'Radar opacity'}
+          .helper=${'1.0 = fully opaque (default), lower = more transparent over the basemap'}
+          .configValue=${'radar_opacity'}
+          @value-changed=${this._handleSelectorChanged}
+        ></ha-selector>
 
       </div>
     `;
