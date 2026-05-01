@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-04-30
+
 ### Added
 
 - **`radar_opacity` config option** — adjust the opacity of the active radar frame (0.1–1.0, default `1.0`). Lower values let more of the basemap show through. Editor exposes a slider in the Appearance section.
@@ -208,7 +210,8 @@ Multi-marker overhaul. **Breaking:** single-marker config fields (`show_marker`,
 
 For changes in versions prior to 2.0.4, please refer to the git commit history.
 
-[Unreleased]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.2...HEAD
+[Unreleased]: https://github.com/Makin-Things/weather-radar-card/compare/v3.2.0...HEAD
+[3.2.0]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.2...v3.2.0
 [3.1.2]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.1...v3.1.2
 [3.1.1]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/Makin-Things/weather-radar-card/compare/v3.0.2...v3.1.0
