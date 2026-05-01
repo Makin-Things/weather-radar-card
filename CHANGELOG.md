@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`radar_opacity` config option** — adjust the opacity of the active radar frame (0.1–1.0, default `1.0`). Lower values let more of the basemap show through. Editor exposes a slider in the Appearance section.
 
+## [3.1.3] - 2026-05-01
+
+### Fixed
+
+- **Markers disappeared when clustering was on** (#110). The map's `maxZoom` bump from 10 to 16 in 3.1.2 expanded markercluster's internal cluster tree by six zoom levels, exposing a markercluster bug where a cluster's `_bounds` could end up undefined and crash `_zoomEnd` (`Cannot read properties of undefined (reading 'lat')`). The crash left the marker pane completely empty. Setting `disableClusteringAtZoom: 11` on the cluster group caps the cluster tree depth — beyond zoom 11 markers display individually anyway, so there's no behavioural cost.
+
 ## [3.1.2] - 2026-04-29
 
 ### Changed
@@ -217,8 +223,7 @@ Multi-marker overhaul. **Breaking:** single-marker config fields (`show_marker`,
 For changes in versions prior to 2.0.4, please refer to the git commit history.
 
 [Unreleased]: https://github.com/Makin-Things/weather-radar-card/compare/v3.3.0...HEAD
-[3.3.0]: https://github.com/Makin-Things/weather-radar-card/compare/v3.2.0...v3.3.0
-[3.2.0]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.2...v3.2.0
+[3.3.0]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.2...v3.3.0
 [3.1.2]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.1...v3.1.2
 [3.1.1]: https://github.com/Makin-Things/weather-radar-card/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/Makin-Things/weather-radar-card/compare/v3.0.2...v3.1.0
