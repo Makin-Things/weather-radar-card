@@ -1,0 +1,97 @@
+{
+  "common": {
+    "version": "Versión"
+  },
+  "ui": {
+    "rate_limited": "Límite de solicitudes alcanzado — esperando restablecimiento de la cuota",
+    "save_map_center": "Guardar como centro del mapa"
+  },
+  "editor": {
+    "section": {
+      "map": "Mapa",
+      "location": "Ubicación",
+      "markers": "Marcadores",
+      "display": "Visualización",
+      "interaction": "Interacción",
+      "animation": "Animación",
+      "appearance": "Apariencia"
+    },
+    "map": {
+      "radar_source": "Fuente del radar",
+      "source_rainviewer": "RainViewer (Global)",
+      "source_noaa": "NOAA/NWS (solo EE. UU. — experimental)",
+      "map_style": "Estilo de mapa",
+      "style_auto": "Auto (sigue el modo claro/oscuro del sistema)",
+      "style_light": "CARTO Light (solo inglés)",
+      "style_voyager": "CARTO Voyager (solo inglés)",
+      "style_dark": "CARTO Dark (solo inglés)",
+      "style_satellite": "Satélite (solo inglés)",
+      "style_osm": "OpenStreetMap (localizado)",
+      "zoom_level": "Nivel de zoom",
+      "zoom_default": "Predeterminado (5)"
+    },
+    "location": {
+      "centre_latitude": "Latitud del centro",
+      "centre_longitude": "Longitud del centro",
+      "number_or_entity": "Número o ID de entidad"
+    },
+    "markers": {
+      "add": "+ Añadir marcador",
+      "label": "Marcador {n}",
+      "remove": "Eliminar",
+      "entity": "Entidad (device_tracker / person / zone)",
+      "latitude": "Latitud",
+      "longitude": "Longitud",
+      "use_entity_picture": "Usar imagen de la entidad",
+      "icon": "Icono",
+      "icon_entity": "Entidad del icono (autodetectada si está vacío)",
+      "tracking": "Seguimiento",
+      "track_off": "Desactivado",
+      "track_entity": "Seguir entidad (person = prioridad del usuario actual)",
+      "track_always": "Seguir siempre",
+      "icon_colour": "Color del icono",
+      "reset": "Restablecer",
+      "mobile_only": "Solo móvil"
+    },
+    "display": {
+      "show_zoom": "Mostrar zoom",
+      "show_playback": "Mostrar reproducción",
+      "show_recenter": "Mostrar recentrar",
+      "show_scale": "Mostrar escala",
+      "show_range": "Mostrar alcance",
+      "extra_labels": "Etiquetas adicionales",
+      "static_map": "Mapa estático",
+      "square_map": "Mapa cuadrado",
+      "cluster_markers": "Agrupar marcadores",
+      "show_snow": "Mostrar nieve",
+      "show_color_bar": "Mostrar barra de colores",
+      "show_progress_bar": "Mostrar barra de progreso"
+    },
+    "interaction": {
+      "disable_scroll": "Desactivar desplazamiento (permite deslizar la página sobre el mapa)",
+      "double_tap_action": "Acción al tocar dos veces",
+      "double_tap_none": "Ninguna",
+      "double_tap_recenter": "Recentrar mapa",
+      "double_tap_toggle_play": "Alternar reproducción / pausa"
+    },
+    "animation": {
+      "frame_count": "Número de fotogramas",
+      "frame_delay": "Retardo entre fotogramas (ms)",
+      "restart_delay": "Retardo de reinicio (ms)",
+      "default_5": "Predeterminado: 5",
+      "default_500": "Predeterminado: 500",
+      "default_1000": "Predeterminado: 1000",
+      "animated_transitions": "Transiciones animadas",
+      "transition_time": "Tiempo de transición (ms)",
+      "transition_time_helper": "Predeterminado: 40 % del retardo entre fotogramas — máx: retardo entre fotogramas"
+    },
+    "appearance": {
+      "height": "Altura",
+      "width": "Anchura",
+      "height_helper": "p. ej. 400px, 50vh",
+      "width_helper": "p. ej. 100%, 500px",
+      "radar_opacity": "Opacidad del radar",
+      "radar_opacity_helper": "1.0 = totalmente opaco (predeterminado), menor = más transparente sobre el mapa base"
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "common": {
+    "version": "Version"
+  },
+  "ui": {
+    "rate_limited": "Anfragelimit erreicht — warte auf Zurücksetzen des Kontingents",
+    "save_map_center": "Als Kartenmittelpunkt speichern"
+  },
+  "editor": {
+    "section": {
+      "map": "Karte",
+      "location": "Standort",
+      "markers": "Markierungen",
+      "display": "Anzeige",
+      "interaction": "Interaktion",
+      "animation": "Animation",
+      "appearance": "Aussehen"
+    },
+    "map": {
+      "radar_source": "Radarquelle",
+      "source_rainviewer": "RainViewer (Global)",
+      "source_noaa": "NOAA/NWS (nur USA — experimentell)",
+      "map_style": "Kartenstil",
+      "style_auto": "Auto (folgt dem hellen/dunklen Modus des Systems)",
+      "style_light": "CARTO Light (nur Englisch)",
+      "style_voyager": "CARTO Voyager (nur Englisch)",
+      "style_dark": "CARTO Dark (nur Englisch)",
+      "style_satellite": "Satellit (nur Englisch)",
+      "style_osm": "OpenStreetMap (lokalisiert)",
+      "zoom_level": "Zoomstufe",
+      "zoom_default": "Standard (5)"
+    },
+    "location": {
+      "centre_latitude": "Breitengrad des Mittelpunkts",
+      "centre_longitude": "Längengrad des Mittelpunkts",
+      "number_or_entity": "Zahl oder Entitäts-ID"
+    },
+    "markers": {
+      "add": "+ Markierung hinzufügen",
+      "label": "Markierung {n}",
+      "remove": "Entfernen",
+      "entity": "Entität (device_tracker / person / zone)",
+      "latitude": "Breitengrad",
+      "longitude": "Längengrad",
+      "use_entity_picture": "Entitätsbild verwenden",
+      "icon": "Symbol",
+      "icon_entity": "Symbol-Entität (automatisch erkannt, wenn leer)",
+      "tracking": "Verfolgung",
+      "track_off": "Aus",
+      "track_entity": "Entität verfolgen (person = Priorität für aktuellen Benutzer)",
+      "track_always": "Immer verfolgen",
+      "icon_colour": "Symbolfarbe",
+      "reset": "Zurücksetzen",
+      "mobile_only": "Nur Mobil"
+    },
+    "display": {
+      "show_zoom": "Zoom anzeigen",
+      "show_playback": "Wiedergabe anzeigen",
+      "show_recenter": "Zentrieren-Button anzeigen",
+      "show_scale": "Maßstab anzeigen",
+      "show_range": "Reichweite anzeigen",
+      "extra_labels": "Zusätzliche Beschriftungen",
+      "static_map": "Statische Karte",
+      "square_map": "Quadratische Karte",
+      "cluster_markers": "Markierungen gruppieren",
+      "show_snow": "Schnee anzeigen",
+      "show_color_bar": "Farbskala anzeigen",
+      "show_progress_bar": "Fortschrittsleiste anzeigen"
+    },
+    "interaction": {
+      "disable_scroll": "Scrollen deaktivieren (Seitenwischen über die Karte erlauben)",
+      "double_tap_action": "Aktion bei Doppelklick",
+      "double_tap_none": "Keine",
+      "double_tap_recenter": "Karte zentrieren",
+      "double_tap_toggle_play": "Wiedergabe / Pause umschalten"
+    },
+    "animation": {
+      "frame_count": "Anzahl der Bilder",
+      "frame_delay": "Bildverzögerung (ms)",
+      "restart_delay": "Neustartverzögerung (ms)",
+      "default_5": "Standard: 5",
+      "default_500": "Standard: 500",
+      "default_1000": "Standard: 1000",
+      "animated_transitions": "Animierte Übergänge",
+      "transition_time": "Übergangsdauer (ms)",
+      "transition_time_helper": "Standard: 40 % der Bildverzögerung — max: Bildverzögerung"
+    },
+    "appearance": {
+      "height": "Höhe",
+      "width": "Breite",
+      "height_helper": "z. B. 400px, 50vh",
+      "width_helper": "z. B. 100%, 500px",
+      "radar_opacity": "Radar-Deckkraft",
+      "radar_opacity_helper": "1.0 = vollständig deckend (Standard), niedriger = transparenter über der Hintergrundkarte"
+    }
+  }
+}

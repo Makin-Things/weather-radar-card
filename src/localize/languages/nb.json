@@ -1,5 +1,97 @@
 {
   "common": {
     "version": "Versjon"
+  },
+  "ui": {
+    "rate_limited": "Forespørselsgrense nådd — venter på tilbakestilling",
+    "save_map_center": "Lagre som kartsentrum"
+  },
+  "editor": {
+    "section": {
+      "map": "Kart",
+      "location": "Plassering",
+      "markers": "Markører",
+      "display": "Visning",
+      "interaction": "Interaksjon",
+      "animation": "Animasjon",
+      "appearance": "Utseende"
+    },
+    "map": {
+      "radar_source": "Radarkilde",
+      "source_rainviewer": "RainViewer (global)",
+      "source_noaa": "NOAA/NWS (kun USA — eksperimentell)",
+      "map_style": "Kartstil",
+      "style_auto": "Auto (følger OS lys/mørk modus)",
+      "style_light": "CARTO Light (kun engelsk)",
+      "style_voyager": "CARTO Voyager (kun engelsk)",
+      "style_dark": "CARTO Dark (kun engelsk)",
+      "style_satellite": "Satellitt (kun engelsk)",
+      "style_osm": "OpenStreetMap (lokalisert)",
+      "zoom_level": "Zoomnivå",
+      "zoom_default": "Standard (5)"
+    },
+    "location": {
+      "centre_latitude": "Sentrumsbreddegrad",
+      "centre_longitude": "Sentrumslengdegrad",
+      "number_or_entity": "Tall eller entitets-ID"
+    },
+    "markers": {
+      "add": "+ Legg til markør",
+      "label": "Markør {n}",
+      "remove": "Fjern",
+      "entity": "Entitet (device_tracker / person / zone)",
+      "latitude": "Breddegrad",
+      "longitude": "Lengdegrad",
+      "use_entity_picture": "Bruk entitetsbilde",
+      "icon": "Ikon",
+      "icon_entity": "Ikon-entitet (oppdages automatisk hvis tom)",
+      "tracking": "Sporing",
+      "track_off": "Av",
+      "track_entity": "Spor entitet (person = nåværende bruker har prioritet)",
+      "track_always": "Alltid spor",
+      "icon_colour": "Ikonfarge",
+      "reset": "Tilbakestill",
+      "mobile_only": "Kun mobil"
+    },
+    "display": {
+      "show_zoom": "Vis zoom",
+      "show_playback": "Vis avspilling",
+      "show_recenter": "Vis sentrer",
+      "show_scale": "Vis skala",
+      "show_range": "Vis rekkevidde",
+      "extra_labels": "Ekstra etiketter",
+      "static_map": "Statisk kart",
+      "square_map": "Firkantet kart",
+      "cluster_markers": "Grupper markører",
+      "show_snow": "Vis snø",
+      "show_color_bar": "Vis fargeskala",
+      "show_progress_bar": "Vis fremdriftslinje"
+    },
+    "interaction": {
+      "disable_scroll": "Deaktiver rulling (la siden sveipes gjennom kartet)",
+      "double_tap_action": "Dobbelttrykk-handling",
+      "double_tap_none": "Ingen",
+      "double_tap_recenter": "Sentrer kart",
+      "double_tap_toggle_play": "Veksle avspilling / pause"
+    },
+    "animation": {
+      "frame_count": "Antall bilder",
+      "frame_delay": "Bildeforsinkelse (ms)",
+      "restart_delay": "Omstartforsinkelse (ms)",
+      "default_5": "Standard: 5",
+      "default_500": "Standard: 500",
+      "default_1000": "Standard: 1000",
+      "animated_transitions": "Animerte overganger",
+      "transition_time": "Overgangstid (ms)",
+      "transition_time_helper": "Standard: 40 % av bildeforsinkelse — maks: bildeforsinkelse"
+    },
+    "appearance": {
+      "height": "Høyde",
+      "width": "Bredde",
+      "height_helper": "f.eks. 400px, 50vh",
+      "width_helper": "f.eks. 100%, 500px",
+      "radar_opacity": "Radar-opasitet",
+      "radar_opacity_helper": "1.0 = helt ugjennomsiktig (standard), lavere = mer gjennomsiktig over kartet"
+    }
   }
 }

@@ -1,5 +1,97 @@
 {
   "common": {
     "version": "Verzia"
+  },
+  "ui": {
+    "rate_limited": "Prekročený limit požiadaviek — čaká sa na obnovenie kvóty",
+    "save_map_center": "Uložiť ako stred mapy"
+  },
+  "editor": {
+    "section": {
+      "map": "Mapa",
+      "location": "Poloha",
+      "markers": "Značky",
+      "display": "Zobrazenie",
+      "interaction": "Interakcia",
+      "animation": "Animácia",
+      "appearance": "Vzhľad"
+    },
+    "map": {
+      "radar_source": "Zdroj radaru",
+      "source_rainviewer": "RainViewer (globálny)",
+      "source_noaa": "NOAA/NWS (iba USA — experimentálne)",
+      "map_style": "Štýl mapy",
+      "style_auto": "Auto (sleduje svetlý/tmavý režim OS)",
+      "style_light": "CARTO Light (iba angličtina)",
+      "style_voyager": "CARTO Voyager (iba angličtina)",
+      "style_dark": "CARTO Dark (iba angličtina)",
+      "style_satellite": "Satelit (iba angličtina)",
+      "style_osm": "OpenStreetMap (lokalizovaná)",
+      "zoom_level": "Úroveň priblíženia",
+      "zoom_default": "Predvolené (5)"
+    },
+    "location": {
+      "centre_latitude": "Zemepisná šírka stredu",
+      "centre_longitude": "Zemepisná dĺžka stredu",
+      "number_or_entity": "Číslo alebo ID entity"
+    },
+    "markers": {
+      "add": "+ Pridať značku",
+      "label": "Značka {n}",
+      "remove": "Odstrániť",
+      "entity": "Entita (device_tracker / person / zone)",
+      "latitude": "Zemepisná šírka",
+      "longitude": "Zemepisná dĺžka",
+      "use_entity_picture": "Použiť obrázok entity",
+      "icon": "Ikona",
+      "icon_entity": "Entita ikony (zistená automaticky, ak je prázdne)",
+      "tracking": "Sledovanie",
+      "track_off": "Vypnuté",
+      "track_entity": "Sledovať entitu (person = priorita aktuálneho používateľa)",
+      "track_always": "Vždy sledovať",
+      "icon_colour": "Farba ikony",
+      "reset": "Obnoviť",
+      "mobile_only": "Iba mobil"
+    },
+    "display": {
+      "show_zoom": "Zobraziť priblíženie",
+      "show_playback": "Zobraziť prehrávanie",
+      "show_recenter": "Zobraziť vycentrovanie",
+      "show_scale": "Zobraziť mierku",
+      "show_range": "Zobraziť dosah",
+      "extra_labels": "Extra menovky",
+      "static_map": "Statická mapa",
+      "square_map": "Štvorcová mapa",
+      "cluster_markers": "Zhlukovať značky",
+      "show_snow": "Zobraziť sneh",
+      "show_color_bar": "Zobraziť farebnú stupnicu",
+      "show_progress_bar": "Zobraziť ukazovateľ priebehu"
+    },
+    "interaction": {
+      "disable_scroll": "Zakázať posúvanie (umožniť potiahnutie stránky cez mapu)",
+      "double_tap_action": "Akcia po dvojkliknutí",
+      "double_tap_none": "Žiadna",
+      "double_tap_recenter": "Vycentrovať mapu",
+      "double_tap_toggle_play": "Prepnúť prehrávanie / pauzu"
+    },
+    "animation": {
+      "frame_count": "Počet snímok",
+      "frame_delay": "Oneskorenie snímky (ms)",
+      "restart_delay": "Oneskorenie reštartu (ms)",
+      "default_5": "Predvolené: 5",
+      "default_500": "Predvolené: 500",
+      "default_1000": "Predvolené: 1000",
+      "animated_transitions": "Animované prechody",
+      "transition_time": "Čas prechodu (ms)",
+      "transition_time_helper": "Predvolené: 40 % oneskorenia snímky — max: oneskorenie snímky"
+    },
+    "appearance": {
+      "height": "Výška",
+      "width": "Šírka",
+      "height_helper": "napr. 400px, 50vh",
+      "width_helper": "napr. 100%, 500px",
+      "radar_opacity": "Nepriehľadnosť radaru",
+      "radar_opacity_helper": "1.0 = úplne nepriehľadný (predvolené), nižšie = viac priehľadný cez podkladovú mapu"
+    }
   }
 }

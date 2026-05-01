@@ -1,0 +1,97 @@
+{
+  "common": {
+    "version": "Version"
+  },
+  "ui": {
+    "rate_limited": "Förfrågningsgräns nådd — väntar på återställning av kvot",
+    "save_map_center": "Spara som kartcentrum"
+  },
+  "editor": {
+    "section": {
+      "map": "Karta",
+      "location": "Plats",
+      "markers": "Markörer",
+      "display": "Visning",
+      "interaction": "Interaktion",
+      "animation": "Animation",
+      "appearance": "Utseende"
+    },
+    "map": {
+      "radar_source": "Radarkälla",
+      "source_rainviewer": "RainViewer (global)",
+      "source_noaa": "NOAA/NWS (endast USA — experimentell)",
+      "map_style": "Kartstil",
+      "style_auto": "Auto (följer ljust/mörkt systemläge)",
+      "style_light": "CARTO Light (endast engelska)",
+      "style_voyager": "CARTO Voyager (endast engelska)",
+      "style_dark": "CARTO Dark (endast engelska)",
+      "style_satellite": "Satellit (endast engelska)",
+      "style_osm": "OpenStreetMap (lokaliserad)",
+      "zoom_level": "Zoomnivå",
+      "zoom_default": "Standard (5)"
+    },
+    "location": {
+      "centre_latitude": "Centrums latitud",
+      "centre_longitude": "Centrums longitud",
+      "number_or_entity": "Tal eller entitets-ID"
+    },
+    "markers": {
+      "add": "+ Lägg till markör",
+      "label": "Markör {n}",
+      "remove": "Ta bort",
+      "entity": "Entitet (device_tracker / person / zone)",
+      "latitude": "Latitud",
+      "longitude": "Longitud",
+      "use_entity_picture": "Använd entitetsbild",
+      "icon": "Ikon",
+      "icon_entity": "Ikonentitet (identifieras automatiskt om tom)",
+      "tracking": "Spårning",
+      "track_off": "Av",
+      "track_entity": "Spåra entitet (person = aktuell användare har prioritet)",
+      "track_always": "Spåra alltid",
+      "icon_colour": "Ikonfärg",
+      "reset": "Återställ",
+      "mobile_only": "Endast mobil"
+    },
+    "display": {
+      "show_zoom": "Visa zoom",
+      "show_playback": "Visa uppspelning",
+      "show_recenter": "Visa centrering",
+      "show_scale": "Visa skala",
+      "show_range": "Visa räckvidd",
+      "extra_labels": "Extra etiketter",
+      "static_map": "Statisk karta",
+      "square_map": "Kvadratisk karta",
+      "cluster_markers": "Gruppera markörer",
+      "show_snow": "Visa snö",
+      "show_color_bar": "Visa färgskala",
+      "show_progress_bar": "Visa förloppsindikator"
+    },
+    "interaction": {
+      "disable_scroll": "Inaktivera rullning (tillåt sidsvep genom kartan)",
+      "double_tap_action": "Åtgärd vid dubbeltryck",
+      "double_tap_none": "Ingen",
+      "double_tap_recenter": "Centrera karta",
+      "double_tap_toggle_play": "Växla uppspelning / paus"
+    },
+    "animation": {
+      "frame_count": "Antal bildrutor",
+      "frame_delay": "Bildrutefördröjning (ms)",
+      "restart_delay": "Omstartsfördröjning (ms)",
+      "default_5": "Standard: 5",
+      "default_500": "Standard: 500",
+      "default_1000": "Standard: 1000",
+      "animated_transitions": "Animerade övergångar",
+      "transition_time": "Övergångstid (ms)",
+      "transition_time_helper": "Standard: 40 % av bildrutefördröjning — max: bildrutefördröjning"
+    },
+    "appearance": {
+      "height": "Höjd",
+      "width": "Bredd",
+      "height_helper": "t.ex. 400px, 50vh",
+      "width_helper": "t.ex. 100%, 500px",
+      "radar_opacity": "Radaropacitet",
+      "radar_opacity_helper": "1.0 = helt ogenomskinlig (standard), lägre = mer genomskinlig över bakgrundskartan"
+    }
+  }
+}

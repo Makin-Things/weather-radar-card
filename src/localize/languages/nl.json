@@ -1,0 +1,97 @@
+{
+  "common": {
+    "version": "Versie"
+  },
+  "ui": {
+    "rate_limited": "Aanvraaglimiet bereikt — wachten op herstel van quotum",
+    "save_map_center": "Opslaan als kaartmiddelpunt"
+  },
+  "editor": {
+    "section": {
+      "map": "Kaart",
+      "location": "Locatie",
+      "markers": "Markeringen",
+      "display": "Weergave",
+      "interaction": "Interactie",
+      "animation": "Animatie",
+      "appearance": "Uiterlijk"
+    },
+    "map": {
+      "radar_source": "Radarbron",
+      "source_rainviewer": "RainViewer (wereldwijd)",
+      "source_noaa": "NOAA/NWS (alleen VS — experimenteel)",
+      "map_style": "Kaartstijl",
+      "style_auto": "Auto (volgt licht/donker modus van OS)",
+      "style_light": "CARTO Light (alleen Engels)",
+      "style_voyager": "CARTO Voyager (alleen Engels)",
+      "style_dark": "CARTO Dark (alleen Engels)",
+      "style_satellite": "Satelliet (alleen Engels)",
+      "style_osm": "OpenStreetMap (gelokaliseerd)",
+      "zoom_level": "Zoomniveau",
+      "zoom_default": "Standaard (5)"
+    },
+    "location": {
+      "centre_latitude": "Middenbreedtegraad",
+      "centre_longitude": "Middenlengtegraad",
+      "number_or_entity": "Getal of entiteits-ID"
+    },
+    "markers": {
+      "add": "+ Markering toevoegen",
+      "label": "Markering {n}",
+      "remove": "Verwijderen",
+      "entity": "Entiteit (device_tracker / person / zone)",
+      "latitude": "Breedtegraad",
+      "longitude": "Lengtegraad",
+      "use_entity_picture": "Entiteitsafbeelding gebruiken",
+      "icon": "Pictogram",
+      "icon_entity": "Pictogram-entiteit (automatisch gedetecteerd indien leeg)",
+      "tracking": "Volgen",
+      "track_off": "Uit",
+      "track_entity": "Entiteit volgen (person = prioriteit voor huidige gebruiker)",
+      "track_always": "Altijd volgen",
+      "icon_colour": "Pictogramkleur",
+      "reset": "Herstellen",
+      "mobile_only": "Alleen mobiel"
+    },
+    "display": {
+      "show_zoom": "Zoom tonen",
+      "show_playback": "Afspelen tonen",
+      "show_recenter": "Centreren tonen",
+      "show_scale": "Schaal tonen",
+      "show_range": "Bereik tonen",
+      "extra_labels": "Extra labels",
+      "static_map": "Statische kaart",
+      "square_map": "Vierkante kaart",
+      "cluster_markers": "Markeringen groeperen",
+      "show_snow": "Sneeuw tonen",
+      "show_color_bar": "Kleurenbalk tonen",
+      "show_progress_bar": "Voortgangsbalk tonen"
+    },
+    "interaction": {
+      "disable_scroll": "Scrollen uitschakelen (laat pagina door kaart vegen)",
+      "double_tap_action": "Actie bij dubbeltikken",
+      "double_tap_none": "Geen",
+      "double_tap_recenter": "Kaart centreren",
+      "double_tap_toggle_play": "Afspelen / pauze omschakelen"
+    },
+    "animation": {
+      "frame_count": "Aantal frames",
+      "frame_delay": "Frame-vertraging (ms)",
+      "restart_delay": "Herstartvertraging (ms)",
+      "default_5": "Standaard: 5",
+      "default_500": "Standaard: 500",
+      "default_1000": "Standaard: 1000",
+      "animated_transitions": "Geanimeerde overgangen",
+      "transition_time": "Overgangstijd (ms)",
+      "transition_time_helper": "Standaard: 40 % van frame-vertraging — max: frame-vertraging"
+    },
+    "appearance": {
+      "height": "Hoogte",
+      "width": "Breedte",
+      "height_helper": "bv. 400px, 50vh",
+      "width_helper": "bv. 100%, 500px",
+      "radar_opacity": "Radar-dekking",
+      "radar_opacity_helper": "1.0 = volledig dekkend (standaard), lager = transparanter over de basiskaart"
+    }
+  }
+}

@@ -204,11 +204,11 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
           <img id="img-color-bar" height="8" style="vertical-align:top" src=${colourBarSrc} />
         </div>
         <div id="rate-limit-banner" class="status-banner" style="display:none">
-          Rate limited — waiting for quota to reset
+          ${localize('ui.rate_limited')}
         </div>
         ${this.editMode && this._pendingCenter ? html`
           <button class="save-center-btn" @click=${this._savePendingCenter}>
-            Save as map center
+            ${localize('ui.save_map_center')}
           </button>
         ` : ''}
         <div id="mapid" style="${this._config.square_map && !this._config.height ? 'aspect-ratio:1/1' : `height:${this._calculateHeight()}`}"></div>
