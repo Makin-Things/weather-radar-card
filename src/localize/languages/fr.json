@@ -1,0 +1,97 @@
+{
+  "common": {
+    "version": "Version"
+  },
+  "ui": {
+    "rate_limited": "Limite de requêtes atteinte — en attente de la réinitialisation du quota",
+    "save_map_center": "Enregistrer comme centre de la carte"
+  },
+  "editor": {
+    "section": {
+      "map": "Carte",
+      "location": "Emplacement",
+      "markers": "Marqueurs",
+      "display": "Affichage",
+      "interaction": "Interaction",
+      "animation": "Animation",
+      "appearance": "Apparence"
+    },
+    "map": {
+      "radar_source": "Source radar",
+      "source_rainviewer": "RainViewer (Mondial)",
+      "source_noaa": "NOAA/NWS (États-Unis uniquement — expérimental)",
+      "map_style": "Style de carte",
+      "style_auto": "Auto (suit le mode clair/sombre du système)",
+      "style_light": "CARTO Light (anglais uniquement)",
+      "style_voyager": "CARTO Voyager (anglais uniquement)",
+      "style_dark": "CARTO Dark (anglais uniquement)",
+      "style_satellite": "Satellite (anglais uniquement)",
+      "style_osm": "OpenStreetMap (localisé)",
+      "zoom_level": "Niveau de zoom",
+      "zoom_default": "Par défaut (5)"
+    },
+    "location": {
+      "centre_latitude": "Latitude du centre",
+      "centre_longitude": "Longitude du centre",
+      "number_or_entity": "Nombre ou ID d'entité"
+    },
+    "markers": {
+      "add": "+ Ajouter un marqueur",
+      "label": "Marqueur {n}",
+      "remove": "Supprimer",
+      "entity": "Entité (device_tracker / person / zone)",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "use_entity_picture": "Utiliser l'image de l'entité",
+      "icon": "Icône",
+      "icon_entity": "Entité de l'icône (détectée automatiquement si vide)",
+      "tracking": "Suivi",
+      "track_off": "Désactivé",
+      "track_entity": "Suivre l'entité (person = priorité à l'utilisateur actuel)",
+      "track_always": "Toujours suivre",
+      "icon_colour": "Couleur de l'icône",
+      "reset": "Réinitialiser",
+      "mobile_only": "Mobile uniquement"
+    },
+    "display": {
+      "show_zoom": "Afficher le zoom",
+      "show_playback": "Afficher la lecture",
+      "show_recenter": "Afficher le recentrage",
+      "show_scale": "Afficher l'échelle",
+      "show_range": "Afficher la portée",
+      "extra_labels": "Étiquettes supplémentaires",
+      "static_map": "Carte statique",
+      "square_map": "Carte carrée",
+      "cluster_markers": "Regrouper les marqueurs",
+      "show_snow": "Afficher la neige",
+      "show_color_bar": "Afficher la barre de couleurs",
+      "show_progress_bar": "Afficher la barre de progression"
+    },
+    "interaction": {
+      "disable_scroll": "Désactiver le défilement (permet le balayage de la page sur la carte)",
+      "double_tap_action": "Action au double-clic",
+      "double_tap_none": "Aucune",
+      "double_tap_recenter": "Recentrer la carte",
+      "double_tap_toggle_play": "Lecture / pause"
+    },
+    "animation": {
+      "frame_count": "Nombre d'images",
+      "frame_delay": "Délai entre images (ms)",
+      "restart_delay": "Délai de redémarrage (ms)",
+      "default_5": "Par défaut : 5",
+      "default_500": "Par défaut : 500",
+      "default_1000": "Par défaut : 1000",
+      "animated_transitions": "Transitions animées",
+      "transition_time": "Durée de transition (ms)",
+      "transition_time_helper": "Par défaut : 40 % du délai entre images — max : délai entre images"
+    },
+    "appearance": {
+      "height": "Hauteur",
+      "width": "Largeur",
+      "height_helper": "ex. 400px, 50vh",
+      "width_helper": "ex. 100%, 500px",
+      "radar_opacity": "Opacité du radar",
+      "radar_opacity_helper": "1.0 = entièrement opaque (par défaut), plus bas = plus transparent sur la carte de fond"
+    }
+  }
+}

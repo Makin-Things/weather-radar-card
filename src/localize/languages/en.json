@@ -1,5 +1,97 @@
 {
   "common": {
     "version": "Version"
+  },
+  "ui": {
+    "rate_limited": "Rate limited — waiting for quota to reset",
+    "save_map_center": "Save as map center"
+  },
+  "editor": {
+    "section": {
+      "map": "Map",
+      "location": "Location",
+      "markers": "Markers",
+      "display": "Display",
+      "interaction": "Interaction",
+      "animation": "Animation",
+      "appearance": "Appearance"
+    },
+    "map": {
+      "radar_source": "Radar Source",
+      "source_rainviewer": "RainViewer (Global)",
+      "source_noaa": "NOAA/NWS (US Only — Experimental)",
+      "map_style": "Map Style",
+      "style_auto": "Auto (follows OS dark/light mode)",
+      "style_light": "CARTO Light (English only)",
+      "style_voyager": "CARTO Voyager (English only)",
+      "style_dark": "CARTO Dark (English only)",
+      "style_satellite": "Satellite (English only)",
+      "style_osm": "OpenStreetMap (Localized)",
+      "zoom_level": "Zoom Level",
+      "zoom_default": "Default (5)"
+    },
+    "location": {
+      "centre_latitude": "Centre Latitude",
+      "centre_longitude": "Centre Longitude",
+      "number_or_entity": "Number or entity ID"
+    },
+    "markers": {
+      "add": "+ Add Marker",
+      "label": "Marker {n}",
+      "remove": "Remove",
+      "entity": "Entity (device_tracker / person / zone)",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "use_entity_picture": "Use entity picture",
+      "icon": "Icon",
+      "icon_entity": "Icon Entity (auto-detected if blank)",
+      "tracking": "Tracking",
+      "track_off": "Off",
+      "track_entity": "Track entity (person = current user priority)",
+      "track_always": "Always track",
+      "icon_colour": "Icon colour",
+      "reset": "Reset",
+      "mobile_only": "Mobile only"
+    },
+    "display": {
+      "show_zoom": "Show Zoom",
+      "show_playback": "Show Playback",
+      "show_recenter": "Show Recenter",
+      "show_scale": "Show Scale",
+      "show_range": "Show Range",
+      "extra_labels": "Extra Labels",
+      "static_map": "Static Map",
+      "square_map": "Square Map",
+      "cluster_markers": "Cluster Markers",
+      "show_snow": "Show Snow",
+      "show_color_bar": "Show Colour Bar",
+      "show_progress_bar": "Show Progress Bar"
+    },
+    "interaction": {
+      "disable_scroll": "Disable Scroll (allow page swipe through map)",
+      "double_tap_action": "Double-tap action",
+      "double_tap_none": "None",
+      "double_tap_recenter": "Re-centre map",
+      "double_tap_toggle_play": "Toggle play / pause"
+    },
+    "animation": {
+      "frame_count": "Frame Count",
+      "frame_delay": "Frame Delay (ms)",
+      "restart_delay": "Restart Delay (ms)",
+      "default_5": "Default: 5",
+      "default_500": "Default: 500",
+      "default_1000": "Default: 1000",
+      "animated_transitions": "Animated Transitions",
+      "transition_time": "Transition Time (ms)",
+      "transition_time_helper": "Default: 40% of frame delay — max: frame delay"
+    },
+    "appearance": {
+      "height": "Height",
+      "width": "Width",
+      "height_helper": "e.g. 400px, 50vh",
+      "width_helper": "e.g. 100%, 500px",
+      "radar_opacity": "Radar opacity",
+      "radar_opacity_helper": "1.0 = fully opaque (default), lower = more transparent over the basemap"
+    }
   }
 }

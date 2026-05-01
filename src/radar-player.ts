@@ -82,6 +82,11 @@ export class RadarPlayer {
     if (this._cfg.animated_transitions === false) return 0;
     return this._cfg.transition_time ?? Math.floor(this._timeout * 0.4);
   }
+  private get _activeOpacity(): string {
+    const v = this._cfg.radar_opacity;
+    if (typeof v !== 'number' || !isFinite(v)) return '1';
+    return String(Math.max(0, Math.min(1, v)));
+  }
 
   // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -218,13 +223,14 @@ export class RadarPlayer {
     if (n === 0 || slot < 0 || slot >= n) return;
     const fade = this._fadeMs;
     const transition = fade > 0 ? `opacity ${fade}ms linear` : 'none';
+    const active = this._activeOpacity;
     for (let s = 0; s < n; s++) {
       const fi = this._loadedSlots[s];
       const layer = this._radarImage[fi];
       const el = layer && (layer as any).getContainer?.() as HTMLElement | undefined;
       if (el) {
         el.style.transition = transition;
-        el.style.opacity = s === slot ? '1' : '0';
+        el.style.opacity = s === slot ? active : '0';
       }
     }
     const fi = this._loadedSlots[slot];
@@ -426,7 +432,7 @@ export class RadarPlayer {
         if (!newestShown) {
           // Show newest frame as a static preview before the loop starts
           newestShown = true;
-          if (el) el.style.opacity = '1';
+          if (el) el.style.opacity = this._activeOpacity;
           const ts = this._shadowRoot.getElementById('timestamp');
           if (ts) ts.textContent = this._radarTime[fi];
           this._highlightSegment(fi);

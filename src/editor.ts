@@ -4,6 +4,7 @@ import { HomeAssistant, fireEvent, LovelaceCardEditor } from 'custom-card-helper
 
 import { WeatherRadarCardConfig, CoordinateConfig, Marker } from './types';
 import { migrateConfig } from './marker-utils';
+import { localize } from './localize/localize';
 import { customElement, property, state } from 'lit/decorators.js';
 
 // Subset of HA's device_class → default icon mapping.
@@ -115,19 +116,19 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
       <div class="values">
 
         <!-- MAP -->
-        <h3 class="section-header">Map</h3>
+        <h3 class="section-header">${localize('editor.section.map')}</h3>
         <ha-selector
           .hass=${this.hass}
           .selector=${{
             select: {
               options: [
-                { value: 'RainViewer', label: 'RainViewer (Global)' },
-                { value: 'NOAA', label: 'NOAA/NWS (US Only — Experimental)' },
+                { value: 'RainViewer', label: localize('editor.map.source_rainviewer') },
+                { value: 'NOAA', label: localize('editor.map.source_noaa') },
               ],
             },
           }}
           .value=${config.data_source || 'RainViewer'}
-          .label=${'Radar Source'}
+          .label=${localize('editor.map.radar_source')}
           .configValue=${'data_source'}
           @value-changed=${this._handleSelectorChanged}
         ></ha-selector>
@@ -137,17 +138,17 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             .selector=${{
               select: {
                 options: [
-                  { value: 'Auto', label: 'Auto (follows OS dark/light mode)' },
-                  { value: 'Light', label: 'CARTO Light (English only)' },
-                  { value: 'Voyager', label: 'CARTO Voyager (English only)' },
-                  { value: 'Dark', label: 'CARTO Dark (English only)' },
-                  { value: 'Satellite', label: 'Satellite (English only)' },
-                  { value: 'OSM', label: 'OpenStreetMap (Localized)' },
+                  { value: 'Auto', label: localize('editor.map.style_auto') },
+                  { value: 'Light', label: localize('editor.map.style_light') },
+                  { value: 'Voyager', label: localize('editor.map.style_voyager') },
+                  { value: 'Dark', label: localize('editor.map.style_dark') },
+                  { value: 'Satellite', label: localize('editor.map.style_satellite') },
+                  { value: 'OSM', label: localize('editor.map.style_osm') },
                 ],
               },
             }}
             .value=${config.map_style || 'Auto'}
-            .label=${'Map Style'}
+            .label=${localize('editor.map.map_style')}
             .configValue=${'map_style'}
             @value-changed=${this._handleSelectorChanged}
           ></ha-selector>
@@ -156,7 +157,7 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             .selector=${{
               select: {
                 options: [
-                  { value: '', label: 'Default (5)' },
+                  { value: '', label: localize('editor.map.zoom_default') },
                   { value: '4', label: '4' },
                   { value: '5', label: '5' },
                   { value: '6', label: '6' },
@@ -168,86 +169,86 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
               },
             }}
             .value=${config.zoom_level?.toString() || ''}
-            .label=${'Zoom Level'}
+            .label=${localize('editor.map.zoom_level')}
             .configValue=${'zoom_level'}
             @value-changed=${this._handleSelectorNumberChanged}
           ></ha-selector>
         </div>
 
         <!-- LOCATION -->
-        <h3 class="section-header">Location</h3>
+        <h3 class="section-header">${localize('editor.section.location')}</h3>
         <div class="side-by-side">
           <ha-textfield
-            label="Centre Latitude"
+            label=${localize('editor.location.centre_latitude')}
             .value=${this._formatCoordinateValue(config.center_latitude)}
             .configValue=${'center_latitude'}
             @input=${this._valueChangedCoordinate}
-            helper="Number or entity ID"
+            helper=${localize('editor.location.number_or_entity')}
           ></ha-textfield>
           <ha-textfield
-            label="Centre Longitude"
+            label=${localize('editor.location.centre_longitude')}
             .value=${this._formatCoordinateValue(config.center_longitude)}
             .configValue=${'center_longitude'}
             @input=${this._valueChangedCoordinate}
-            helper="Number or entity ID"
+            helper=${localize('editor.location.number_or_entity')}
           ></ha-textfield>
         </div>
 
         <!-- MARKERS -->
-        <h3 class="section-header">Markers</h3>
+        <h3 class="section-header">${localize('editor.section.markers')}</h3>
         ${(config.markers ?? []).map((m, i) => this._renderMarkerRow(m, i))}
-        <button class="add-marker-btn" @click=${this._addMarker}>+ Add Marker</button>
+        <button class="add-marker-btn" @click=${this._addMarker}>${localize('editor.markers.add')}</button>
 
         <!-- DISPLAY -->
-        <h3 class="section-header">Display</h3>
+        <h3 class="section-header">${localize('editor.section.display')}</h3>
         <div class="side-by-side">
-          <label>Show Zoom
+          <label>${localize('editor.display.show_zoom')}
             <ha-switch .checked=${config.show_zoom === true} .configValue=${'show_zoom'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
-          <label>Show Playback
+          <label>${localize('editor.display.show_playback')}
             <ha-switch .checked=${config.show_playback === true} .configValue=${'show_playback'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
-          <label>Show Recenter
+          <label>${localize('editor.display.show_recenter')}
             <ha-switch .checked=${config.show_recenter === true} .configValue=${'show_recenter'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
         </div>
         <div class="side-by-side">
-          <label>Show Scale
+          <label>${localize('editor.display.show_scale')}
             <ha-switch .checked=${config.show_scale === true} .configValue=${'show_scale'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
-          <label>Show Range
+          <label>${localize('editor.display.show_range')}
             <ha-switch .checked=${config.show_range === true} .configValue=${'show_range'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
-          <label>Extra Labels
+          <label>${localize('editor.display.extra_labels')}
             <ha-switch .checked=${config.extra_labels === true} .configValue=${'extra_labels'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
         </div>
         <div class="side-by-side">
-          <label>Static Map
+          <label>${localize('editor.display.static_map')}
             <ha-switch .checked=${config.static_map === true} .configValue=${'static_map'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
-          <label>Square Map
+          <label>${localize('editor.display.square_map')}
             <ha-switch .checked=${config.square_map === true} .configValue=${'square_map'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
-          <label>Cluster Markers
+          <label>${localize('editor.display.cluster_markers')}
             <ha-switch .checked=${config.cluster_markers !== false} .configValue=${'cluster_markers'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
         </div>
         <div class="side-by-side">
-          <label>Show Snow
+          <label>${localize('editor.display.show_snow')}
             <ha-switch .checked=${config.show_snow === true} .configValue=${'show_snow'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
-          <label>Show Colour Bar
+          <label>${localize('editor.display.show_color_bar')}
             <ha-switch .checked=${config.show_color_bar !== false} .configValue=${'show_color_bar'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
-          <label>Show Progress Bar
+          <label>${localize('editor.display.show_progress_bar')}
             <ha-switch .checked=${config.show_progress_bar !== false} .configValue=${'show_progress_bar'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
         </div>
 
         <!-- INTERACTION -->
-        <h3 class="section-header">Interaction</h3>
-        <label>Disable Scroll (allow page swipe through map)
+        <h3 class="section-header">${localize('editor.section.interaction')}</h3>
+        <label>${localize('editor.interaction.disable_scroll')}
           <ha-switch .checked=${config.disable_scroll === true} .configValue=${'disable_scroll'} @change=${this._valueChangedSwitch}></ha-switch>
         </label>
         <ha-selector
@@ -255,44 +256,44 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
           .selector=${{
             select: {
               options: [
-                { value: 'none', label: 'None' },
-                { value: 'recenter', label: 'Re-centre map' },
-                { value: 'toggle_play', label: 'Toggle play / pause' },
+                { value: 'none', label: localize('editor.interaction.double_tap_none') },
+                { value: 'recenter', label: localize('editor.interaction.double_tap_recenter') },
+                { value: 'toggle_play', label: localize('editor.interaction.double_tap_toggle_play') },
               ],
             },
           }}
           .value=${config.double_tap_action || 'none'}
-          .label=${'Double-tap action'}
+          .label=${localize('editor.interaction.double_tap_action')}
           .configValue=${'double_tap_action'}
           @value-changed=${this._handleSelectorChanged}
         ></ha-selector>
 
         <!-- ANIMATION -->
-        <h3 class="section-header">Animation</h3>
+        <h3 class="section-header">${localize('editor.section.animation')}</h3>
         <div class="side-by-side">
           <ha-textfield
-            label="Frame Count"
+            label=${localize('editor.animation.frame_count')}
             .value=${config.frame_count ? config.frame_count : ''}
             .configValue=${'frame_count'}
             @input=${this._valueChangedNumber}
-            helper="Default: 5"
+            helper=${localize('editor.animation.default_5')}
           ></ha-textfield>
           <ha-textfield
-            label="Frame Delay (ms)"
+            label=${localize('editor.animation.frame_delay')}
             .value=${config.frame_delay ? config.frame_delay : ''}
             .configValue=${'frame_delay'}
             @input=${this._valueChangedNumber}
-            helper="Default: 500"
+            helper=${localize('editor.animation.default_500')}
           ></ha-textfield>
           <ha-textfield
-            label="Restart Delay (ms)"
+            label=${localize('editor.animation.restart_delay')}
             .value=${config.restart_delay ? config.restart_delay : ''}
             .configValue=${'restart_delay'}
             @input=${this._valueChangedNumber}
-            helper="Default: 1000"
+            helper=${localize('editor.animation.default_1000')}
           ></ha-textfield>
         </div>
-        <label>Animated Transitions
+        <label>${localize('editor.animation.animated_transitions')}
           <ha-switch
             .checked=${config.animated_transitions !== false}
             .configValue=${'animated_transitions'}
@@ -301,32 +302,41 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
         </label>
         ${config.animated_transitions !== false ? html`
           <ha-textfield
-            label="Transition Time (ms)"
+            label=${localize('editor.animation.transition_time')}
             .value=${config.transition_time !== undefined ? config.transition_time : ''}
             .configValue=${'transition_time'}
             @input=${this._valueChangedNumber}
-            helper="Default: 40% of frame delay — max: frame delay"
+            helper=${localize('editor.animation.transition_time_helper')}
           ></ha-textfield>
         ` : ''}
 
         <!-- APPEARANCE -->
-        <h3 class="section-header">Appearance</h3>
+        <h3 class="section-header">${localize('editor.section.appearance')}</h3>
         <div class="side-by-side">
           <ha-textfield
-            label="Height"
+            label=${localize('editor.appearance.height')}
             .value=${config.height ? config.height : ''}
             .configValue=${'height'}
             @input=${this._valueChangedString}
-            helper="e.g. 400px, 50vh"
+            helper=${localize('editor.appearance.height_helper')}
           ></ha-textfield>
           <ha-textfield
-            label="Width"
+            label=${localize('editor.appearance.width')}
             .value=${config.width ? config.width : ''}
             .configValue=${'width'}
             @input=${this._valueChangedString}
-            helper="e.g. 100%, 500px"
+            helper=${localize('editor.appearance.width_helper')}
           ></ha-textfield>
         </div>
+        <ha-selector
+          .hass=${this.hass}
+          .selector=${{ number: { min: 0.1, max: 1.0, step: 0.05, mode: 'slider' } }}
+          .value=${config.radar_opacity ?? 1.0}
+          .label=${localize('editor.appearance.radar_opacity')}
+          .helper=${localize('editor.appearance.radar_opacity_helper')}
+          .configValue=${'radar_opacity'}
+          @value-changed=${this._handleSelectorChanged}
+        ></ha-selector>
 
       </div>
     `;
@@ -334,17 +344,17 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
 
   private _renderMarkerRow(m: Marker, i: number) {
     const trackOptions = [
-      { value: '', label: 'Off' },
-      { value: 'entity', label: 'Track entity (person = current user priority)' },
-      { value: 'true', label: 'Always track' },
+      { value: '', label: localize('editor.markers.track_off') },
+      { value: 'entity', label: localize('editor.markers.track_entity') },
+      { value: 'true', label: localize('editor.markers.track_always') },
     ];
     const trackValue = m.track === true ? 'true' : (m.track === 'entity' ? 'entity' : '');
 
     return html`
       <div class="marker-row">
         <div class="marker-row-header">
-          <span class="marker-row-label">Marker ${i + 1}</span>
-          <button class="remove-marker-btn" @click=${() => this._removeMarker(i)}>Remove</button>
+          <span class="marker-row-label">${localize('editor.markers.label', '{n}', String(i + 1))}</span>
+          <button class="remove-marker-btn" @click=${() => this._removeMarker(i)}>${localize('editor.markers.remove')}</button>
         </div>
         <ha-selector
           .hass=${this.hass}
@@ -358,7 +368,7 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             },
           }}
           .value=${m.entity || ''}
-          .label=${'Entity (device_tracker / person / zone)'}
+          .label=${localize('editor.markers.entity')}
           .markerIndex=${i}
           .markerField=${'entity'}
           @value-changed=${this._updateMarkerSelector}
@@ -366,14 +376,14 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
         ${!m.entity ? html`
           <div class="side-by-side">
             <ha-textfield
-              label="Latitude"
+              label=${localize('editor.markers.latitude')}
               .value=${m.latitude !== undefined ? String(m.latitude) : ''}
               .markerIndex=${i}
               .markerField=${'latitude'}
               @input=${this._updateMarkerFieldNumber}
             ></ha-textfield>
             <ha-textfield
-              label="Longitude"
+              label=${localize('editor.markers.longitude')}
               .value=${m.longitude !== undefined ? String(m.longitude) : ''}
               .markerIndex=${i}
               .markerField=${'longitude'}
@@ -382,7 +392,7 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
           </div>
         ` : ''}
         ${m.entity && m.entity.startsWith('person.') ? html`
-          <label class="marker-mobile-only">Use entity picture
+          <label class="marker-mobile-only">${localize('editor.markers.use_entity_picture')}
             <ha-switch
               .checked=${m.icon === 'entity_picture'}
               .markerIndex=${i}
@@ -393,7 +403,7 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
         ${m.icon !== 'entity_picture' ? html`
           <ha-icon-picker
             .hass=${this.hass}
-            .label=${'Icon'}
+            .label=${localize('editor.markers.icon')}
             .value=${m.icon || ''}
             .markerIndex=${i}
             .markerField=${'icon'}
@@ -401,7 +411,7 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
           ></ha-icon-picker>
         ` : html`
           <ha-textfield
-            label="Icon Entity (auto-detected if blank)"
+            label=${localize('editor.markers.icon_entity')}
             .value=${m.icon_entity || ''}
             .markerIndex=${i}
             .markerField=${'icon_entity'}
@@ -412,14 +422,14 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
           .hass=${this.hass}
           .selector=${{ select: { options: trackOptions } }}
           .value=${trackValue}
-          .label=${'Tracking'}
+          .label=${localize('editor.markers.tracking')}
           .markerIndex=${i}
           .markerField=${'track'}
           @value-changed=${this._updateMarkerSelector}
         ></ha-selector>
         ${m.entity && m.icon !== 'entity_picture' ? html`
           <div class="marker-color-row">
-            <span class="color-label">Icon colour</span>
+            <span class="color-label">${localize('editor.markers.icon_colour')}</span>
             <input
               type="color"
               .value=${m.color || '#888888'}
@@ -427,11 +437,11 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
               @input=${this._updateMarkerColor}
             />
             ${m.color ? html`
-              <button class="clear-color-btn" @click=${() => this._clearMarkerColor(i)}>Reset</button>
+              <button class="clear-color-btn" @click=${() => this._clearMarkerColor(i)}>${localize('editor.markers.reset')}</button>
             ` : ''}
           </div>
         ` : ''}
-        <label class="marker-mobile-only">Mobile only
+        <label class="marker-mobile-only">${localize('editor.markers.mobile_only')}
           <ha-switch
             .checked=${m.mobile_only === true}
             .markerIndex=${i}
