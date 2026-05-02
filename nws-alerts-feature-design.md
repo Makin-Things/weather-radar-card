@@ -4,6 +4,25 @@ US National Weather Service active alerts as a toggleable map overlay. Polygons 
 
 This design also introduces a **session-only layer-toggle menu** on the map for switching individual warning types and the wildfire layer on/off without editing config.
 
+## Lessons from the wildfire build
+
+Concrete refinements to this design folded back from implementing the wildfire overlay (PR off `wildfire-overlay`, issue #115):
+
+1. **Mandatory `skipIfDecisionsUnchanged` on the update path.** HA pushes hass updates frequently — every state change of every entity. Tearing down and rebuilding the polygon layer on every tick destroys any popup the user has open mid-interaction. This is the same shape of bug that hit the marker-cluster spider in #110. The implementation MUST cache per-feature render decisions and skip the rebuild when they're unchanged. The same guard applies to zone-fetch completions: filling in geometry for one zone must not blow away popups for adjacent zones. See `WildfireLayer._renderInner` + `decisionsEqual()` for the working pattern to copy.
+
+2. **Stable feature keys via `feature.properties.id`.** NWS alerts each carry a canonical `id` URL — perfect stable key for the `_renderDecisions` map and for future per-feature reconciliation (the wildfire layer's weakness when an icon swaps to polygon at a zoom-threshold crossing and loses its open popup). The wildfire layer used a fallback `name + discovery date` composite; alerts get a clean upstream-provided ID.
+
+3. **Default `marine` category to OFF.** Most users are inland; coastal/offshore alerts generate noise that's irrelevant to them. Coastal users opt in via the layer menu in seconds. The config default for `alerts_categories` should be `[tornado, thunderstorm, flood, winter, tropical, fire_weather, heat, wind, other]` (marine omitted).
+
+4. **`layer_menu: false` is a first-class config choice.** YAML-only users may not want the on-map menu. When `layer_menu: false`, the menu is hidden and the active filter is exactly what `alerts_categories` / `alerts_types` specifies — no session override possible.
+
+Plus things validated empirically that the rest of this design relies on:
+
+- ArcGIS REST is CORS-friendly from a browser context (proven in wildfire fetch + InciWeb RSS xref). NWS `api.weather.gov` is documented as CORS-enabled but should be verified with a one-line `fetch()` before committing the architecture.
+- Inline-styled HTML in `bindPopup(htmlString, { autoPan: false })` works correctly. The `autoPan: false` matters — without it, opening a popup can trigger map pan, which fires move/zoom handlers that interfere with the host card's pointer/action handler.
+- The card-wide `BUILD_TIMESTAMP` in the console signon (added during wildfire work) is the fast way to confirm a hard refresh actually loaded the new bundle vs a cached older one. Use it during alerts iteration too.
+- DOMParser handles XML in the browser fine (used for InciWeb RSS). NWS API is JSON so this isn't directly relevant, but reassuring for any future XML-shaped feeds.
+
 ## Data source
 
 NWS public API — active alerts as GeoJSON:
@@ -121,7 +140,7 @@ alerts_categories: [tornado, thunderstorm, flood, fire_weather]
 alerts_types: ['Tornado Warning', 'Severe Thunderstorm Warning', 'Flash Flood Warning']
 ```
 
-- Default: all categories enabled (effectively "show me everything"). Most users will then narrow via the on-map session toggle (see UI section below).
+- Default: every category **except `marine`** enabled. Marine zones (coastal / offshore alerts) generate a high volume of activity that's irrelevant to most users, who are inland. Coastal users opt back in via the layer menu in two clicks.
 - When both `alerts_categories` and `alerts_types` are set, `alerts_types` wins.
 
 ### Severity floor
@@ -186,7 +205,13 @@ Same slots Leaflet uses for built-in controls. Coexists with zoom/recenter/playb
 
 ### Disabled state
 
-If both wildfires and alerts are disabled in config, the layers button is hidden entirely. The menu has no purpose with nothing to toggle.
+The on-map menu is hidden in three situations, in order of precedence:
+
+1. **`layer_menu: false`** in the user's YAML — explicit opt-out for users who manage everything via config. The session-filter source becomes the config-declared `alerts_categories` / `alerts_types` exactly, with no per-session override path.
+2. **Both wildfires and alerts are disabled** in config — the menu has no purpose with nothing to toggle.
+3. **Only wildfires is enabled and `cluster_markers` style controls are not pre-conflicting** — currently the wildfire layer has no per-feature toggles, so a menu with one row is useless. Suppress until a second toggleable surface exists (i.e. once alerts ship, the menu becomes meaningful even with just `show_wildfires` on, because hiding/showing wildfires from the map UI is a useful interaction).
+
+The layers button itself is also hidden in all three cases — no button, no panel.
 
 ## US-only warning
 
@@ -209,7 +234,7 @@ The shared banner utility handles this consolidation.
 | Field | Type | Default | Notes |
 |---|---|---|---|
 | `show_alerts` | bool | `false` | Master toggle |
-| `alerts_categories` | string[] | all | Allowlist of category keys (`tornado`, `thunderstorm`, `flood`, `winter`, `tropical`, `fire_weather`, `heat`, `wind`, `marine`, `other`) |
+| `alerts_categories` | string[] | all except `marine` | Allowlist of category keys (`tornado`, `thunderstorm`, `flood`, `winter`, `tropical`, `fire_weather`, `heat`, `wind`, `marine`, `other`). Default omits `marine` since most users are inland. |
 | `alerts_types` | string[] | unset | Explicit event-string allowlist. Overrides `alerts_categories` when set. |
 | `alerts_radius_km` | number | unset | Filter to alerts within N km of map center |
 | `alerts_min_severity` | string | `'Minor'` | `Extreme` / `Severe` / `Moderate` / `Minor` / `Unknown` |
@@ -224,7 +249,10 @@ Editor exposes the master toggle in **Display** near `show_wildfires`. Category 
 
 ### New file `src/nws-alerts-layer.ts`
 
-Mirrors `WildfireLayer`'s shape:
+Mirrors `WildfireLayer`'s shape, with two non-negotiable additions called out in **Lessons from the wildfire build** above:
+
+- `_renderDecisions: Map<string, DecisionShape>` keyed by `feature.properties.id` (NWS-supplied stable URL ID), and a `decisionsEqual()` check on the update path so a no-op hass tick or zone-resolution callback doesn't tear down popups.
+- All hass-driven re-renders MUST flow through `_render({ skipIfDecisionsUnchanged: true })`. Only fetch-driven re-renders (where features may genuinely have appeared or disappeared) get the unconditional rebuild path.
 
 ```ts
 export class NwsAlertsLayer {
@@ -350,13 +378,11 @@ Plus the alert-popup field labels (`Effective`, `Expires`, `Severity`, `Affected
 
 ## Sequencing with the wildfire overlay
 
-Land the overlays in this order:
-
-1. **Wildfire layer** (own PR): introduces `WildfireLayer`, the shared `region-warning` utility, the alert-pane Z-ordering scheme, and the `mdi:fire` inline-SVG path. No layer-menu yet — wildfires has a single config toggle, no categories.
-2. **NWS alerts layer + layer-menu control** (own PR): introduces `NwsAlertsLayer`, `LayerMenuControl`, and registers both wildfires and alerts in the menu. Wildfire toggle in the menu becomes meaningful in this PR.
+1. **Wildfire layer** — ✅ landed on `wildfire-overlay`, ready for PR after #113/#114 rebase. Introduced `WildfireLayer`, the shared `region-warning` utility, the alert-pane Z-ordering scheme, the `mdi:fire` inline-SVG path, the `BUILD_TIMESTAMP` console signon, and the InciWeb RSS xref pattern (gating popup links against an external index). No layer-menu — wildfires has a single config toggle.
+2. **NWS alerts layer + layer-menu control** (this design) — own PR, branched off `wildfire-overlay`. Introduces `NwsAlertsLayer`, `LayerMenuControl`, and registers both wildfires and alerts in the menu. The wildfire toggle in the menu becomes meaningful in this PR.
 3. **Refactor pass** (optional, only if a third overlay is planned): extract `GeoJsonOverlay` base class with `_fetchGeojson()`, `_styleFeature(f)`, `_getRefreshMs()` abstract methods. Two overlays still doesn't strictly justify the abstraction; three would.
 
-Splitting into two PRs keeps each diff reviewable and lets wildfires ship for user feedback before the heavier alerts work lands.
+Splitting into two PRs keeps each diff reviewable and lets wildfires soak in users' hands before the heavier alerts work lands.
 
 ## Disclaimer / README warning
 
