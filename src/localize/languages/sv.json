@@ -85,7 +85,8 @@
       "default_1000": "Standard: 1000",
       "animated_transitions": "Animerade övergångar",
       "transition_time": "Övergångstid (ms)",
-      "transition_time_helper": "Standard: 40 % av bildrutefördröjning — max: bildrutefördröjning"
+      "transition_time_helper": "Standard: 40 % av bildrutefördröjning — max: bildrutefördröjning",
+      "smooth_animation": "Mjuk animation (kontinuerlig övergång)"
     },
     "appearance": {
       "height": "Höjd",

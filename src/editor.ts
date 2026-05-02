@@ -323,6 +323,14 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             @input=${this._valueChangedNumber}
             helper=${localize('editor.animation.transition_time_helper')}
           ></ha-textfield>
+          <label>
+            <ha-switch
+              .checked=${config.smooth_animation === true}
+              .configValue=${'smooth_animation'}
+              @change=${this._valueChangedSwitch}
+            ></ha-switch>
+            <span>${localize('editor.animation.smooth_animation')}</span>
+          </label>
         ` : ''}
 
         <!-- APPEARANCE -->

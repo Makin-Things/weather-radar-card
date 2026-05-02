@@ -87,6 +87,7 @@ All options can be configured using the GUI editor — there is no need to edit 
 | restart_delay        | number          | **Optional** | Extra milliseconds to hold the last frame before looping                                                                                                                                                                                                     | `1000`                                |
 | animated_transitions | boolean         | **Optional** | Enable crossfade transitions between frames                                                                                                                                                                                                                  | `true`                                |
 | transition_time      | number          | **Optional** | Crossfade duration in ms. Default is 40% of frame_delay                                                                                                                                                                                                      | auto                                  |
+| smooth_animation     | boolean         | **Optional** | When `true`, the crossfade fully spans the inter-frame interval — the radar appears to flow continuously instead of stepping. Overrides `transition_time`.                                                                                                   | `false`                               |
 | radar_opacity        | number          | **Optional** | Opacity of the active radar frame (0.1–1.0). Lower values let more of the basemap show through                                                                                                                                                               | `1.0`                                 |
 | show_snow            | boolean         | **Optional** | Include snow in the precipitation display (RainViewer only)                                                                                                                                                                                                  | `false`                               |
 | show_color_bar       | boolean         | **Optional** | Show the radar colour scale bar (RainViewer only)                                                                                                                                                                                                            | `true`                                |
@@ -147,7 +148,11 @@ The frame timestamp uses the browser's locale via `Intl.DateTimeFormat`, so 12 h
 
 **Crossfade (animated_transitions: true):**
 
-When one frame fades out and the next fades in, the outgoing frame's `opacity` transitions to `0` and the incoming frame's transitions to `1` simultaneously over `transition_time` milliseconds, producing a smooth crossfade.
+The new frame is placed on top of the previous one with a higher z-index, snaps to opacity `0`, then fades up to `1` over `transition_time` milliseconds with `ease-in-out`. The previous frame stays at opacity `1` underneath — once the new one reaches full opacity it fully covers the previous frame. This avoids the alpha-compositing dip that a symmetric outgoing-1→0 / incoming-0→1 crossfade would produce: at mid-fade two layers each at opacity `0.5` only compose to ~`0.75` visibility, leaving 25% of the basemap showing through and producing a visible "pulse" against light basemaps.
+
+**Continuous animation (smooth_animation: true):**
+
+Sets the crossfade duration to the full inter-frame interval (`frame_delay`), so each transition is still in progress when the next begins — the radar appears to flow continuously instead of stepping. Overrides `transition_time`.
 
 **Hard cut (animated_transitions: false):**
 

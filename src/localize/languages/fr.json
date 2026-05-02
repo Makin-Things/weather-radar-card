@@ -85,7 +85,8 @@
       "default_1000": "Par défaut : 1000",
       "animated_transitions": "Transitions animées",
       "transition_time": "Durée de transition (ms)",
-      "transition_time_helper": "Par défaut : 40 % du délai entre images — max : délai entre images"
+      "transition_time_helper": "Par défaut : 40 % du délai entre images — max : délai entre images",
+      "smooth_animation": "Animation fluide (fondu continu)"
     },
     "appearance": {
       "height": "Hauteur",

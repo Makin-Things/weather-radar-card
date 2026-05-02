@@ -85,7 +85,8 @@
       "default_1000": "Predvolené: 1000",
       "animated_transitions": "Animované prechody",
       "transition_time": "Čas prechodu (ms)",
-      "transition_time_helper": "Predvolené: 40 % oneskorenia snímky — max: oneskorenie snímky"
+      "transition_time_helper": "Predvolené: 40 % oneskorenia snímky — max: oneskorenie snímky",
+      "smooth_animation": "Plynulá animácia (plynulý prechod)"
     },
     "appearance": {
       "height": "Výška",

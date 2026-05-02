@@ -85,7 +85,8 @@
       "default_1000": "Standard: 1000",
       "animated_transitions": "Animerte overganger",
       "transition_time": "Overgangstid (ms)",
-      "transition_time_helper": "Standard: 40 % av bildeforsinkelse — maks: bildeforsinkelse"
+      "transition_time_helper": "Standard: 40 % av bildeforsinkelse — maks: bildeforsinkelse",
+      "smooth_animation": "Jevn animasjon (kontinuerlig overgang)"
     },
     "appearance": {
       "height": "Høyde",
