@@ -37,7 +37,7 @@ console.info(
 (window as any).customCards.push({
   type: 'weather-radar-card',
   name: 'Weather Radar Card',
-  description: 'A rain radar card using tiled imagery from RainViewer and NOAA/NWS',
+  description: 'A rain radar card using tiled imagery from RainViewer, NOAA/NWS, and DWD',
 });
 
 @customElement('weather-radar-card')
@@ -374,7 +374,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     const ds = this._config.data_source ?? 'RainViewer';
     const radarCredit = ds === 'NOAA'
       ? 'Radar: <a href="https://www.weather.gov" target="_blank">NOAA/NWS</a>'
-      : 'Radar: <a href="https://rainviewer.com" target="_blank">RainViewer</a>';
+      : ds === 'DWD'
+        ? 'Radar: <a href="https://www.dwd.de" target="_blank">DWD</a>'
+        : 'Radar: <a href="https://rainviewer.com" target="_blank">RainViewer</a>';
     const mapCredit = mapStyle === 'osm'
       ? '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
       : mapStyle === 'satellite'

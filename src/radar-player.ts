@@ -14,6 +14,12 @@ const NOAA_WMS_URL =
   'https://mapservices.weather.noaa.gov/eventdriven/services/radar/radar_base_reflectivity_time/ImageServer/WMSServer';
 const NOAA_WMS_LAYER = 'radar_base_reflectivity_time';
 
+const DWD_WMS_URL = 'https://maps.dwd.de/geoserver/dwd/wms';
+const DWD_WMS_LAYER_DEFAULT = 'Niederschlagsradar';
+const DWD_FRAME_INTERVAL_MS = 5 * 60 * 1000;
+// Frames usually appear 1–3 min after their timestamp; 5 min is safely past the lag.
+const DWD_LAG_MS = 5 * 60 * 1000;
+
 export interface RadarPlayerOptions {
   map: L.Map;
   shadowRoot: ShadowRoot;
@@ -336,6 +342,16 @@ export class RadarPlayer {
       }
       return frames;
     }
+    if (dataSource === 'DWD') {
+      const override = this._cfg.dwd_time_override;
+      const anchor = override ? new Date(override).getTime() : Date.now() - DWD_LAG_MS;
+      const snap = Math.trunc(anchor / DWD_FRAME_INTERVAL_MS) * DWD_FRAME_INTERVAL_MS;
+      const frames: RadarFrame[] = [];
+      for (let i = this._configFrameCount - 1; i >= 0; i--) {
+        frames.push({ time: (snap - i * DWD_FRAME_INTERVAL_MS) / 1000, path: '' });
+      }
+      return frames;
+    }
     const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
     const data = await res.json();
     const host: string = data.host ?? 'https://tilecache.rainviewer.com';
@@ -357,6 +373,20 @@ export class RadarPlayer {
         TIME: isoTime,
         maxNativeZoom: 7,
         rateLimiter: this._noaaLimiter,
+        on429: () => this._onRateLimited(),
+        animationOwnsOpacity: true,
+      } as any);
+    }
+    if (dataSource === 'DWD') {
+      const isoTime = new Date(frame.time * 1000).toISOString().split('.')[0] + 'Z';
+      const layerName = this._cfg.dwd_layer ?? DWD_WMS_LAYER_DEFAULT;
+      return new FetchWmsTileLayer(DWD_WMS_URL, {
+        layers: layerName,
+        format: 'image/png',
+        transparent: true,
+        version: '1.3.0',
+        TIME: isoTime,
+        maxNativeZoom: 8,
         on429: () => this._onRateLimited(),
         animationOwnsOpacity: true,
       } as any);
@@ -466,6 +496,7 @@ export class RadarPlayer {
 
   private _scheduleUpdate(): void {
     const framePeriod = 300_000;
+    // RainViewer publishes ~1 min after the timestamp; DWD ~1–3 min; NOAA's lag is already baked in.
     const lag = (this._cfg.data_source ?? 'RainViewer') === 'NOAA' ? 0 : 60_000;
     this._workerTimeout(() => {
       if (this._radarReady && !this.navPaused && !this.viewPaused) {

@@ -124,6 +124,7 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
               options: [
                 { value: 'RainViewer', label: localize('editor.map.source_rainviewer') },
                 { value: 'NOAA', label: localize('editor.map.source_noaa') },
+                { value: 'DWD', label: localize('editor.map.source_dwd') },
               ],
             },
           }}

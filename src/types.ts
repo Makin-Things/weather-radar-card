@@ -56,6 +56,10 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   name?: string;
   map_style?: string;
   data_source?: string;
+  /** DWD-only: ISO timestamp to anchor frames at instead of "now" — for testing with historical rain. */
+  dwd_time_override?: string;
+  /** DWD-only: WMS layer name override (default: Niederschlagsradar). */
+  dwd_layer?: string;
   show_snow?: boolean;
   show_progress_bar?: boolean;
   show_color_bar?: boolean;
