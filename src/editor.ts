@@ -261,6 +261,11 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             <ha-switch .checked=${config.show_progress_bar !== false} .configValue=${'show_progress_bar'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
         </div>
+        <div class="side-by-side">
+          <label>${localize('editor.display.show_wildfires')}
+            <ha-switch .checked=${config.show_wildfires === true} .configValue=${'show_wildfires'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
+        </div>
 
         <!-- INTERACTION -->
         <h3 class="section-header">${localize('editor.section.interaction')}</h3>

@@ -4,7 +4,20 @@
   },
   "ui": {
     "rate_limited": "Anfragelimit erreicht — warte auf Zurücksetzen des Kontingents",
-    "save_map_center": "Als Kartenmittelpunkt speichern"
+    "save_map_center": "Als Kartenmittelpunkt speichern",
+    "region_warning": {
+      "wildfires_us_only": "Wildfire data is US-only. Your Home Assistant location is outside the US — no fires will show.",
+      "noaa_us_only": "NOAA radar is US-only. Your Home Assistant location is outside the US — radar may not load.",
+      "us_combined": "Wildfire and NOAA radar data are US-only. Your Home Assistant location is outside the US — these layers will not load."
+    },
+    "wildfire": {
+      "acres": "Acres",
+      "contained": "Contained",
+      "discovered": "Discovered",
+      "more_info": "More info → NIFC",
+      "unknown_name": "Unnamed incident",
+      "disclaimer": "Informational only — not a substitute for official alerts. See README."
+    }
   },
   "editor": {
     "section": {
@@ -68,7 +81,8 @@
       "cluster_markers": "Markierungen gruppieren",
       "show_snow": "Schnee anzeigen",
       "show_color_bar": "Farbskala anzeigen",
-      "show_progress_bar": "Fortschrittsleiste anzeigen"
+      "show_progress_bar": "Fortschrittsleiste anzeigen",
+      "show_wildfires": "Show Wildfires (US only)"
     },
     "interaction": {
       "disable_scroll": "Scrollen deaktivieren (Seitenwischen über die Karte erlauben)",

@@ -9,6 +9,21 @@ import { string } from 'rollup-plugin-string';
 
 const dev = process.env.ROLLUP_WATCH;
 
+// Substitute __BUILD_TIMESTAMP__ in the bundled output with the actual build
+// time. Surfaced in the card's console signon so users can confirm a hard
+// refresh actually loaded the new bundle vs a cached older one. Runs at the
+// renderChunk stage so the substitution happens after TS / babel and before
+// terser, regardless of mangling.
+const buildStampPlugin = () => {
+  const stamp = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+  return {
+    name: 'build-stamp',
+    renderChunk(code) {
+      return code.replace(/__BUILD_TIMESTAMP__/g, stamp);
+    },
+  };
+};
+
 const serveopts = {
   contentBase: ['./dist'],
   host: '0.0.0.0',
@@ -30,6 +45,7 @@ const plugins = [
     exclude: 'node_modules/**',
     babelHelpers: 'bundled',
   }),
+  buildStampPlugin(),
   // Minify production builds; skip in watch mode for fast iteration.
   !dev && terser({
     format: { comments: false },

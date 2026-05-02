@@ -1,0 +1,466 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import * as L from 'leaflet';
+import { HomeAssistant } from 'custom-card-helpers';
+import { WeatherRadarCardConfig } from './types';
+import { FIRE_PATH } from './marker-icon';
+import { localize } from './localize/localize';
+
+// NIFC WFIGS Current Interagency Fire Perimeters — see wildfire-feature-design.md.
+// outFields trimmed to just what the popup renders. geometryPrecision=4 keeps
+// coordinates to ~11m precision and shrinks the payload substantially without
+// any visible difference at our zoom range.
+const NIFC_URL =
+  'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/'
+  + 'WFIGS_Interagency_Perimeters_Current/FeatureServer/0/query'
+  + '?where=1%3D1'
+  + '&outFields=poly_IncidentName,poly_GISAcres,attr_PercentContained,attr_FireDiscoveryDateTime,attr_POOJurisdictionalUnit'
+  + '&geometryPrecision=4'
+  + '&f=geojson';
+
+// InciWeb's RSS index of currently-listed incidents. Used to gate the
+// "More info → InciWeb" link in the popup so we don't link to 404s for
+// fires that have no public InciWeb page (most small / contained fires).
+const INCIWEB_RSS_URL = 'https://inciweb.wildfire.gov/incidents/rss.xml';
+
+const DEFAULT_REFRESH_VISIBLE_MS = 5 * 60 * 1000;
+const DEFAULT_REFRESH_EMPTY_MS = 30 * 60 * 1000;
+const DEFAULT_MIN_ACRES = 10;
+const DEFAULT_FILL_OPACITY = 0.2;
+const DEFAULT_ACTIVE_COLOR = '#ff3300';
+const DEFAULT_CONTAINED_COLOR = '#888888';
+
+// Polygon's pixel-bbox below this size at the current zoom renders as the
+// fire icon at the centroid instead of as a polygon outline.
+const ICON_THRESHOLD_PX = 20;
+
+// Acreage → icon size mapping. Wildfires <10 acres are usually filtered out
+// by the default min_acres, but if the user lowers the floor we still want a
+// reasonable visual scale.
+function iconSizeForAcres(acres: number): number {
+  if (acres < 10) return 16;
+  if (acres < 100) return 24;
+  return 32;
+}
+
+interface WildfireProps {
+  poly_IncidentName?: string;
+  poly_GISAcres?: number;
+  attr_PercentContained?: number;
+  attr_FireDiscoveryDateTime?: number;   // ms since epoch from ArcGIS
+  attr_POOJurisdictionalUnit?: string;   // Point-of-origin jurisdictional unit (e.g. "FLFNF") — used to build the InciWeb URL
+}
+
+export class WildfireLayer {
+  private _map: L.Map;
+  private _getConfig: () => WeatherRadarCardConfig;
+  private _hass: HomeAssistant | undefined;
+
+  private _polygonLayer: L.GeoJSON | null = null;
+  private _iconLayer: L.LayerGroup | null = null;
+  private _features: GeoJSON.Feature[] = [];
+  // Lower-cased slugs (path segment after /incident-information/) of fires
+  // currently listed on InciWeb. Used to suppress the InciWeb link for
+  // incidents with no public page. Empty + _inciwebReady=false means the
+  // RSS hasn't returned yet (or failed) — fall back to showing the link.
+  private _inciwebSlugs: Set<string> = new Set();
+  private _inciwebReady = false;
+  // Per-feature render decision from the last _render() pass — keyed by
+  // featureKey(feature). Used to skip re-rendering (which would close any
+  // open popup) when zoomend fires but no feature actually crossed the
+  // polygon-vs-icon threshold.
+  private _renderDecisions: Map<string, 'polygon' | 'icon'> = new Map();
+  private _timer: ReturnType<typeof setTimeout> | null = null;
+  // Generation guard — incremented on every fetch start. If the value at the
+  // resolve point doesn't match, the fetch is stale (config changed mid-flight,
+  // teardown happened, etc.) and we discard the result.
+  private _gen = 0;
+  private _zoomHandler: (() => void) | null = null;
+
+  constructor(
+    map: L.Map,
+    getConfig: () => WeatherRadarCardConfig,
+    hass?: HomeAssistant,
+  ) {
+    this._map = map;
+    this._getConfig = getConfig;
+    this._hass = hass;
+  }
+
+  start(): void {
+    // On zoomend, only re-render if at least one feature crossed the
+    // polygon-vs-icon threshold. This preserves any open popup when the
+    // user zooms (e.g. via double-tap) without crossing the threshold.
+    this._zoomHandler = () => this._render({ skipIfDecisionsUnchanged: true });
+    this._map.on('zoomend', this._zoomHandler);
+    void this._fetch();
+  }
+
+  clear(): void {
+    this._gen++;   // invalidate any in-flight fetches
+    if (this._timer) { clearTimeout(this._timer); this._timer = null; }
+    if (this._zoomHandler) {
+      this._map.off('zoomend', this._zoomHandler);
+      this._zoomHandler = null;
+    }
+    if (this._polygonLayer) { this._map.removeLayer(this._polygonLayer); this._polygonLayer = null; }
+    if (this._iconLayer) { this._map.removeLayer(this._iconLayer); this._iconLayer = null; }
+    this._features = [];
+    this._renderDecisions.clear();
+  }
+
+  // Re-filter and re-render in response to a hass change. Currently only
+  // affects results when wildfire_radius_km is set and the map center has
+  // shifted — cheap to call unconditionally since filter+render is fast for
+  // the modest feature counts we deal with.
+  updateHass(hass: HomeAssistant): void {
+    this._hass = hass;
+    if (this._features.length === 0) return;
+    // HA pushes hass updates on every state change — frequent. Don't tear
+    // down the layers (which would close any open popup) unless the
+    // per-feature polygon-vs-icon decisions actually change. Pass the
+    // skip-if-unchanged flag so a no-op hass tick is truly a no-op.
+    this._render({ skipIfDecisionsUnchanged: true });
+  }
+
+  private async _fetch(): Promise<void> {
+    const myGen = ++this._gen;
+    // Fetch WFIGS perimeters and the InciWeb incident index in parallel —
+    // they're independent and we want the latest of both before re-rendering.
+    const [features, inciwebSlugs] = await Promise.all([
+      this._fetchWfigs(),
+      this._fetchInciwebSlugs(),
+    ]);
+    if (myGen !== this._gen) return;   // stale — abandon
+
+    this._features = this._filter(features);
+    if (inciwebSlugs) {
+      this._inciwebSlugs = inciwebSlugs;
+      this._inciwebReady = true;
+    }
+    this._render();
+    this._scheduleNext();
+  }
+
+  private async _fetchWfigs(): Promise<GeoJSON.Feature[]> {
+    try {
+      const res = await fetch(NIFC_URL);
+      if (!res.ok) throw new Error(`NIFC fetch ${res.status}`);
+      const data = await res.json() as GeoJSON.FeatureCollection;
+      return (data?.features ?? []).filter((f): f is GeoJSON.Feature => !!f?.geometry);
+    } catch (err) {
+      // Transient — NIFC's ArcGIS endpoint occasionally rate-limits or
+      // returns 503. Next scheduled fetch will retry.
+      console.warn('Wildfire layer: WFIGS fetch failed', err);
+      return [];
+    }
+  }
+
+  // Fetch InciWeb's RSS and extract the slug (path segment) from every
+  // incident link. Returns null on failure so the caller can leave the
+  // existing slug set in place (avoid blowing it away on a transient error).
+  private async _fetchInciwebSlugs(): Promise<Set<string> | null> {
+    try {
+      const res = await fetch(INCIWEB_RSS_URL);
+      if (!res.ok) throw new Error(`InciWeb RSS fetch ${res.status}`);
+      const text = await res.text();
+      const doc = new DOMParser().parseFromString(text, 'application/xml');
+      const slugs = new Set<string>();
+      doc.querySelectorAll('item > link').forEach((linkEl) => {
+        const url = linkEl.textContent?.trim();
+        if (!url) return;
+        const m = url.match(/\/incident-information\/([^/?#]+)/i);
+        if (m) slugs.add(m[1].toLowerCase());
+      });
+      return slugs;
+    } catch (err) {
+      // CORS, network, or parse failure. Leave the previous set intact and
+      // fall back to "show link" behaviour for new fires until next refresh.
+      console.warn('Wildfire layer: InciWeb RSS fetch failed', err);
+      return null;
+    }
+  }
+
+  private _filter(features: GeoJSON.Feature[]): GeoJSON.Feature[] {
+    const cfg = this._getConfig();
+    const minAcres = cfg.wildfire_min_acres ?? DEFAULT_MIN_ACRES;
+    const radiusKm = cfg.wildfire_radius_km;
+    const center = radiusKm ? this._map.getCenter() : null;
+
+    return features.filter((f) => {
+      const props = f.properties as WildfireProps | null;
+      const acres = props?.poly_GISAcres ?? 0;
+      if (acres < minAcres) return false;
+
+      if (radiusKm && center) {
+        const c = centroidLngLat(f.geometry);
+        if (!c) return false;
+        const distKm = haversineKm(center.lat, center.lng, c[1], c[0]);
+        if (distKm > radiusKm) return false;
+      }
+      return true;
+    });
+  }
+
+  private _render(opts?: { skipIfDecisionsUnchanged?: boolean }): void {
+    try {
+      this._renderInner(opts);
+    } catch (err) {
+      // Never let a render exception escape — it would break the host card's
+      // Lit lifecycle and (worse) the dashboard's pointer handling.
+      console.warn('Wildfire layer: render failed', err);
+    }
+  }
+
+  private _renderInner(opts?: { skipIfDecisionsUnchanged?: boolean }): void {
+    if (!this._map) return;
+    const cfg = this._getConfig();
+    const fillOpacity = cfg.wildfire_fill_opacity ?? DEFAULT_FILL_OPACITY;
+    const activeColor = cfg.wildfire_color ?? DEFAULT_ACTIVE_COLOR;
+    const containedColor = cfg.wildfire_contained_color ?? DEFAULT_CONTAINED_COLOR;
+
+    // Compute polygon-vs-icon for each feature first so we can skip the full
+    // tear-down/rebuild when the zoom change didn't actually cross the
+    // threshold for any feature. Preserves any popup the user has open.
+    const polygons: GeoJSON.Feature[] = [];
+    const icons: { latLng: L.LatLng; feature: GeoJSON.Feature }[] = [];
+    const newDecisions = new Map<string, 'polygon' | 'icon'>();
+
+    for (const f of this._features) {
+      const bbox = featureBboxPx(f.geometry, this._map);
+      if (!bbox) continue;
+      const px = Math.max(bbox.width, bbox.height);
+      const key = featureKey(f);
+      if (px >= ICON_THRESHOLD_PX) {
+        polygons.push(f);
+        newDecisions.set(key, 'polygon');
+      } else {
+        const c = centroidLngLat(f.geometry);
+        if (c) {
+          icons.push({ latLng: L.latLng(c[1], c[0]), feature: f });
+          newDecisions.set(key, 'icon');
+        }
+      }
+    }
+
+    if (opts?.skipIfDecisionsUnchanged && decisionsEqual(this._renderDecisions, newDecisions)) {
+      return;
+    }
+    this._renderDecisions = newDecisions;
+
+    // Tear down any existing layers before re-rendering — simplest correct
+    // approach for the volume we deal with (typically 50–200 features post-filter).
+    if (this._polygonLayer) { this._map.removeLayer(this._polygonLayer); this._polygonLayer = null; }
+    if (this._iconLayer) { this._map.removeLayer(this._iconLayer); this._iconLayer = null; }
+
+    if (this._features.length === 0) return;
+
+    if (polygons.length > 0) {
+      this._polygonLayer = L.geoJSON(polygons, {
+        style: (feature) => {
+          const contained = isContained(feature?.properties as WildfireProps | null);
+          const color = contained ? containedColor : activeColor;
+          return { color, weight: 1.5, fillColor: color, fillOpacity };
+        },
+        onEachFeature: (feature, layer) => {
+          // autoPan: false so opening a popup doesn't fire move/zoom events
+          // that could interfere with the host card's pointer/action handler.
+          layer.bindPopup(
+            buildPopupHtml(
+              feature.properties as WildfireProps | null,
+              this._inciwebSlugs,
+              this._inciwebReady,
+            ),
+            { autoPan: false },
+          );
+        },
+      });
+      this._polygonLayer.addTo(this._map);
+    }
+
+    if (icons.length > 0) {
+      this._iconLayer = L.layerGroup();
+      for (const item of icons) {
+        const props = item.feature.properties as WildfireProps | null;
+        const acres = props?.poly_GISAcres ?? 0;
+        const size = iconSizeForAcres(acres);
+        const color = isContained(props) ? containedColor : activeColor;
+        const icon = L.divIcon({
+          html: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" style="display:block"><path fill="${color}" d="${FIRE_PATH}"/></svg>`,
+          iconSize: [size, size],
+          className: 'wildfire-icon',
+        });
+        const marker = L.marker(item.latLng, { icon });
+        marker.bindPopup(
+          buildPopupHtml(props, this._inciwebSlugs, this._inciwebReady),
+          { autoPan: false },
+        );
+        marker.addTo(this._iconLayer!);
+      }
+      this._iconLayer.addTo(this._map);
+    }
+  }
+
+  private _scheduleNext(): void {
+    if (this._timer) clearTimeout(this._timer);
+    const cfg = this._getConfig();
+    const overrideMin = cfg.wildfire_refresh_minutes;
+    const intervalMs = overrideMin
+      ? overrideMin * 60 * 1000
+      : (this._features.length > 0 ? DEFAULT_REFRESH_VISIBLE_MS : DEFAULT_REFRESH_EMPTY_MS);
+    this._timer = setTimeout(() => void this._fetch(), intervalMs);
+  }
+}
+
+// ── helpers ─────────────────────────────────────────────────────────────────
+
+function isContained(props: WildfireProps | null): boolean {
+  return (props?.attr_PercentContained ?? 0) >= 100;
+}
+
+// Stable identifier for a NIFC feature. ArcGIS GeoJSON usually carries an
+// OBJECTID as feature.id; fall back to name+discovery so we still get a
+// reasonable key when id isn't set.
+function featureKey(f: GeoJSON.Feature): string {
+  if (f.id != null) return String(f.id);
+  const p = f.properties as WildfireProps | null;
+  return `${p?.poly_IncidentName ?? ''}|${p?.attr_FireDiscoveryDateTime ?? ''}`;
+}
+
+function decisionsEqual(
+  a: Map<string, 'polygon' | 'icon'>,
+  b: Map<string, 'polygon' | 'icon'>,
+): boolean {
+  if (a.size !== b.size) return false;
+  for (const [k, v] of a) if (b.get(k) !== v) return false;
+  return true;
+}
+
+function buildPopupHtml(
+  props: WildfireProps | null,
+  inciwebSlugs: Set<string>,
+  inciwebReady: boolean,
+): string {
+  const name = props?.poly_IncidentName ?? localize('ui.wildfire.unknown_name');
+  const acres = props?.poly_GISAcres;
+  const contained = props?.attr_PercentContained;
+  const discovered = props?.attr_FireDiscoveryDateTime;
+
+  const acresStr = typeof acres === 'number'
+    ? acres.toLocaleString(undefined, { maximumFractionDigits: 0 })
+    : '—';
+  const containedStr = typeof contained === 'number'
+    ? `${Math.round(contained)}%`
+    : '—';
+  const discoveredStr = typeof discovered === 'number'
+    ? new Date(discovered).toLocaleDateString()
+    : '—';
+
+  // InciWeb URL format: /incident-information/{poo-jurisdictional-unit-lower}-{name-slug}
+  // e.g. flfnf-sand-drain. We only render the link when the computed slug
+  // appears in InciWeb's RSS index — that way we don't link users to 404s
+  // for fires too small / contained to have a public InciWeb page.
+  // InciWeb sometimes appends "-fire" to incident slugs (e.g. "East Side"
+  // → mtgnf-east-side-fire), so we test both variants. If neither matches,
+  // no link is rendered. While the RSS fetch hasn't returned yet
+  // (inciwebReady=false), fall back to the bare slug so first paint
+  // isn't degraded.
+  const unit = props?.attr_POOJurisdictionalUnit;
+  const baseSlug = unit ? `${unit.toLowerCase()}-${slugify(name)}` : null;
+  let linkSlug: string | null = null;
+  if (baseSlug) {
+    if (!inciwebReady) {
+      linkSlug = baseSlug;
+    } else {
+      const candidates = [baseSlug, `${baseSlug}-fire`];
+      linkSlug = candidates.find((c) => inciwebSlugs.has(c)) ?? null;
+    }
+  }
+  const linkHtml = linkSlug
+    ? `<div style="margin-top:4px"><a href="https://inciweb.wildfire.gov/incident-information/${linkSlug}" target="_blank" rel="noopener noreferrer">${escapeHtml(localize('ui.wildfire.more_info'))}</a></div>`
+    : '';
+
+  // Inline-styled HTML — the popup renders inside Leaflet's own container,
+  // outside the card's shadow root, so card CSS doesn't apply.
+  return `
+    <div style="font:12px/1.4 'Helvetica Neue',Arial,sans-serif;min-width:180px">
+      <div style="font-weight:bold;font-size:13px;margin-bottom:4px">${escapeHtml(name)}</div>
+      <div><b>${escapeHtml(localize('ui.wildfire.acres'))}:</b> ${escapeHtml(acresStr)}</div>
+      <div><b>${escapeHtml(localize('ui.wildfire.contained'))}:</b> ${escapeHtml(containedStr)}</div>
+      <div><b>${escapeHtml(localize('ui.wildfire.discovered'))}:</b> ${escapeHtml(discoveredStr)}</div>
+      <div style="margin-top:6px;font-size:10px;color:#666">${escapeHtml(localize('ui.wildfire.disclaimer'))}</div>
+      ${linkHtml}
+    </div>
+  `;
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string
+  ));
+}
+
+// Lowercase + collapse whitespace/punctuation into single hyphens, matching
+// InciWeb's URL slug convention (e.g. "Sand Drain" → "sand-drain").
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+// Compute the on-screen pixel bounding box of a geometry at the current zoom.
+// Returns null if the geometry is empty or unsupported.
+function featureBboxPx(
+  geom: GeoJSON.Geometry,
+  map: L.Map,
+): { width: number; height: number } | null {
+  const ll = geometryLngLatBounds(geom);
+  if (!ll) return null;
+  const sw = map.latLngToLayerPoint(L.latLng(ll.minLat, ll.minLng));
+  const ne = map.latLngToLayerPoint(L.latLng(ll.maxLat, ll.maxLng));
+  return { width: Math.abs(ne.x - sw.x), height: Math.abs(ne.y - sw.y) };
+}
+
+function geometryLngLatBounds(
+  geom: GeoJSON.Geometry,
+): { minLng: number; minLat: number; maxLng: number; maxLat: number } | null {
+  let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+  let any = false;
+  const visitRing = (ring: GeoJSON.Position[]) => {
+    for (const p of ring) {
+      const [lng, lat] = p;
+      if (typeof lng !== 'number' || typeof lat !== 'number') continue;
+      if (lng < minLng) minLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lng > maxLng) maxLng = lng;
+      if (lat > maxLat) maxLat = lat;
+      any = true;
+    }
+  };
+  if (geom.type === 'Polygon') {
+    for (const ring of geom.coordinates) visitRing(ring);
+  } else if (geom.type === 'MultiPolygon') {
+    for (const poly of geom.coordinates) for (const ring of poly) visitRing(ring);
+  } else {
+    return null;
+  }
+  return any ? { minLng, minLat, maxLng, maxLat } : null;
+}
+
+// Bbox-centre, not a true polygon centroid — good enough for icon placement
+// and radius filtering, and avoids pulling in @turf/centroid for a few KB.
+function centroidLngLat(geom: GeoJSON.Geometry): [number, number] | null {
+  const b = geometryLngLatBounds(geom);
+  if (!b) return null;
+  return [(b.minLng + b.maxLng) / 2, (b.minLat + b.maxLat) / 2];
+}
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;   // km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a = Math.sin(dLat / 2) ** 2
+    + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180)
+    * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+}
