@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DWD radar source** — `data_source: DWD` uses Deutscher Wetterdienst's `Niederschlagsradar` WMS at `maps.dwd.de`. 5-minute frame steps (vs. RainViewer's public 10-minute tier), ~3 days of history, +2 hours of forecast available via the `Radar_*-product_*` layers. Coverage is the German radar network footprint (Germany + immediate neighbours).
 - **`dwd_layer` config option** — DWD-only WMS layer name override. Default `Niederschlagsradar` (mm/h). Set to `Radar_wn-product_1x1km_ger` for reflectivity (dBZ) with 2-hour nowcast frames included.
 - **`dwd_time_override` config option** — DWD-only ISO timestamp to anchor frames at a fixed point in time instead of "now". Useful for verifying the overlay renders when current weather is dry.
+- **`dwd_forecast_hours` config option** — DWD-only. Includes this many hours of nowcast forecast in the playback range as if they were "current". When set to a positive value the layer auto-switches from `Niederschlagsradar` to `Radar_wn-product_1x1km_ger` (which carries the +2h nowcast frames) unless `dwd_layer` explicitly overrides it. Matches the DWD WarnWetter app's default behaviour.
 
 ## [3.3.0] - 2026-04-30
 

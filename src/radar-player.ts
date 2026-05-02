@@ -344,7 +344,9 @@ export class RadarPlayer {
     }
     if (dataSource === 'DWD') {
       const override = this._cfg.dwd_time_override;
-      const anchor = override ? new Date(override).getTime() : Date.now() - DWD_LAG_MS;
+      const forecastMs = (this._cfg.dwd_forecast_hours ?? 0) * 3_600_000;
+      const base = override ? new Date(override).getTime() : Date.now() - DWD_LAG_MS;
+      const anchor = base + forecastMs;
       const snap = Math.trunc(anchor / DWD_FRAME_INTERVAL_MS) * DWD_FRAME_INTERVAL_MS;
       const frames: RadarFrame[] = [];
       for (let i = this._configFrameCount - 1; i >= 0; i--) {
@@ -379,7 +381,10 @@ export class RadarPlayer {
     }
     if (dataSource === 'DWD') {
       const isoTime = new Date(frame.time * 1000).toISOString().split('.')[0] + 'Z';
-      const layerName = this._cfg.dwd_layer ?? DWD_WMS_LAYER_DEFAULT;
+      // Niederschlagsradar (default) is past-only. When the user has asked for forecast
+      // hours, switch to the analysis+nowcast layer which carries +2h frames too.
+      const wantsForecast = (this._cfg.dwd_forecast_hours ?? 0) > 0;
+      const layerName = this._cfg.dwd_layer ?? (wantsForecast ? 'Radar_wn-product_1x1km_ger' : DWD_WMS_LAYER_DEFAULT);
       return new FetchWmsTileLayer(DWD_WMS_URL, {
         layers: layerName,
         format: 'image/png',

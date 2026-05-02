@@ -117,7 +117,7 @@ Selects where radar tile data comes from.
 
 > **NOAA note:** This is an experimental feature using a public government service with no documented rate limits. It is US-only. Radar tiles are fetched at a maximum of zoom 7 (the native 1 km MRMS resolution) and upscaled for display.
 
-> **DWD note:** The default layer is `Niederschlagsradar` (precipitation rate, mm/h). Override via `dwd_layer` — `Radar_wn-product_1x1km_ger` gives reflectivity (dBZ) plus a 2-hour nowcast. Outside the German radar coverage you'll see a faint grey wash from the no-data mask. `dwd_time_override` accepts an ISO timestamp to anchor frames at a fixed point in the past instead of "now" — useful for verifying the overlay renders when current weather is dry.
+> **DWD note:** The default layer is `Niederschlagsradar` (precipitation rate, mm/h). Override via `dwd_layer` — `Radar_wn-product_1x1km_ger` gives reflectivity (dBZ) plus a 2-hour nowcast. Outside the German radar coverage you'll see a faint grey wash from the no-data mask. `dwd_time_override` accepts an ISO timestamp to anchor frames at a fixed point in the past instead of "now" — useful for verifying the overlay renders when current weather is dry. `dwd_forecast_hours` includes that many hours of nowcast forecast in the playback range as "current" frames (DWD's WarnWetter app default is 2); when set, the layer auto-switches to `Radar_wn-product_1x1km_ger` unless you've explicitly set `dwd_layer`.
 
 ### Map Style
 
