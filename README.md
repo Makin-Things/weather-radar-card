@@ -104,6 +104,13 @@ All options can be configured using the GUI editor — there is no need to edit 
 | extra_labels         | boolean         | **Optional** | Show more place labels (labels become smaller)                                                                                                                                                                                                               | `false`                               |
 | height               | string          | **Optional** | Custom card height using CSS units e.g. `'400px'`, `'50vh'`                                                                                                                                                                                                  | `'400px'`                             |
 | width                | string          | **Optional** | Custom card width using CSS units e.g. `'500px'`, `'80%'`                                                                                                                                                                                                    | `'100%'`                              |
+| show_wildfires       | boolean         | **Optional** | Overlay active US wildfire perimeters from NIFC's WFIGS feed (see [Wildfires](#wildfires))                                                                                                                                                                   | `false`                               |
+| wildfire_min_acres   | number          | **Optional** | Hide incidents smaller than this acreage                                                                                                                                                                                                                     | `10`                                  |
+| wildfire_radius_km   | number          | **Optional** | Only show fires within N km of the map center                                                                                                                                                                                                                | unset                                 |
+| wildfire_color       | string          | **Optional** | Active fire colour (stroke + icon)                                                                                                                                                                                                                           | `'#ff3300'`                           |
+| wildfire_contained_color | string      | **Optional** | 100%-contained fire colour                                                                                                                                                                                                                                   | `'#888888'`                           |
+| wildfire_fill_opacity | number         | **Optional** | Polygon fill opacity (0 = perimeter only)                                                                                                                                                                                                                    | `0.2`                                 |
+| wildfire_refresh_minutes | number      | **Optional** | Override the adaptive 5/30-min refresh interval                                                                                                                                                                                                              | adaptive                              |
 
 ### Data Source
 
@@ -115,6 +122,19 @@ Selects where radar tile data comes from.
 | `NOAA`       | US only  | Experimental. Uses NOAA/NWS MRMS base reflectivity composite via `mapservices.weather.noaa.gov`. Government data — free, no API key. 15-minute lag, 5-minute frame steps. |
 
 > **NOAA note:** This is an experimental feature using a public government service with no documented rate limits. It is US-only. Radar tiles are fetched at a maximum of zoom 7 (the native 1 km MRMS resolution) and upscaled for display.
+
+### Wildfires
+
+When `show_wildfires: true`, the card overlays active US wildfire perimeters from the National Interagency Fire Center's [WFIGS Current Interagency Fire Perimeters](https://data-nifc.opendata.arcgis.com/datasets/nifc::wfigs-current-interagency-fire-perimeters/about) feed. Active fires are drawn in red; fires reported as 100% contained are drawn in grey. Small incidents render as a fire icon at the centroid; larger incidents render as a polygon outline with translucent fill. Click any fire to see its name, acreage, containment, and discovery date, with a link to NIFC's InciWeb for further information.
+
+The overlay refreshes every 5 minutes when fires are visible (matching NIFC's update cadence) and every 30 minutes when none are. Defaults filter out incidents under 10 acres; tune with `wildfire_min_acres` or `wildfire_radius_km`.
+
+> [!WARNING]
+> **Wildfire data is for informational purposes only.** This overlay shows fire perimeters from NIFC's WFIGS feed, which updates approximately every 5 minutes and may be **delayed, incomplete, or inaccurate**. Reported perimeters typically lag the actual fire front by hours, and not every active incident appears in the feed.
+>
+> **Do not rely on this overlay for evacuation, life-safety, or property-protection decisions.** Follow your local emergency management agency, official evacuation orders, and Wireless Emergency Alerts.
+>
+> NIFC provides this data without warranty of accuracy, completeness, or timeliness. The card developers make no warranty that this overlay accurately reflects current fire activity.
 
 ### Map Style
 

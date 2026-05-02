@@ -11,7 +11,7 @@ import markerClusterCss from 'leaflet.markercluster/dist/MarkerCluster.css';
 
 import './editor';
 import { WeatherRadarCardConfig, Marker } from './types';
-import { CARD_VERSION } from './const';
+import { CARD_VERSION, BUILD_TIMESTAMP } from './const';
 import { localize } from './localize/localize';
 import { RateLimiter } from './rate-limiter';
 import { FetchTileLayer } from './fetch-tile-layer';
@@ -25,10 +25,12 @@ import {
 } from './coordinate-utils';
 import { createMarkerIconForMarker, HOME_PATH } from './marker-icon';
 import { migrateConfig, resolveMarkerPosition, resolveTracking } from './marker-utils';
+import { WildfireLayer } from './wildfire-layer';
+import { getRegionWarnings } from './region-warning';
 
 /* eslint no-console: 0 */
 console.info(
-  `%c  WEATHER-RADAR-CARD \n%c  ${localize('common.version')} ${CARD_VERSION}    `,
+  `%c  WEATHER-RADAR-CARD \n%c  ${localize('common.version')} ${CARD_VERSION}  (built ${BUILD_TIMESTAMP})    `,
   'color: orange; font-weight: bold; background: black',
   'color: white; font-weight: bold; background: dimgray',
 );
@@ -68,6 +70,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _rangeRings: L.Circle[] = [];
   private _dynamicStyleEl!: HTMLStyleElement;
   private _player: RadarPlayer | null = null;
+  private _wildfireLayer: WildfireLayer | null = null;
 
   @state() private _pendingCenter: { lat: number; lon: number; zoom: number } | null = null;
   private _userMoveInProgress = false;
@@ -179,6 +182,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         const hasTracking = (this._config?.markers ?? []).some(m => m.track);
         if (hasTracking) this._resolveTracking();
       }
+      this._wildfireLayer?.updateHass(this.hass);
     }
   }
 
@@ -203,8 +207,13 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         <div id="color-bar" style="height:8px;display:${showColourBar ? '' : 'none'}">
           <img id="img-color-bar" height="8" style="vertical-align:top" src=${colourBarSrc} />
         </div>
-        <div id="rate-limit-banner" class="status-banner" style="display:none">
-          ${localize('ui.rate_limited')}
+        <div id="banner-stack" class="banner-stack">
+          ${getRegionWarnings(this.hass, this._config).map(msg => html`
+            <div class="status-banner status-banner-info">${msg}</div>
+          `)}
+          <div id="rate-limit-banner" class="status-banner" style="display:none">
+            ${localize('ui.rate_limited')}
+          </div>
         </div>
         ${this.editMode && this._pendingCenter ? html`
           <button class="save-center-btn" @click=${this._savePendingCenter}>
@@ -291,6 +300,11 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     });
     this._player.toolbar = this._toolbar;
     this._player.start(cfg.frame_count ?? 5);
+
+    if (cfg.show_wildfires === true) {
+      this._wildfireLayer = new WildfireLayer(this._map, () => this._config, this.hass);
+      this._wildfireLayer.start();
+    }
   }
 
   private _teardown(): void {
@@ -314,6 +328,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     }
     this._player?.clear();
     this._player = null;
+    this._wildfireLayer?.clear();
+    this._wildfireLayer = null;
     if (this._clusterGroup) { this._clusterGroup.clearLayers(); this._clusterGroup = null; }
     this._clusterSpiderfied = false;
     if (this._map) { this._map.remove(); this._map = null; }
@@ -747,13 +763,18 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       :host { display: block; isolation: isolate; }
       ha-card { overflow: hidden; position: relative; }
       #mapid { width: 100%; position: relative; }
-      .status-banner {
+      .banner-stack {
         position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
-        z-index: 1000; background: rgba(180,60,0,0.85); color: #fff;
+        z-index: 1000; display: flex; flex-direction: column; gap: 4px;
+        align-items: center; pointer-events: none; max-width: calc(100% - 16px);
+      }
+      .status-banner {
+        background: rgba(180,60,0,0.85); color: #fff;
         padding: 4px 12px; border-radius: 4px;
         font: 12px/1.5 'Helvetica Neue',Arial,sans-serif;
-        pointer-events: none; white-space: nowrap;
+        pointer-events: none; text-align: center;
       }
+      .status-banner-info { background: rgba(40,80,160,0.85); }
       .marker-entity-picture {
         border-radius: 50%; border: 2px solid white;
         box-shadow: 0 1px 3px rgba(0,0,0,0.4); object-fit: cover;
