@@ -345,7 +345,17 @@ export class RadarPlayer {
     if (dataSource === 'DWD') {
       const override = this._cfg.dwd_time_override;
       const forecastMs = (this._cfg.dwd_forecast_hours ?? 0) * 3_600_000;
-      const base = override ? new Date(override).getTime() : Date.now() - DWD_LAG_MS;
+      let base = Date.now() - DWD_LAG_MS;
+      if (override) {
+        const parsed = new Date(override).getTime();
+        if (Number.isNaN(parsed)) {
+          console.warn(
+            `[weather-radar-card] Invalid dwd_time_override "${override}" — expected an ISO 8601 timestamp. Falling back to current time.`,
+          );
+        } else {
+          base = parsed;
+        }
+      }
       const anchor = base + forecastMs;
       const snap = Math.trunc(anchor / DWD_FRAME_INTERVAL_MS) * DWD_FRAME_INTERVAL_MS;
       const frames: RadarFrame[] = [];
