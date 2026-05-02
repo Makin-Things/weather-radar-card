@@ -1,0 +1,36 @@
+name: "Sync master to main"
+
+# Mirrors `master` to `main` after every push to `main`. Temporary measure
+# until the stale `master` ref can be deleted (needs repo admin). Lets PRs
+# that targeted `master` continue to merge cleanly even though `main` is the
+# default branch now.
+#
+# Pushes use GITHUB_TOKEN, which by design does not trigger downstream
+# workflows — so the build workflow does not re-run on the synced master push.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Fast-forward master to main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify master is an ancestor of main
+        run: |
+          if ! git merge-base --is-ancestor origin/master origin/main; then
+            echo "::error::master has commits not on main — manual intervention required."
+            echo "Either rebase master onto main or push the divergent commits to main first."
+            exit 1
+          fi
+
+      - name: Fast-forward master
+        run: git push origin origin/main:refs/heads/master
