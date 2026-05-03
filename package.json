@@ -1,6 +1,6 @@
 {
   "name": "weather-radar-card",
-  "version": "3.5.0-alpha",
+  "version": "3.5.0-alpha2",
   "type": "module",
   "description": "A rain radar card using data from RainViewer",
   "keywords": [
