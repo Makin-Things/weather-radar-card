@@ -461,8 +461,24 @@ export class RadarPlayer {
     return past.slice(-Math.min(this._configFrameCount, 13));
   }
 
+  // Pick the tile size that fits the map best. Aim for ~6 tiles across
+  // the larger map dimension — fewer requests when the map is large
+  // (panel view, fullscreen), regular 512 for typical card-sized maps.
+  // Quantised to powers of 2 because all three radar sources speak the
+  // size as { 256, 512, 1024, 2048 }: RainViewer encodes it in the URL
+  // path, NOAA/DWD WMS render server-side to whatever width/height we
+  // pass. zoomOffset compensates so the on-screen scale stays constant.
+  private _radarTileSize(): { size: 256 | 512 | 1024 | 2048; zoomOffset: number } {
+    const px = this._map ? Math.max(this._map.getSize().x, this._map.getSize().y) : 600;
+    if (px > 2400) return { size: 2048, zoomOffset: -3 };
+    if (px > 1200) return { size: 1024, zoomOffset: -2 };
+    if (px > 600)  return { size: 512,  zoomOffset: -1 };
+    return                { size: 256,  zoomOffset:  0 };
+  }
+
   private _createLayer(frame: RadarFrame): FetchTileLayer | FetchWmsTileLayer {
     const dataSource = this._cfg.data_source ?? 'RainViewer';
+    const { size: tileSize, zoomOffset } = this._radarTileSize();
     if (dataSource === 'NOAA') {
       const isoTime = new Date(frame.time * 1000).toISOString().split('.')[0] + 'Z';
       return new FetchWmsTileLayer(NOAA_WMS_URL, {
@@ -471,7 +487,12 @@ export class RadarPlayer {
         transparent: true,
         version: '1.3.0',
         TIME: isoTime,
-        maxNativeZoom: 7,
+        // NOAA WMS renders to whatever width/height we ask. Bigger tiles
+        // mean fewer requests for the same coverage on large maps.
+        tileSize,
+        zoomOffset,
+        // NOAA's 4 km MRMS native; cap to keep upscaled appearance.
+        maxNativeZoom: 7 + Math.max(0, -zoomOffset),
         rateLimiter: this._noaaLimiter,
         on429: () => this._onRateLimited(),
         animationOwnsOpacity: true,
@@ -496,13 +517,12 @@ export class RadarPlayer {
         transparent: true,
         version: '1.3.0',
         TIME: isoTime,
-        // 512x512 tiles instead of the default 256x256 cuts the request
-        // count by 4x for the same coverage (one big tile vs four small).
-        // DWD's geoserver renders any size; the small extra payload is a
-        // good trade for fewer round-trips during pan/zoom bursts.
-        tileSize: 512,
-        // DWD's 1 km grid supports zoom 8; NOAA's 4 km MRMS is capped at 7.
-        maxNativeZoom: 8,
+        // DWD's geoserver renders any size; bigger tiles cut request
+        // count proportionally — see _radarTileSize() for the picker.
+        tileSize,
+        zoomOffset,
+        // DWD's 1 km grid supports zoom 8; bump for larger tiles.
+        maxNativeZoom: 8 + Math.max(0, -zoomOffset),
         rateLimiter: this._dwdLimiter,
         on429: () => this._onRateLimited(),
         animationOwnsOpacity: true,
@@ -510,11 +530,15 @@ export class RadarPlayer {
     }
     const snow = this._cfg.show_snow ? 1 : 0;
     const host = frame.host ?? 'https://tilecache.rainviewer.com';
-    return new FetchTileLayer(`${host}${frame.path}/512/{z}/{x}/{y}/2/1_${snow}.png`, {
+    // RainViewer encodes tile size as a path segment (256/512/1024/2048).
+    // Build the URL with whichever size we picked for this map.
+    return new FetchTileLayer(`${host}${frame.path}/${tileSize}/{z}/{x}/{y}/2/1_${snow}.png`, {
       detectRetina: false,
-      tileSize: 512,
-      zoomOffset: -1,
-      maxNativeZoom: 7,
+      tileSize,
+      zoomOffset,
+      // RainViewer publishes tiles up to native zoom 7 at 256px;
+      // higher native zoom available with bigger tiles.
+      maxNativeZoom: 7 + Math.max(0, -zoomOffset),
       rateLimiter: this._rainviewerLimiter,
       on429: () => this._onRateLimited(),
       animationOwnsOpacity: true,

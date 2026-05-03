@@ -83,6 +83,11 @@ export class NwsAlertsLayer {
   // requests for the same zone across multiple alerts.
   private _zoneFetches: Map<string, Promise<void>> = new Map();
   private _timer: ReturnType<typeof setTimeout> | null = null;
+  // Set in pause(), cleared in resume(). When non-null we're paused —
+  // timer is cancelled, zone-fetches in flight will still complete but
+  // their re-render result becomes a no-op (skipIfDecisionsUnchanged).
+  // Used by resume() to decide whether to refetch immediately.
+  private _pausedAt: number | null = null;
   private _gen = 0;
 
   constructor(
@@ -107,6 +112,30 @@ export class NwsAlertsLayer {
     this._renderDecisions.clear();
     this._zoneCache.clear();
     this._zoneFetches.clear();
+  }
+
+  // Stop scheduled fetches while the host card is hidden (off-screen or
+  // tab in background). Currently-rendered alerts stay on the map; no
+  // new network activity until resume().
+  pause(): void {
+    if (this._pausedAt != null) return;
+    this._pausedAt = Date.now();
+    if (this._timer) { clearTimeout(this._timer); this._timer = null; }
+  }
+
+  // Resume after a pause. Alerts have a much shorter staleness threshold
+  // than wildfires (60 s vs 5 min) — a tornado warning issued while the
+  // user was away should appear quickly. If paused longer than the
+  // refresh interval, refetch immediately; otherwise just reschedule.
+  resume(): void {
+    if (this._pausedAt == null) return;
+    const pausedMs = Date.now() - this._pausedAt;
+    this._pausedAt = null;
+    if (pausedMs >= DEFAULT_REFRESH_VISIBLE_MS) {
+      void this._fetch();
+    } else {
+      this._scheduleNext();
+    }
   }
 
   // hass changes don't affect the polygon-vs-polygon decisions (no zoom-

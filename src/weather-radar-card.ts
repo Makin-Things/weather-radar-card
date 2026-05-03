@@ -13,7 +13,7 @@ import './editor';
 import { WeatherRadarCardConfig, Marker } from './types';
 import { CARD_VERSION, BUILD_TIMESTAMP } from './const';
 import { localize } from './localize/localize';
-import { RateLimiter } from './rate-limiter';
+import { rainviewerLimiter, noaaLimiter, dwdLimiter } from './rate-limiters';
 import { FetchTileLayer } from './fetch-tile-layer';
 import { RadarToolbar } from './radar-toolbar';
 import { RadarPlayer } from './radar-player';
@@ -94,14 +94,10 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _darkModeQuery: MediaQueryList | null = null;
   private _darkModeHandler: (() => void) | null = null;
 
-  private _rainviewerLimiter = new RateLimiter(500);
-  private _noaaLimiter = new RateLimiter(120);
-  // DWD via maps.dwd.de is fronted by Akamai with no documented per-IP
-  // limit. 500/min (matches RainViewer) is well within polite budget for
-  // a single user — burst pan/zoom can pull ~80 tiles in one move and
-  // the previous 120/min cap was visibly throttling without ever seeing
-  // 429s from the server.
-  private _dwdLimiter = new RateLimiter(500);
+  // Per-source rate limiters live as module-level singletons in
+  // ./rate-limiters so the sliding-window count survives card teardown
+  // (config edit) AND is shared across multiple card instances on the
+  // dashboard. See that file for rate choices.
   private _dwdCoverageWarned = false;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -334,9 +330,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       map: this._map,
       shadowRoot: this.shadowRoot!,
       getConfig: () => this._config,
-      rainviewerLimiter: this._rainviewerLimiter,
-      noaaLimiter: this._noaaLimiter,
-      dwdLimiter: this._dwdLimiter,
+      rainviewerLimiter,
+      noaaLimiter,
+      dwdLimiter,
     });
     this._player.toolbar = this._toolbar;
     this._player.start(cfg.frame_count ?? 5);
@@ -788,14 +784,30 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   // ── Visibility / resize observers ─────────────────────────────────────────
 
   private _setupVisibilityObserver(): void {
+    // Triggered by IntersectionObserver (card scrolled off-screen) AND
+    // document.visibilitychange (tab hidden). Either condition pauses
+    // ALL network activity we control: radar player frame loop +
+    // overlay-layer polling timers. Tile fetches for the basemap and
+    // labels naturally stop too — Leaflet only requests new tiles when
+    // the view changes, which doesn't happen while the card is hidden.
+    const onHide = (): void => {
+      this._player?.onVisibilityHidden();
+      this._wildfireLayer?.pause();
+      this._alertsLayer?.pause();
+    };
+    const onShow = (): void => {
+      this._player?.onVisibilityVisible();
+      this._wildfireLayer?.resume();
+      this._alertsLayer?.resume();
+    };
     this._visObserver = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) this._player?.onVisibilityVisible();
-      else this._player?.onVisibilityHidden();
+      if (entries[0].isIntersecting) onShow();
+      else onHide();
     }, { threshold: 0.1 });
     this._visObserver.observe(this);
     this._visibilityHandler = () => {
-      if (document.hidden) this._player?.onVisibilityHidden();
-      else this._player?.onVisibilityVisible();
+      if (document.hidden) onHide();
+      else onShow();
     };
     document.addEventListener('visibilitychange', this._visibilityHandler);
   }

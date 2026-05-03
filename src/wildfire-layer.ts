@@ -78,6 +78,11 @@ export class WildfireLayer {
   // polygon-vs-icon threshold.
   private _renderDecisions: Map<string, 'polygon' | 'icon'> = new Map();
   private _timer: ReturnType<typeof setTimeout> | null = null;
+  // Set to Date.now() in pause(), cleared in resume(). When non-null we
+  // know we're paused: timer is cancelled, no fetches in flight should
+  // act on their result. Used by resume() to decide whether to refetch
+  // immediately (data went stale during the pause) or just reschedule.
+  private _pausedAt: number | null = null;
   // Generation guard — incremented on every fetch start. If the value at the
   // resolve point doesn't match, the fetch is stale (config changed mid-flight,
   // teardown happened, etc.) and we discard the result.
@@ -114,6 +119,30 @@ export class WildfireLayer {
     if (this._iconLayer) { this._map.removeLayer(this._iconLayer); this._iconLayer = null; }
     this._features = [];
     this._renderDecisions.clear();
+  }
+
+  // Stop scheduled fetches while the host card is hidden (off-screen or
+  // tab in background). The currently-rendered features stay on the map
+  // but no new network activity happens.
+  pause(): void {
+    if (this._pausedAt != null) return;
+    this._pausedAt = Date.now();
+    if (this._timer) { clearTimeout(this._timer); this._timer = null; }
+  }
+
+  // Resume after a pause. If we were paused longer than the
+  // refresh-when-visible interval, the displayed features are presumed
+  // stale and we refetch immediately. Otherwise just reschedule the
+  // next periodic refresh.
+  resume(): void {
+    if (this._pausedAt == null) return;
+    const pausedMs = Date.now() - this._pausedAt;
+    this._pausedAt = null;
+    if (pausedMs >= DEFAULT_REFRESH_VISIBLE_MS) {
+      void this._fetch();
+    } else {
+      this._scheduleNext();
+    }
   }
 
   // Re-filter and re-render in response to a hass change. Currently only
