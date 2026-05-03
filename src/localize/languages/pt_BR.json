@@ -51,7 +51,9 @@
       "track_always": "Sempre rastrear",
       "icon_colour": "Cor do ícone",
       "reset": "Redefinir",
-      "mobile_only": "Apenas mobile"
+      "mobile_only": "Apenas mobile",
+      "count_summary": "{n} configured",
+      "back": "Back to settings"
     },
     "display": {
       "show_zoom": "Mostrar zoom",
