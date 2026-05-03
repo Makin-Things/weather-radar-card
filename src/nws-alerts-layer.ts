@@ -7,6 +7,8 @@ import { colorForEvent, NWS_ALERT_DEFAULT_COLOR } from './nws-alert-colors';
 import {
   ALL_ALERT_CATEGORIES, categoryForEvent, getActiveAlertCategories,
 } from './nws-alert-categories';
+import { centroidLngLat, haversineKm } from './geo-utils';
+import { escapeHtml, truncate } from './string-utils';
 
 // NWS public API — see nws-alerts-feature-design.md.
 const NWS_ALERTS_URL = 'https://api.weather.gov/alerts/active?status=actual';
@@ -512,16 +514,6 @@ function relativeLuminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string
-  ));
-}
-
-function truncate(s: string, n: number): string {
-  return s.length <= n ? s : s.slice(0, n - 1) + '…';
-}
-
 function formatDateTime(s: string | undefined): string {
   if (!s) return '—';
   const d = new Date(s);
@@ -529,48 +521,22 @@ function formatDateTime(s: string | undefined): string {
   return d.toLocaleString();
 }
 
-function geometryLngLatBounds(
-  geom: GeoJSON.Geometry,
-): { minLng: number; minLat: number; maxLng: number; maxLat: number } | null {
-  let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
-  let any = false;
-  const visit = (ring: GeoJSON.Position[]) => {
-    for (const p of ring) {
-      const [lng, lat] = p;
-      if (typeof lng !== 'number' || typeof lat !== 'number') continue;
-      if (lng < minLng) minLng = lng;
-      if (lat < minLat) minLat = lat;
-      if (lng > maxLng) maxLng = lng;
-      if (lat > maxLat) maxLat = lat;
-      any = true;
-    }
-  };
-  if (geom.type === 'Polygon') {
-    for (const r of geom.coordinates) visit(r);
-  } else if (geom.type === 'MultiPolygon') {
-    for (const poly of geom.coordinates) for (const r of poly) visit(r);
-  } else {
-    return null;
-  }
-  return any ? { minLng, minLat, maxLng, maxLat } : null;
-}
-
-function centroidLngLat(geom: GeoJSON.Geometry): [number, number] | null {
-  const b = geometryLngLatBounds(geom);
-  if (!b) return null;
-  return [(b.minLng + b.maxLng) / 2, (b.minLat + b.maxLat) / 2];
-}
-
-function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a = Math.sin(dLat / 2) ** 2
-    + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180)
-    * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
-}
-
 // Re-export for the editor to enumerate available categories without
 // importing the categories module directly.
 export { ALL_ALERT_CATEGORIES, NWS_ALERT_DEFAULT_COLOR };
+
+// Test-only exports — these are internal implementation details that
+// would be `private` in an OOP language. Exposed here so the unit
+// tests can exercise them; do not consume from production code paths
+// outside this module.
+export {
+  featureKey,
+  decisionsEqual,
+  severityAscending,
+  relativeLuminance,
+  formatDateTime,
+  readZoneFromLocalStorage,
+  writeZoneToLocalStorage,
+  ZONE_LS_KEY_PREFIX,
+  ZONE_LS_TTL_MS,
+};

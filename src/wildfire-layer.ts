@@ -4,6 +4,8 @@ import { HomeAssistant } from 'custom-card-helpers';
 import { WeatherRadarCardConfig } from './types';
 import { FIRE_PATH } from './marker-icon';
 import { localize } from './localize/localize';
+import { centroidLngLat, geometryLngLatBounds, haversineKm } from './geo-utils';
+import { escapeHtml, slugify } from './string-utils';
 
 // NIFC WFIGS Current Interagency Fire Perimeters — see wildfire-feature-design.md.
 // outFields trimmed to just what the popup renders. geometryPrecision=4 keeps
@@ -395,21 +397,6 @@ function buildPopupHtml(
   `;
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string
-  ));
-}
-
-// Lowercase + collapse whitespace/punctuation into single hyphens, matching
-// InciWeb's URL slug convention (e.g. "Sand Drain" → "sand-drain").
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
 // Compute the on-screen pixel bounding box of a geometry at the current zoom.
 // Returns null if the geometry is empty or unsupported.
 function featureBboxPx(
@@ -423,46 +410,5 @@ function featureBboxPx(
   return { width: Math.abs(ne.x - sw.x), height: Math.abs(ne.y - sw.y) };
 }
 
-function geometryLngLatBounds(
-  geom: GeoJSON.Geometry,
-): { minLng: number; minLat: number; maxLng: number; maxLat: number } | null {
-  let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
-  let any = false;
-  const visitRing = (ring: GeoJSON.Position[]) => {
-    for (const p of ring) {
-      const [lng, lat] = p;
-      if (typeof lng !== 'number' || typeof lat !== 'number') continue;
-      if (lng < minLng) minLng = lng;
-      if (lat < minLat) minLat = lat;
-      if (lng > maxLng) maxLng = lng;
-      if (lat > maxLat) maxLat = lat;
-      any = true;
-    }
-  };
-  if (geom.type === 'Polygon') {
-    for (const ring of geom.coordinates) visitRing(ring);
-  } else if (geom.type === 'MultiPolygon') {
-    for (const poly of geom.coordinates) for (const ring of poly) visitRing(ring);
-  } else {
-    return null;
-  }
-  return any ? { minLng, minLat, maxLng, maxLat } : null;
-}
-
-// Bbox-centre, not a true polygon centroid — good enough for icon placement
-// and radius filtering, and avoids pulling in @turf/centroid for a few KB.
-function centroidLngLat(geom: GeoJSON.Geometry): [number, number] | null {
-  const b = geometryLngLatBounds(geom);
-  if (!b) return null;
-  return [(b.minLng + b.maxLng) / 2, (b.minLat + b.maxLat) / 2];
-}
-
-function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;   // km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a = Math.sin(dLat / 2) ** 2
-    + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180)
-    * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
-}
+// Test-only exports — internal helpers exposed for the unit tests.
+export { featureKey, decisionsEqual, isContained, iconSizeForAcres };
