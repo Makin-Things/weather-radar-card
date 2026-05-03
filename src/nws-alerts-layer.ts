@@ -30,6 +30,12 @@ const DEFAULT_MIN_SEVERITY: Severity = 'Minor';
 const ZONE_LS_KEY_PREFIX = 'wrc-zone-v1:';
 const ZONE_LS_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
+// Anchor link to the README's NWS Alerts section on GitHub. Surfaced
+// after the popup's life-safety disclaimer so users can read the full
+// caveat with one click. The hash matches GitHub's auto-generated anchor
+// for the "### NWS Watches & Warnings" heading.
+const README_ALERTS_URL = 'https://github.com/Makin-Things/weather-radar-card#nws-watches--warnings';
+
 type Severity = 'Extreme' | 'Severe' | 'Moderate' | 'Minor' | 'Unknown';
 const SEVERITY_RANK: Record<Severity, number> = {
   Unknown: 0, Minor: 1, Moderate: 2, Severe: 3, Extreme: 4,
@@ -495,7 +501,7 @@ function buildPopupHtml(props: AlertProps | null): string {
       <div><b>${escapeHtml(localize('ui.alerts.effective'))}:</b> ${escapeHtml(effective)}</div>
       <div><b>${escapeHtml(localize('ui.alerts.expires'))}:</b> ${escapeHtml(expires)}</div>
       ${description ? `<div style="margin-top:6px;white-space:pre-line;max-height:240px;overflow:auto">${escapeHtml(truncate(description, 1500))}</div>` : ''}
-      <div style="margin-top:6px;font-size:10px;color:#a00;font-weight:bold">${escapeHtml(localize('ui.alerts.disclaimer'))}</div>
+      <div style="margin-top:6px;font-size:10px;color:#a00;font-weight:bold">${escapeHtml(localize('ui.alerts.disclaimer'))} <a href="${README_ALERTS_URL}" target="_blank" rel="noopener noreferrer" style="color:#a00;text-decoration:underline">${escapeHtml(localize('ui.alerts.see_readme'))}</a>.</div>
       <div style="margin-top:4px"><a href="${linkUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(localize('ui.alerts.more_info'))}</a></div>
     </div>
   `;

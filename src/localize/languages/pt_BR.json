@@ -22,7 +22,8 @@
       "discovered": "Discovered",
       "more_info": "More info → NIFC",
       "unknown_name": "Unnamed incident",
-      "disclaimer": "Informational only — not a substitute for official alerts. See README."
+      "disclaimer": "Informational only — not a substitute for official alerts.",
+      "see_readme": "See README"
     },
     "alerts": {
       "severity": "Severity",
@@ -32,7 +33,8 @@
       "expires": "Expires",
       "more_info": "More info → NWS",
       "unknown_event": "Alert",
-      "disclaimer": "INFORMATIONAL ONLY — not for life-safety decisions. See README."
+      "disclaimer": "INFORMATIONAL ONLY — not for life-safety decisions.",
+      "see_readme": "See README"
     }
   },
   "editor": {
