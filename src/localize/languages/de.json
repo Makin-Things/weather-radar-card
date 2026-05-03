@@ -4,7 +4,6 @@
   },
   "ui": {
     "rate_limited": "Anfragelimit erreicht — warte auf Zurücksetzen des Kontingents",
-    "save_map_center": "Als Kartenmittelpunkt speichern",
     "region_warning": {
       "wildfires_us_only": "Wildfire data is US-only. Your Home Assistant location is outside the US — no fires will show.",
       "noaa_us_only": "NOAA radar is US-only. Your Home Assistant location is outside the US — radar may not load.",
@@ -31,7 +30,6 @@
       "urgency": "Urgency",
       "effective": "Effective",
       "expires": "Expires",
-      "area": "Affected areas",
       "more_info": "More info → NWS",
       "unknown_event": "Alert",
       "disclaimer": "INFORMATIONAL ONLY — not for life-safety decisions. See README."
@@ -45,7 +43,9 @@
       "display": "Anzeige",
       "interaction": "Interaktion",
       "animation": "Animation",
-      "appearance": "Aussehen"
+      "appearance": "Aussehen",
+      "overlays": "Hazard Overlays",
+      "markers_and_overlays": "Markers and Overlays"
     },
     "map": {
       "radar_source": "Radarquelle",
@@ -138,6 +138,33 @@
       "width_helper": "z. B. 100%, 500px",
       "radar_opacity": "Radar-Deckkraft",
       "radar_opacity_helper": "1.0 = vollständig deckend (Standard), niedriger = transparenter über der Hintergrundkarte"
+    },
+    "overlays": {
+      "back": "Back to settings",
+      "none_enabled": "None enabled",
+      "wildfires_header": "Wildfires (US only)",
+      "wildfires_description": "Active US wildfire perimeters from NIFC's WFIGS feed.",
+      "alerts_header": "NWS Watches & Warnings (US only)",
+      "alerts_description": "Active US National Weather Service watches and warnings.",
+      "wildfire_min_acres": "Minimum acreage",
+      "wildfire_min_acres_helper": "Hide fires below this size (default 10)",
+      "wildfire_radius_km": "Radius (km)",
+      "wildfire_radius_km_helper": "Only show fires within N km of map centre",
+      "alerts_radius_km": "Radius (km)",
+      "alerts_radius_km_helper": "Only show alerts within N km of map centre",
+      "alerts_categories_label": "Alert categories — toggle which event types render",
+      "alerts_category": {
+        "tornado": "Tornado",
+        "thunderstorm": "Thunderstorm",
+        "flood": "Flood",
+        "winter": "Winter",
+        "tropical": "Tropical",
+        "fire_weather": "Fire Weather",
+        "heat": "Heat",
+        "wind": "Wind",
+        "marine": "Marine",
+        "other": "Other"
+      }
     }
   }
 }

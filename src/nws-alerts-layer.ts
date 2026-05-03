@@ -5,21 +5,28 @@ import { WeatherRadarCardConfig } from './types';
 import { localize } from './localize/localize';
 import { colorForEvent, NWS_ALERT_DEFAULT_COLOR } from './nws-alert-colors';
 import {
-  AlertCategory, ALL_ALERT_CATEGORIES, DEFAULT_ALERT_CATEGORIES, categoryForEvent,
+  ALL_ALERT_CATEGORIES, categoryForEvent, getActiveAlertCategories,
 } from './nws-alert-categories';
 
 // NWS public API — see nws-alerts-feature-design.md.
 const NWS_ALERTS_URL = 'https://api.weather.gov/alerts/active?status=actual';
-// NWS asks all callers to identify themselves with a User-Agent. Browsers
-// override this header from JS, so the request will actually carry the
-// browser's UA — but setting it explicitly does no harm and matches the
-// recommended convention. (The fetch is allowed regardless.)
-const USER_AGENT = 'weather-radar-card (https://github.com/Makin-Things/weather-radar-card)';
+// We deliberately do NOT set a User-Agent header from JavaScript even though
+// NWS recommends it. User-Agent is on the Fetch spec's "forbidden header"
+// list — browsers reject the entire request (TypeError: Failed to fetch)
+// rather than silently stripping the header. The browser's own UA gets
+// sent automatically, which satisfies NWS's identification requirement.
 
 const DEFAULT_REFRESH_VISIBLE_MS = 60 * 1000;
 const DEFAULT_REFRESH_EMPTY_MS = 5 * 60 * 1000;
 const DEFAULT_FILL_OPACITY = 0.25;
 const DEFAULT_MIN_SEVERITY: Severity = 'Minor';
+
+// Persistent zone-shape cache. NWS forecast zones change at most quarterly
+// (and usually less often), so a 30-day TTL is comfortably conservative.
+// The v1 suffix lets future format changes invalidate old entries by
+// switching to v2 instead of needing a migration path.
+const ZONE_LS_KEY_PREFIX = 'wrc-zone-v1:';
+const ZONE_LS_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 type Severity = 'Extreme' | 'Severe' | 'Moderate' | 'Minor' | 'Unknown';
 const SEVERITY_RANK: Record<Severity, number> = {
@@ -49,14 +56,24 @@ export class NwsAlertsLayer {
   private _hass: HomeAssistant | undefined;
 
   private _polygonLayer: L.GeoJSON | null = null;
-  // All polygon-bearing features kept after filtering. Zone-only alerts
-  // (geometry === null) are skipped in Phase 1 — see TODO in _filter().
+  // Filtered alerts — both polygon-bearing AND zone-only. Zone-only alerts
+  // become renderable once their affectedZones URLs are resolved into the
+  // _zoneCache below.
   private _features: GeoJSON.Feature[] = [];
   // Per-feature render decision keyed by feature.id (NWS-provided URL).
   // Compared on each _render() call; if unchanged, we skip the rebuild,
   // preserving any open popup. See "Lessons from the wildfire build" in the
   // alerts design doc — same trap that closed wildfire popups every hass tick.
+  // For zone-resolved alerts the decision string includes the count of
+  // zones currently loaded, so a fresh zone arrival re-renders just enough.
   private _renderDecisions: Map<string, string> = new Map();
+  // Zone-shape cache. Persists across refresh cycles for the lifetime of
+  // the layer instance — zones change rarely (monthly at most), so a single
+  // fetch per zone per session covers the typical user.
+  private _zoneCache: Map<string, GeoJSON.Geometry> = new Map();
+  // In-flight zone fetches, keyed by URL. Used to dedupe concurrent
+  // requests for the same zone across multiple alerts.
+  private _zoneFetches: Map<string, Promise<void>> = new Map();
   private _timer: ReturnType<typeof setTimeout> | null = null;
   private _gen = 0;
 
@@ -75,11 +92,13 @@ export class NwsAlertsLayer {
   }
 
   clear(): void {
-    this._gen++;
+    this._gen++;   // invalidates any in-flight WFIGS / zone fetches
     if (this._timer) { clearTimeout(this._timer); this._timer = null; }
     if (this._polygonLayer) { this._map.removeLayer(this._polygonLayer); this._polygonLayer = null; }
     this._features = [];
     this._renderDecisions.clear();
+    this._zoneCache.clear();
+    this._zoneFetches.clear();
   }
 
   // hass changes don't affect the polygon-vs-polygon decisions (no zoom-
@@ -97,7 +116,7 @@ export class NwsAlertsLayer {
     const myGen = ++this._gen;
     let features: GeoJSON.Feature[] = [];
     try {
-      const res = await fetch(NWS_ALERTS_URL, { headers: { 'User-Agent': USER_AGENT, Accept: 'application/geo+json' } });
+      const res = await fetch(NWS_ALERTS_URL, { headers: { Accept: 'application/geo+json' } });
       if (!res.ok) throw new Error(`NWS fetch ${res.status}`);
       const data = await res.json() as GeoJSON.FeatureCollection;
       features = data?.features ?? [];
@@ -111,9 +130,97 @@ export class NwsAlertsLayer {
     }
     if (myGen !== this._gen) return;   // stale
 
-    this._features = this._filter(features);
+    // Filter, then sort severity-ascending so more-severe features render
+    // on top (Leaflet draws later features above earlier ones in a layer).
+    // Sort once here, not per render — the order is stable until the next
+    // _fetch() pass.
+    this._features = this._filter(features).sort(severityAscending);
+    // Render polygon-bearing alerts immediately for snappy first paint;
+    // zone-only alerts will fill in progressively as their geometry arrives.
     this._render();
     this._scheduleNext();
+    // Kick off zone resolution in the background — re-renders the layer
+    // once each batch of zone fetches completes, picking up newly-cached
+    // geometry. Doesn't await; lets the next refresh cycle run on time.
+    void this._resolveZones();
+  }
+
+  // Fetch any zone shape we don't already have cached for an alert in
+  // _features. Uses Promise.all over the missing-set; the browser will
+  // throttle to ~6 concurrent requests per origin, which fits comfortably
+  // inside NWS's published rate limits. Re-renders when the batch settles.
+  private async _resolveZones(): Promise<void> {
+    const myGen = this._gen;
+    const needed = new Set<string>();
+    for (const f of this._features) {
+      if (f.geometry) continue;   // already has its own geometry; no zones needed
+      const zones = (f.properties as AlertProps | null)?.affectedZones ?? [];
+      for (const url of zones) {
+        if (!this._zoneCache.has(url) && !this._zoneFetches.has(url)) {
+          needed.add(url);
+        }
+      }
+    }
+    if (needed.size === 0) return;
+
+    // _fetchZone self-registers in _zoneFetches as its first action so the
+    // entry exists before any sync return path (e.g. localStorage hit) can
+    // hit the matching `finally { delete }`. We just collect the promises
+    // here for the Promise.all join.
+    const promises = Array.from(needed, (url) => this._fetchZone(url));
+    await Promise.all(promises);
+    if (myGen !== this._gen) return;   // stale (cleared / reconfigured during the fetch)
+
+    // Skip-if-unchanged still applies — only the features whose zones
+    // actually arrived will see their decision strings flip, so this is
+    // a no-op for any feature whose render state is stable.
+    this._render({ skipIfDecisionsUnchanged: true });
+  }
+
+  private async _fetchZone(url: string): Promise<void> {
+    // Self-register so concurrent callers dedupe. Registration must happen
+    // BEFORE the localStorage early-return path so the matching `finally
+    // { delete }` always pairs with a real entry, never a stale one. If
+    // we're already in flight for this URL, await the existing promise
+    // instead of starting a new request.
+    const existing = this._zoneFetches.get(url);
+    if (existing) return existing;
+    let resolveOuter!: () => void;
+    const outer = new Promise<void>((r) => { resolveOuter = r; });
+    this._zoneFetches.set(url, outer);
+    try {
+      // localStorage hit short-circuits the network request — saves a
+      // round-trip per zone for users who've previously viewed alerts in
+      // the same area. First session pays the network cost; subsequent
+      // sessions read from disk.
+      const cached = readZoneFromLocalStorage(url);
+      if (cached) {
+        this._zoneCache.set(url, cached);
+        return;
+      }
+      const myGen = this._gen;
+      const res = await fetch(url, {
+        headers: { Accept: 'application/geo+json' },
+      });
+      if (!res.ok) throw new Error(`zone fetch ${res.status}`);
+      const data = await res.json();
+      if (myGen !== this._gen) return;
+      const geom: GeoJSON.Geometry | undefined = data?.geometry;
+      // Some forecast zones return geometry === null (rare, usually
+      // administrative entries with no shape). Cache only real geometries.
+      if (geom && (geom.type === 'Polygon' || geom.type === 'MultiPolygon')) {
+        this._zoneCache.set(url, geom);
+        writeZoneToLocalStorage(url, geom);
+      }
+    } catch (err) {
+      // Per-zone failures are common (404s on retired zones, transient
+      // network blips). Log once and move on; the alert's other zones
+      // may still resolve and render.
+      console.warn('NWS alerts: zone fetch failed', url, err);
+    } finally {
+      this._zoneFetches.delete(url);
+      resolveOuter();
+    }
   }
 
   private _filter(all: GeoJSON.Feature[]): GeoJSON.Feature[] {
@@ -123,25 +230,21 @@ export class NwsAlertsLayer {
     const radiusKm = cfg.alerts_radius_km;
     const centre = radiusKm ? this._map.getCenter() : null;
 
-    // Resolve the active type allowlist. Explicit alerts_types overrides
-    // alerts_categories. Otherwise convert categories → set of allowed
-    // event strings via the EVENT_TO_CATEGORY map (lazily built on demand
-    // so the user can also use a category they've never seen before).
+    // Resolve the active type allowlist. Explicit alerts_types (when
+    // present and non-empty) overrides alerts_categories; otherwise we
+    // resolve the category set via the shared helper (which correctly
+    // distinguishes "undefined → defaults" from "empty array → none").
     const explicitTypes = cfg.alerts_types && cfg.alerts_types.length > 0
       ? new Set(cfg.alerts_types) : null;
-    const activeCategories = new Set<AlertCategory>(
-      (cfg.alerts_categories && cfg.alerts_categories.length > 0
-        ? cfg.alerts_categories
-        : DEFAULT_ALERT_CATEGORIES) as AlertCategory[],
-    );
+    const activeCategories = getActiveAlertCategories(cfg.alerts_categories);
 
     return all.filter((f) => {
-      // Phase 1: skip zone-only alerts (no geometry). Phase 2 will resolve
-      // affectedZones URLs into geometry from /zones/{type}/{id}.
-      // TODO(phase 2): _resolveZones() to fill these in.
-      if (!f.geometry) return false;
-
+      // Keep both polygon-bearing and zone-only alerts. Zone-only ones are
+      // resolved into geometry asynchronously by _resolveZones() and
+      // become renderable on a subsequent _render() pass.
       const props = f.properties as AlertProps | null;
+      const hasZones = (props?.affectedZones?.length ?? 0) > 0;
+      if (!f.geometry && !hasZones) return false;
 
       // Severity floor
       const sev = (props?.severity ?? 'Unknown') as Severity;
@@ -155,16 +258,43 @@ export class NwsAlertsLayer {
         if (!activeCategories.has(categoryForEvent(event))) return false;
       }
 
-      // Radius from map centre
+      // Radius from map centre. For zone-only alerts whose zones haven't
+      // resolved yet we can't compute a centroid — keep the alert in the
+      // filter set; it'll be re-evaluated on the next render once any zone
+      // resolves. Letting it through is safer than dropping it (a far-away
+      // alert just won't find geometry in the cache and rendered as null).
       if (radiusKm && centre) {
-        const c = centroidLngLat(f.geometry);
-        if (!c) return false;
-        const distKm = haversineKm(centre.lat, centre.lng, c[1], c[0]);
-        if (distKm > radiusKm) return false;
+        const geom = f.geometry ?? this._geometryFromZones(props?.affectedZones ?? []);
+        if (geom) {
+          const c = centroidLngLat(geom);
+          if (c) {
+            const distKm = haversineKm(centre.lat, centre.lng, c[1], c[0]);
+            if (distKm > radiusKm) return false;
+          }
+        }
       }
 
       return true;
     });
+  }
+
+  // Build a synthetic MultiPolygon from whatever zone shapes are currently
+  // in the cache. Zones still being fetched are silently omitted — the
+  // _renderInner pass picks them up on a subsequent re-render once they
+  // arrive. Returns null if no zones are cached yet.
+  private _geometryFromZones(zoneUrls: string[]): GeoJSON.MultiPolygon | null {
+    const polys: GeoJSON.Position[][][] = [];
+    for (const url of zoneUrls) {
+      const g = this._zoneCache.get(url);
+      if (!g) continue;
+      if (g.type === 'Polygon') {
+        polys.push(g.coordinates);
+      } else if (g.type === 'MultiPolygon') {
+        for (const p of g.coordinates) polys.push(p);
+      }
+    }
+    if (polys.length === 0) return null;
+    return { type: 'MultiPolygon', coordinates: polys };
   }
 
   private _render(opts?: { skipIfDecisionsUnchanged?: boolean }): void {
@@ -182,24 +312,49 @@ export class NwsAlertsLayer {
     const cfg = this._getConfig();
     const fillOpacity = cfg.alerts_fill_opacity ?? DEFAULT_FILL_OPACITY;
 
-    // Sort severity-ascending so more-severe features render on top
-    // (Leaflet draws later features above earlier ones in the same layer).
-    const sorted = [...this._features].sort((a, b) => {
-      const sa = SEVERITY_RANK[((a.properties as AlertProps)?.severity ?? 'Unknown') as Severity] ?? 0;
-      const sb = SEVERITY_RANK[((b.properties as AlertProps)?.severity ?? 'Unknown') as Severity] ?? 0;
-      return sa - sb;
-    });
-
-    // Compute per-feature decisions BEFORE tearing down — so we can short
-    // circuit when nothing meaningful changed.
+    // _features is already sorted severity-ascending by _fetch (see there).
+    // Materialise the renderable feature set: features get their inline
+    // geometry where present, otherwise a synthetic MultiPolygon built
+    // from cached zone shapes. Features whose zones haven't arrived yet
+    // are excluded from this render but stay in _features so they pick
+    // up geometry on the next render when zones land.
+    const renderable: GeoJSON.Feature[] = [];
     const newDecisions = new Map<string, string>();
-    for (const f of sorted) {
+    for (const f of this._features) {
       const key = featureKey(f);
       const props = f.properties as AlertProps | null;
-      // The "decision" is everything that affects how this feature is
-      // drawn: event (-> colour) and severity (-> z-order). If both match
-      // the previous render, the layer renders identically — skip rebuild.
-      newDecisions.set(key, `${props?.event ?? ''}|${props?.severity ?? ''}`);
+
+      let geom: GeoJSON.Geometry | null = f.geometry ?? null;
+      let zonesLoaded = 0;
+      let zonesTotal = 0;
+      if (!geom) {
+        const zones = props?.affectedZones ?? [];
+        zonesTotal = zones.length;
+        const synth = this._geometryFromZones(zones);
+        if (synth) {
+          geom = synth;
+          // Count how many zones contributed — for the decision string.
+          zonesLoaded = zones.filter((u) => this._zoneCache.has(u)).length;
+        }
+      }
+
+      // Decision captures everything that affects this feature's render:
+      // event (colour), severity (z-order), and either "polygon" for
+      // inline geometry or "zones:N/M" for zone-derived. When more zones
+      // arrive the count rises, the decision flips, and we re-render.
+      const geomTag = f.geometry ? 'polygon' : `zones:${zonesLoaded}/${zonesTotal}`;
+      newDecisions.set(key, `${props?.event ?? ''}|${props?.severity ?? ''}|${geomTag}`);
+
+      if (!geom) continue;   // zone-only with nothing in cache yet — skip this render
+
+      // Push a feature carrying the derived geometry; preserve id/properties
+      // so the popup picks up the original alert metadata.
+      renderable.push({
+        type: 'Feature',
+        id: f.id,
+        properties: f.properties,
+        geometry: geom,
+      });
     }
 
     if (opts?.skipIfDecisionsUnchanged && decisionsEqual(this._renderDecisions, newDecisions)) {
@@ -212,18 +367,22 @@ export class NwsAlertsLayer {
       this._polygonLayer = null;
     }
 
-    if (sorted.length === 0) return;
+    if (renderable.length === 0) return;
 
-    this._polygonLayer = L.geoJSON(sorted, {
+    this._polygonLayer = L.geoJSON(renderable, {
       style: (feature) => {
         const event = (feature?.properties as AlertProps | null)?.event;
         const colour = colorForEvent(event);
         return { color: colour, weight: 1.5, fillColor: colour, fillOpacity };
       },
       onEachFeature: (feature, layer) => {
+        // autoPan defaults to true — when an off-edge popup opens, Leaflet
+        // pans the map so it's fully visible inside the card. autoPanPadding
+        // adds a small inset so the popup never butts right against the card
+        // edge (looks awkward).
         layer.bindPopup(
           buildPopupHtml(feature.properties as AlertProps | null),
-          { autoPan: false },
+          { autoPan: true, autoPanPadding: [12, 12] },
         );
       },
     });
@@ -243,12 +402,54 @@ export class NwsAlertsLayer {
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
+// localStorage helpers for the persistent zone cache. Both functions are
+// best-effort — any storage error (quota, disabled, corrupt entry) is
+// swallowed silently so the layer still works with just the in-memory
+// cache. Keying is by zone URL with a versioned prefix; a future cache
+// format change can use ZONE_LS_KEY_PREFIX = 'wrc-zone-v2:' and old
+// entries become invisible without needing a migration.
+function readZoneFromLocalStorage(url: string): GeoJSON.Geometry | null {
+  try {
+    const raw = localStorage.getItem(ZONE_LS_KEY_PREFIX + url);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { geometry: GeoJSON.Geometry; ts: number };
+    if (Date.now() - parsed.ts > ZONE_LS_TTL_MS) {
+      // TTL expired — drop and treat as a miss so we re-fetch fresh data.
+      localStorage.removeItem(ZONE_LS_KEY_PREFIX + url);
+      return null;
+    }
+    return parsed.geometry;
+  } catch {
+    return null;
+  }
+}
+
+function writeZoneToLocalStorage(url: string, geometry: GeoJSON.Geometry): void {
+  try {
+    localStorage.setItem(
+      ZONE_LS_KEY_PREFIX + url,
+      JSON.stringify({ geometry, ts: Date.now() }),
+    );
+  } catch {
+    // Quota exceeded or storage disabled. Swallow — the in-memory cache
+    // still works for this session, the persistent cache is a bonus.
+  }
+}
+
 function featureKey(f: GeoJSON.Feature): string {
   // NWS gives every alert a unique URL as feature.id. Always present in
   // practice; fall back to properties.id (a urn:oid:...) just in case.
   if (f.id != null) return String(f.id);
   const p = f.properties as AlertProps | null;
   return p?.id ?? '';
+}
+
+// Severity-ascending so more-severe features render on top in Leaflet
+// (later features draw above earlier ones in a GeoJSON layer).
+function severityAscending(a: GeoJSON.Feature, b: GeoJSON.Feature): number {
+  const sa = SEVERITY_RANK[((a.properties as AlertProps)?.severity ?? 'Unknown') as Severity] ?? 0;
+  const sb = SEVERITY_RANK[((b.properties as AlertProps)?.severity ?? 'Unknown') as Severity] ?? 0;
+  return sa - sb;
 }
 
 function decisionsEqual(a: Map<string, string>, b: Map<string, string>): boolean {
@@ -265,10 +466,18 @@ function buildPopupHtml(props: AlertProps | null): string {
   const effective = formatDateTime(props?.effective);
   const expires = formatDateTime(props?.expires ?? props?.ends);
   const headline = props?.headline ?? '';
-  const area = props?.areaDesc ?? '';
+  // NWS descriptions are free-text bodies of the alert (winds, hail size,
+  // location, recommended actions). They preserve their own line breaks —
+  // we render with white-space: pre-line so paragraphs read correctly.
+  // Truncate generously since the popup is the only place the user sees
+  // the full text. Affected-areas is omitted: the user can see the polygon.
+  const description = props?.description ?? '';
   const colour = colorForEvent(props?.event);
-  const accent = colour === '#FFFFFF' || colour === '#FFE4B5' || colour === '#FFFF00'
-    ? '#444' : colour;   // unreadable on light fills — fall back to dark text
+  // Some NWS palette colours (Yellow, Moccasin, White, …) are too light to
+  // read as bold text on the popup's white background. Use the colour only
+  // when it has enough contrast; fall back to dark grey otherwise. Picks
+  // up new "light" entries automatically if the palette grows.
+  const accent = relativeLuminance(colour) < 0.7 ? colour : '#444';
 
   // properties.uri is sometimes null in practice; fall back to the alerts
   // index page so the link always works (even if it's not as deep).
@@ -283,11 +492,24 @@ function buildPopupHtml(props: AlertProps | null): string {
       <div><b>${escapeHtml(localize('ui.alerts.severity'))}:</b> ${escapeHtml(severity)} · <b>${escapeHtml(localize('ui.alerts.certainty'))}:</b> ${escapeHtml(certainty)} · <b>${escapeHtml(localize('ui.alerts.urgency'))}:</b> ${escapeHtml(urgency)}</div>
       <div><b>${escapeHtml(localize('ui.alerts.effective'))}:</b> ${escapeHtml(effective)}</div>
       <div><b>${escapeHtml(localize('ui.alerts.expires'))}:</b> ${escapeHtml(expires)}</div>
-      ${area ? `<div style="margin-top:4px"><b>${escapeHtml(localize('ui.alerts.area'))}:</b> ${escapeHtml(truncate(area, 200))}</div>` : ''}
+      ${description ? `<div style="margin-top:6px;white-space:pre-line;max-height:240px;overflow:auto">${escapeHtml(truncate(description, 1500))}</div>` : ''}
       <div style="margin-top:6px;font-size:10px;color:#a00;font-weight:bold">${escapeHtml(localize('ui.alerts.disclaimer'))}</div>
       <div style="margin-top:4px"><a href="${linkUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(localize('ui.alerts.more_info'))}</a></div>
     </div>
   `;
+}
+
+// Relative luminance per WCAG (simplified — straight-RGB average rather
+// than the full sRGB→linear conversion). Good enough for "is this colour
+// too light to read on a white background?" decisions in popup chrome.
+// Returns 0..1 where 1 is pure white.
+function relativeLuminance(hex: string): number {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return 0.5;   // unknown format — assume mid-grey
+  const r = parseInt(m[1].slice(0, 2), 16) / 255;
+  const g = parseInt(m[1].slice(2, 4), 16) / 255;
+  const b = parseInt(m[1].slice(4, 6), 16) / 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
 function escapeHtml(s: string): string {

@@ -165,3 +165,16 @@ export function categoryForEvent(event: string | undefined): AlertCategory {
   if (!event) return 'other';
   return EVENT_TO_CATEGORY[event] ?? 'other';
 }
+
+// Resolve the category set the user has actually opted into, distinguishing
+// "key absent / undefined" (treat as default — DEFAULT_ALERT_CATEGORIES)
+// from "explicit empty array" (treat as opt out of everything). The latter
+// is the path used by the editor when the user unchecks every category
+// toggle — they expect it to mean "show nothing", not "snap back to
+// defaults".
+export function getActiveAlertCategories(
+  configured: string[] | undefined,
+): Set<AlertCategory> {
+  if (configured === undefined) return new Set(DEFAULT_ALERT_CATEGORIES);
+  return new Set(configured as AlertCategory[]);
+}

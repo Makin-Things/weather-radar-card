@@ -173,7 +173,7 @@ The default filter excludes the `marine` category (most users are inland; coasta
 >
 > The National Weather Service provides alert data without warranty of accuracy, completeness, or timeliness. The card developers make no warranty that this overlay accurately reflects current NWS alerts.
 
-**Phase 1 limitation:** zone-based alerts (advisories that reference NWS forecast zones rather than carrying their own polygon — most non-warning advisories) are not yet rendered. They will appear once Phase 2 of the alerts feature lands. Polygon-based alerts (most warnings) render today.
+Both polygon-bearing alerts (most warnings) and zone-based alerts (most advisories — Wind, Frost, Heat, etc.) render. Zone shapes are fetched on demand from `api.weather.gov/zones/...` and cached for the lifetime of the card instance, so the same zone is never re-fetched.
 
 ### Map Style
 

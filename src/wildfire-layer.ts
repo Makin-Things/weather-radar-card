@@ -262,15 +262,17 @@ export class WildfireLayer {
           return { color, weight: 1.5, fillColor: color, fillOpacity };
         },
         onEachFeature: (feature, layer) => {
-          // autoPan: false so opening a popup doesn't fire move/zoom events
-          // that could interfere with the host card's pointer/action handler.
+          // autoPan keeps the popup inside the visible map area when the
+          // anchor is near an edge — Leaflet smoothly slides the map so the
+          // popup is fully readable. autoPanPadding keeps a small inset so
+          // it never butts against the card edge.
           layer.bindPopup(
             buildPopupHtml(
               feature.properties as WildfireProps | null,
               this._inciwebSlugs,
               this._inciwebReady,
             ),
-            { autoPan: false },
+            { autoPan: true, autoPanPadding: [12, 12] },
           );
         },
       });
@@ -292,7 +294,7 @@ export class WildfireLayer {
         const marker = L.marker(item.latLng, { icon });
         marker.bindPopup(
           buildPopupHtml(props, this._inciwebSlugs, this._inciwebReady),
-          { autoPan: false },
+          { autoPan: true, autoPanPadding: [12, 12] },
         );
         marker.addTo(this._iconLayer!);
       }

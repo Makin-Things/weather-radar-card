@@ -74,7 +74,15 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _wildfireLayer: WildfireLayer | null = null;
   private _alertsLayer: NwsAlertsLayer | null = null;
 
-  @state() private _pendingCenter: { lat: number; lon: number; zoom: number } | null = null;
+  // True while the user is actively editing this card via HA's edit dialog.
+  // Detected via window-level events from the editor element's lifecycle —
+  // we can't infer it from the card's `editMode` property, which only tells
+  // us the dashboard is editable, not whether the card's edit dialog is open.
+  // Used to decide whether to auto-propagate pan/zoom into the editor's
+  // Lat/Long/Zoom fields.
+  @state() private _editorOpen = false;
+  private _editorOpenedHandler: (() => void) | null = null;
+  private _editorClosedHandler: (() => void) | null = null;
   private _userMoveInProgress = false;
 
   private _navReloadTimer: ReturnType<typeof setTimeout> | null = null;
@@ -159,7 +167,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   protected shouldUpdate(changedProps: PropertyValues): boolean {
     if (!this._config) return false;
     return changedProps.has('_config') || changedProps.has('hass')
-      || changedProps.has('editMode') || changedProps.has('_pendingCenter');
+      || changedProps.has('editMode');
   }
 
   protected firstUpdated(): void {
@@ -171,9 +179,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   }
 
   protected updated(changedProps: PropertyValues): void {
-    if (changedProps.has('editMode') && !this.editMode) {
-      this._pendingCenter = null;
-    }
     if (!this._map && this._config) {
       this._initMap();
     } else if (changedProps.has('_config') && this._map) {
@@ -196,8 +201,24 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     }
   }
 
+  public connectedCallback(): void {
+    super.connectedCallback();
+    // Listen for the editor element's lifecycle so we can switch on
+    // auto-propagate of pan/zoom into the editor's Lat/Long/Zoom fields
+    // ONLY while the user is editing this card. The editor dispatches the
+    // events on its own connect/disconnect (see editor.ts).
+    this._editorOpenedHandler = () => { this._editorOpen = true; };
+    this._editorClosedHandler = () => { this._editorOpen = false; };
+    window.addEventListener('weather-radar-editor-opened', this._editorOpenedHandler);
+    window.addEventListener('weather-radar-editor-closed', this._editorClosedHandler);
+  }
+
   public disconnectedCallback(): void {
     super.disconnectedCallback();
+    if (this._editorOpenedHandler) window.removeEventListener('weather-radar-editor-opened', this._editorOpenedHandler);
+    if (this._editorClosedHandler) window.removeEventListener('weather-radar-editor-closed', this._editorClosedHandler);
+    this._editorOpenedHandler = null;
+    this._editorClosedHandler = null;
     this._teardown();
   }
 
@@ -227,11 +248,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
             ${localize('ui.rate_limited')}
           </div>
         </div>
-        ${this.editMode && this._pendingCenter ? html`
-          <button class="save-center-btn" @click=${this._savePendingCenter}>
-            ${localize('ui.save_map_center')}
-          </button>
-        ` : ''}
         <div id="mapid" style="${this._config.square_map && !this._config.height ? 'aspect-ratio:1/1' : `height:${this._calculateHeight()}`}"></div>
         <div id="div-progress-bar" style="height:8px;cursor:pointer;display:${this._config.show_progress_bar === false ? 'none' : 'flex'}"></div>
         <div id="bottom-container">
@@ -665,18 +681,19 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     this._toolbar.addTo(this._map);
   }
 
-  private _savePendingCenter(): void {
-    if (!this._pendingCenter) return;
-    const { lat, lon, zoom } = this._pendingCenter;
-    this._pendingCenter = null;
-    // Communicate to the editor element via a window event so the editor can
-    // fire config-changed from the correct element. Firing it from the card
-    // causes HA to call setConfig back with the old stored config (snap-back).
+  // Push the current map centre + zoom into the editor's Lat/Long/Zoom
+  // fields via a window event. The editor element (in editor.ts) listens
+  // for this and calls config-changed itself — firing it from the card
+  // causes HA to round-trip back through setConfig with the old stored
+  // values, which would snap the map back.
+  private _pushCenterToEditor(): void {
+    if (!this._map) return;
+    const c = this._map.getCenter();
     window.dispatchEvent(new CustomEvent('weather-radar-center-update', {
       detail: {
-        center_latitude: Math.round(lat * 10000) / 10000,
-        center_longitude: Math.round(lon * 10000) / 10000,
-        zoom_level: zoom,
+        center_latitude: Math.round(c.lat * 10000) / 10000,
+        center_longitude: Math.round(c.lng * 10000) / 10000,
+        zoom_level: this._map.getZoom(),
       },
     }));
   }
@@ -757,9 +774,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       this._navReloadTimer = setTimeout(() => {
         this._player?.onNavSettled(this._config.frame_count ?? 5);
       }, 100);
-      if (this._userMoveInProgress && this.editMode && this._map) {
-        const c = this._map.getCenter();
-        this._pendingCenter = { lat: c.lat, lon: c.lng, zoom: this._map.getZoom() };
+      // When the user is editing this card, push the new map view straight
+      // into the editor's Lat/Long/Zoom fields. WYSIWYG — no save button.
+      // editMode alone isn't enough (it just means the dashboard is
+      // editable); _editorOpen is set by the editor element's lifecycle.
+      if (this._userMoveInProgress && this.editMode && this._editorOpen) {
+        this._pushCenterToEditor();
       }
       this._userMoveInProgress = false;
     });
@@ -826,13 +846,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       #bottom-container a { color: var(--primary-color); }
       .map-dark .leaflet-control-scale-line {
         color: #bbb; border-color: #bbb; background: rgba(0,0,0,0.5);
-      }
-      .save-center-btn {
-        position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%);
-        z-index: 1000; background: var(--primary-color); color: var(--text-primary-color, #fff);
-        border: none; border-radius: 4px; padding: 6px 16px; cursor: pointer;
-        font: 12px/1.5 'Helvetica Neue', Arial, sans-serif;
-        white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
       }
     `,
   ];
