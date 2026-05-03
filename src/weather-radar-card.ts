@@ -196,18 +196,14 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     const isMapDark = mapStyle === 'dark' || mapStyle === 'satellite';
     const dataSource = this._config.data_source ?? 'RainViewer';
     const showColourBar = this._config.show_color_bar !== false;
-    const isDwd = dataSource === 'DWD';
     const colourBarSrc = dataSource === 'NOAA'
       ? '/local/community/weather-radar-card/radar-colour-bar-nws.png'
-      : '/local/community/weather-radar-card/radar-colour-bar-universalblue.png';
-    // DWD ships its own per-layer legends via WMS GetLegendGraphic. Track the active layer
-    // (must mirror the resolution in radar-player.ts so the legend matches what's rendered).
-    const dwdLegendLayer = this._config.dwd_layer
-      ?? ((this._config.dwd_forecast_hours ?? 0) > 0 ? 'Radar_wn-product_1x1km_ger' : 'Niederschlagsradar');
-    const dwdLegendUrl = `https://maps.dwd.de/geoserver/dwd/wms?service=WMS&version=1.3.0&request=GetLegendGraphic&format=image%2Fpng&layer=${encodeURIComponent(dwdLegendLayer)}&LEGEND_OPTIONS=fontAntiAliasing%3Atrue%3BfontSize%3A10`;
+      : dataSource === 'DWD'
+        ? '/local/community/weather-radar-card/radar-colour-bar-dwd.png'
+        : '/local/community/weather-radar-card/radar-colour-bar-universalblue.png';
     return html`
       <ha-card class=${isMapDark ? 'map-dark' : ''} style="${this._config.width && this._validateCssSize(this._config.width) ? `width:${this._config.width}` : ''}">
-        <div id="color-bar" style="height:8px;display:${showColourBar && !isDwd ? '' : 'none'}">
+        <div id="color-bar" style="height:8px;display:${showColourBar ? '' : 'none'}">
           <img id="img-color-bar" height="8" style="vertical-align:top" src=${colourBarSrc} />
         </div>
         <div id="rate-limit-banner" class="status-banner" style="display:none">
@@ -218,14 +214,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
             ${localize('ui.save_map_center')}
           </button>
         ` : ''}
-        <div id="mapid" style="${this._config.square_map && !this._config.height ? 'aspect-ratio:1/1' : `height:${this._calculateHeight()}`}">
-          ${isDwd && showColourBar ? html`
-            <div id="dwd-legend" title=${dwdLegendLayer}>
-              <img src=${dwdLegendUrl} alt="DWD radar legend"
-                @error=${(e: Event) => { (e.currentTarget as HTMLImageElement).parentElement!.style.display = 'none'; }} />
-            </div>
-          ` : ''}
-        </div>
+        <div id="mapid" style="${this._config.square_map && !this._config.height ? 'aspect-ratio:1/1' : `height:${this._calculateHeight()}`}"></div>
         <div id="div-progress-bar" style="height:8px;cursor:pointer;display:${this._config.show_progress_bar === false ? 'none' : 'flex'}"></div>
         <div id="bottom-container">
           <div id="timestampid" style="height:32px;float:left;position:absolute">
@@ -797,13 +786,6 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         font: 12px/1.5 'Helvetica Neue', Arial, sans-serif;
         white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
       }
-      #dwd-legend {
-        position: absolute; bottom: 8px; right: 8px; z-index: 1000;
-        background: rgba(255,255,255,0.92); border-radius: 4px; padding: 4px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.3); pointer-events: none;
-        max-height: calc(100% - 16px); overflow: hidden;
-      }
-      #dwd-legend img { display: block; max-width: 120px; max-height: 100%; }
     `,
   ];
 }
