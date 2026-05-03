@@ -51,7 +51,9 @@
       "track_always": "Traccia sempre",
       "icon_colour": "Colore dell'icona",
       "reset": "Ripristina",
-      "mobile_only": "Solo mobile"
+      "mobile_only": "Solo mobile",
+      "count_summary": "{n} configured",
+      "back": "Back to settings"
     },
     "display": {
       "show_zoom": "Mostra zoom",
