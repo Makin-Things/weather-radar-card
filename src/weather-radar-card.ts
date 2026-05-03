@@ -26,6 +26,7 @@ import {
 import { createMarkerIconForMarker, HOME_PATH } from './marker-icon';
 import { migrateConfig, resolveMarkerPosition, resolveTracking } from './marker-utils';
 import { WildfireLayer } from './wildfire-layer';
+import { NwsAlertsLayer } from './nws-alerts-layer';
 import { getRegionWarnings } from './region-warning';
 
 /* eslint no-console: 0 */
@@ -71,6 +72,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _dynamicStyleEl!: HTMLStyleElement;
   private _player: RadarPlayer | null = null;
   private _wildfireLayer: WildfireLayer | null = null;
+  private _alertsLayer: NwsAlertsLayer | null = null;
 
   @state() private _pendingCenter: { lat: number; lon: number; zoom: number } | null = null;
   private _userMoveInProgress = false;
@@ -190,6 +192,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         if (hasTracking) this._resolveTracking();
       }
       this._wildfireLayer?.updateHass(this.hass);
+      this._alertsLayer?.updateHass(this.hass);
     }
   }
 
@@ -326,6 +329,11 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       this._wildfireLayer = new WildfireLayer(this._map, () => this._config, this.hass);
       this._wildfireLayer.start();
     }
+
+    if (cfg.show_alerts === true) {
+      this._alertsLayer = new NwsAlertsLayer(this._map, () => this._config, this.hass);
+      this._alertsLayer.start();
+    }
   }
 
   private _teardown(): void {
@@ -351,6 +359,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     this._player = null;
     this._wildfireLayer?.clear();
     this._wildfireLayer = null;
+    this._alertsLayer?.clear();
+    this._alertsLayer = null;
     if (this._clusterGroup) { this._clusterGroup.clearLayers(); this._clusterGroup = null; }
     this._clusterSpiderfied = false;
     if (this._map) { this._map.remove(); this._map = null; }

@@ -74,6 +74,14 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   wildfire_contained_color?: string;
   wildfire_fill_opacity?: number;
   wildfire_refresh_minutes?: number;
+  // NWS watches & warnings overlay (US-only — see nws-alerts-feature-design.md)
+  show_alerts?: boolean;
+  alerts_categories?: string[];        // category keys; default: all except 'marine'
+  alerts_types?: string[];             // explicit event-string allowlist; overrides alerts_categories when set
+  alerts_radius_km?: number;
+  alerts_min_severity?: 'Extreme' | 'Severe' | 'Moderate' | 'Minor' | 'Unknown';
+  alerts_fill_opacity?: number;
+  alerts_refresh_seconds?: number;
   // Simple shortcut string OR a standard HA action object e.g. {action: navigate, navigation_path: /lovelace/1}
   double_tap_action?: string | { action: string; [key: string]: unknown };
   disable_scroll?: boolean;

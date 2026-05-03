@@ -8,7 +8,14 @@
     "region_warning": {
       "wildfires_us_only": "Wildfire data is US-only. Your Home Assistant location is outside the US — no fires will show.",
       "noaa_us_only": "NOAA radar is US-only. Your Home Assistant location is outside the US — radar may not load.",
-      "us_combined": "Wildfire and NOAA radar data are US-only. Your Home Assistant location is outside the US — these layers will not load."
+      "combined": "{features} are US-only. Your Home Assistant location is outside the US — these will not load.",
+      "and": "and",
+      "alerts_us_only": "NWS watches & warnings are US-only. Your Home Assistant location is outside the US — alerts will not load.",
+      "label": {
+        "wildfires": "Wildfires",
+        "alerts": "NWS alerts",
+        "noaa": "NOAA radar"
+      }
     },
     "wildfire": {
       "acres": "Acres",
@@ -17,6 +24,17 @@
       "more_info": "More info → NIFC",
       "unknown_name": "Unnamed incident",
       "disclaimer": "Informational only — not a substitute for official alerts. See README."
+    },
+    "alerts": {
+      "severity": "Severity",
+      "certainty": "Certainty",
+      "urgency": "Urgency",
+      "effective": "Effective",
+      "expires": "Expires",
+      "area": "Affected areas",
+      "more_info": "More info → NWS",
+      "unknown_event": "Alert",
+      "disclaimer": "INFORMATIONAL ONLY — not for life-safety decisions. See README."
     }
   },
   "editor": {
@@ -81,7 +99,17 @@
       "show_snow": "Pokaż śnieg",
       "show_color_bar": "Pokaż pasek kolorów",
       "show_progress_bar": "Pokaż pasek postępu",
-      "show_wildfires": "Show Wildfires (US only)"
+      "show_wildfires": "Show Wildfires (US only)",
+      "show_alerts": "Show NWS Alerts (US only)",
+      "alerts_min_severity": "Alerts: minimum severity",
+      "alerts_min_severity_helper": "Hide alerts below this severity level",
+      "alerts_severity": {
+        "extreme": "Extreme",
+        "severe": "Severe",
+        "moderate": "Moderate",
+        "minor": "Minor",
+        "unknown": "Unknown"
+      }
     },
     "interaction": {
       "disable_scroll": "Wyłącz przewijanie (umożliw przesuwanie strony przez mapę)",

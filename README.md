@@ -112,6 +112,13 @@ All options can be configured using the GUI editor — there is no need to edit 
 | wildfire_contained_color | string      | **Optional** | 100%-contained fire colour                                                                                                                                                                                                                                   | `'#888888'`                           |
 | wildfire_fill_opacity | number         | **Optional** | Polygon fill opacity (0 = perimeter only)                                                                                                                                                                                                                    | `0.2`                                 |
 | wildfire_refresh_minutes | number      | **Optional** | Override the adaptive 5/30-min refresh interval                                                                                                                                                                                                              | adaptive                              |
+| show_alerts          | boolean         | **Optional** | Overlay active US NWS watches and warnings (see [NWS Alerts](#nws-watches--warnings))                                                                                                                                                                        | `false`                               |
+| alerts_categories    | string[]        | **Optional** | Allowlist of category keys (`tornado`, `thunderstorm`, `flood`, `winter`, `tropical`, `fire_weather`, `heat`, `wind`, `marine`, `other`); default omits `marine`                                                                                             | all except `marine`                   |
+| alerts_types         | string[]        | **Optional** | Explicit event-string allowlist; overrides `alerts_categories` when set                                                                                                                                                                                      | unset                                 |
+| alerts_min_severity  | string          | **Optional** | One of `Extreme`, `Severe`, `Moderate`, `Minor`, `Unknown`                                                                                                                                                                                                   | `'Minor'`                             |
+| alerts_radius_km     | number          | **Optional** | Only show alerts within N km of the map center                                                                                                                                                                                                               | unset                                 |
+| alerts_fill_opacity  | number          | **Optional** | Alert polygon fill opacity (0 = outline only)                                                                                                                                                                                                                | `0.25`                                |
+| alerts_refresh_seconds | number        | **Optional** | Override the adaptive 60s/300s refresh interval                                                                                                                                                                                                              | adaptive                              |
 
 ### Data Source
 
@@ -141,6 +148,32 @@ The overlay refreshes every 5 minutes when fires are visible (matching NIFC's up
 > **Do not rely on this overlay for evacuation, life-safety, or property-protection decisions.** Follow your local emergency management agency, official evacuation orders, and Wireless Emergency Alerts.
 >
 > NIFC provides this data without warranty of accuracy, completeness, or timeliness. The card developers make no warranty that this overlay accurately reflects current fire activity.
+
+### NWS Watches & Warnings
+
+When `show_alerts: true`, the card overlays active US National Weather Service watches and warnings from the public [NWS API](https://www.weather.gov/documentation/services-web-api). Each alert is drawn as a translucent polygon coloured per [NWS's standard warning palette](https://www.weather.gov/help-map) — Tornado Warning red, Severe Thunderstorm Warning orange, Flash Flood Warning dark red, and so on. When alerts overlap, more severe ones render on top so their colour wins.
+
+Click any alert to see its event type, headline, severity / certainty / urgency, effective and expiry times, affected areas, and a link out to weather.gov for the full alert text.
+
+The overlay refreshes every 60 seconds when alerts are visible (alerts can have minute-scale lifespans, especially tornado warnings) and every 5 minutes when none are. Filter by category, by severity floor, or by distance from the map centre.
+
+The default filter excludes the `marine` category (most users are inland; coastal users opt back in via `alerts_categories`). Other categories: `tornado`, `thunderstorm`, `flood`, `winter`, `tropical`, `fire_weather`, `heat`, `wind`, `other`.
+
+> [!CAUTION]
+> **NWS alert data is for informational purposes only.**
+>
+> This overlay polls the National Weather Service public API on a delay (60 seconds when alerts are visible, 5 minutes otherwise). Network latency, API outages, browser tab throttling, and rendering delays mean the alerts you see here may be **seconds to minutes behind reality**.
+>
+> **Do not rely on this overlay for life-safety decisions.** For tornado, flash flood, hurricane, and other immediate-threat warnings, use:
+>
+> - **Wireless Emergency Alerts (WEA)** on your mobile phone
+> - **NOAA Weather Radio** with SAME alerting
+> - **Your local emergency management agency**
+> - **Official evacuation orders** from local authorities
+>
+> The National Weather Service provides alert data without warranty of accuracy, completeness, or timeliness. The card developers make no warranty that this overlay accurately reflects current NWS alerts.
+
+**Phase 1 limitation:** zone-based alerts (advisories that reference NWS forecast zones rather than carrying their own polygon — most non-warning advisories) are not yet rendered. They will appear once Phase 2 of the alerts feature lands. Polygon-based alerts (most warnings) render today.
 
 ### Map Style
 

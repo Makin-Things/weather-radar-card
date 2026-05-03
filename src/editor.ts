@@ -265,7 +265,31 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
           <label>${localize('editor.display.show_wildfires')}
             <ha-switch .checked=${config.show_wildfires === true} .configValue=${'show_wildfires'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
+          <label>${localize('editor.display.show_alerts')}
+            <ha-switch .checked=${config.show_alerts === true} .configValue=${'show_alerts'} @change=${this._valueChangedSwitch}></ha-switch>
+          </label>
         </div>
+        ${config.show_alerts === true ? html`
+          <ha-selector
+            .hass=${this.hass}
+            .selector=${{
+              select: {
+                options: [
+                  { value: 'Extreme', label: localize('editor.display.alerts_severity.extreme') },
+                  { value: 'Severe', label: localize('editor.display.alerts_severity.severe') },
+                  { value: 'Moderate', label: localize('editor.display.alerts_severity.moderate') },
+                  { value: 'Minor', label: localize('editor.display.alerts_severity.minor') },
+                  { value: 'Unknown', label: localize('editor.display.alerts_severity.unknown') },
+                ],
+              },
+            }}
+            .value=${config.alerts_min_severity ?? 'Minor'}
+            .label=${localize('editor.display.alerts_min_severity')}
+            .helper=${localize('editor.display.alerts_min_severity_helper')}
+            .configValue=${'alerts_min_severity'}
+            @value-changed=${this._handleSelectorChanged}
+          ></ha-selector>
+        ` : ''}
 
         <!-- INTERACTION -->
         <h3 class="section-header">${localize('editor.section.interaction')}</h3>

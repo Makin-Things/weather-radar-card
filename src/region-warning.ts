@@ -27,17 +27,40 @@ export function getRegionWarnings(
 
   const messages: string[] = [];
 
-  const wildfiresEnabled = cfg.show_wildfires === true;
-  const noaaSelected = (cfg.data_source ?? '').toUpperCase() === 'NOAA';
+  // Catalogue of features that only have US data coverage. Each entry's
+  // `key` is the localize suffix used for its individual banner; when more
+  // than one is enabled at once we collapse to a single combined banner
+  // instead of stacking near-identical messages.
+  const usOnly: Array<{ enabled: boolean; key: string; label: string }> = [
+    {
+      enabled: cfg.show_wildfires === true,
+      key: 'wildfires_us_only',
+      label: localize('ui.region_warning.label.wildfires'),
+    },
+    {
+      enabled: cfg.show_alerts === true,
+      key: 'alerts_us_only',
+      label: localize('ui.region_warning.label.alerts'),
+    },
+    {
+      enabled: (cfg.data_source ?? '').toUpperCase() === 'NOAA',
+      key: 'noaa_us_only',
+      label: localize('ui.region_warning.label.noaa'),
+    },
+  ];
 
   if (country !== 'US') {
-    if (wildfiresEnabled && noaaSelected) {
-      // Combined message — avoid stacking two near-identical banners.
-      messages.push(localize('ui.region_warning.us_combined'));
-    } else if (wildfiresEnabled) {
-      messages.push(localize('ui.region_warning.wildfires_us_only'));
-    } else if (noaaSelected) {
-      messages.push(localize('ui.region_warning.noaa_us_only'));
+    const enabled = usOnly.filter((e) => e.enabled);
+    if (enabled.length === 1) {
+      messages.push(localize(`ui.region_warning.${enabled[0].key}`));
+    } else if (enabled.length > 1) {
+      // Combined: "Wildfires, NWS alerts and NOAA radar are US-only..."
+      const labels = enabled.map((e) => e.label);
+      const joined = labels.length === 2
+        ? `${labels[0]} ${localize('ui.region_warning.and')} ${labels[1]}`
+        : `${labels.slice(0, -1).join(', ')} ${localize('ui.region_warning.and')} ${labels[labels.length - 1]}`;
+      const template = localize('ui.region_warning.combined');
+      messages.push(template.replace('{features}', joined));
     }
   }
 
