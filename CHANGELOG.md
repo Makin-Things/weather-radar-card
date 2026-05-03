@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [3.4.0] - TBD
+## [3.4.0-beta] - 2026-05-03
 
 ### Added
 
@@ -19,9 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DWD coverage check** — `data_source: DWD` emits a one-shot `console.warn` when HA's configured location falls outside the bounding box of Germany and its immediate neighbours, so the inevitable no-data grey wash isn't mistaken for a broken card.
 - **`smooth_animation` config option** — when `true`, the crossfade fully spans the inter-frame interval so the radar appears to flow continuously instead of stepping. Overrides `transition_time`.
 
+### Changed
+
+- **DWD rate limiter raised to 500/min** (from the initial conservative 120/min, copied from NOAA). DWD's `maps.dwd.de` is fronted by Akamai with no documented per-IP limit; 120 was visibly throttling pan/zoom bursts (~80 tile requests in one move) without ever seeing 429s from the server. 500/min matches RainViewer.
+- **DWD tiles requested at 512×512** instead of the default 256×256 — quarters the request count for the same map coverage. Useful for the same burst case above and reduces total bandwidth slightly since the per-tile overhead is amortised.
+
 ### Fixed
 
 - **Crossfade no longer pulses against light basemaps.** The previous symmetric crossfade animated the outgoing layer 1→0 while the incoming layer animated 0→1. At the midpoint both layers sat at opacity 0.5 and alpha-composed to ~0.75 visibility — letting 25% of the basemap show through at every transition. Replaced with a three-layer z-stack: the new current frame gets a higher z-index, snaps to opacity 0, then animates to the configured `radar_opacity` with `ease-in-out`; the immediately-previous frame stays at full opacity underneath (so transparent pixels of the incoming frame don't briefly expose the basemap); the frame BEFORE that simultaneously fades from full opacity to 0 (so old data dissolves smoothly instead of snapping out). Older frames stay hidden throughout. At the loop boundary — when the player wraps from the last frame back to the first after the restart pause — transitions snap instead of fading, since the natural pause makes a smooth fade across the loop read as "time ran backwards".
+- **Internal options no longer leak into WMS GetMap URLs.** `FetchWmsTileLayer` was passing its full options object to Leaflet's `L.TileLayer.WMS.initialize`, which appends any unrecognised option as a query parameter — so requests carried `&rateLimiter=[object%20Object]&on429=...&animationOwnsOpacity=true` tail-end, which were ignored by the server but bloated the URL and confused log inspection. Now strips those internal fields before delegating, then re-attaches them to `this.options` for the rest of the layer code. Affects both NOAA and DWD WMS layers.
 
 ## [3.3.0] - 2026-04-30
 

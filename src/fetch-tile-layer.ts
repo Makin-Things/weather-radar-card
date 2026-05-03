@@ -142,7 +142,16 @@ export class FetchWmsTileLayer extends L.TileLayer.WMS {
     this._tilePending = 0;
     this._tileFailed = 0;
     this._tileLoaded = 0;
-    (L.TileLayer.WMS.prototype as any).initialize.call(this, url, options);
+    // Leaflet's L.TileLayer.WMS appends ANY option that isn't a recognised
+    // Leaflet/WMS field to the GetMap URL as a query parameter — that
+    // would leak our internal options (rateLimiter, on429,
+    // animationOwnsOpacity) into the request, producing URL fragments
+    // like `&rateLimiter=[object%20Object]`. Split them off, hand only
+    // the WMS-relevant subset to the parent initialize, then put ours
+    // back onto this.options so createTile / _updateOpacity can read them.
+    const { rateLimiter, on429, animationOwnsOpacity, ...wmsOptions } = options;
+    (L.TileLayer.WMS.prototype as any).initialize.call(this, url, wmsOptions);
+    Object.assign(this.options, { rateLimiter, on429, animationOwnsOpacity });
   }
 
   createTile(coords: L.Coords, done: L.DoneCallback): HTMLElement {

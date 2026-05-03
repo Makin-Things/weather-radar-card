@@ -496,6 +496,11 @@ export class RadarPlayer {
         transparent: true,
         version: '1.3.0',
         TIME: isoTime,
+        // 512x512 tiles instead of the default 256x256 cuts the request
+        // count by 4x for the same coverage (one big tile vs four small).
+        // DWD's geoserver renders any size; the small extra payload is a
+        // good trade for fewer round-trips during pan/zoom bursts.
+        tileSize: 512,
         // DWD's 1 km grid supports zoom 8; NOAA's 4 km MRMS is capped at 7.
         maxNativeZoom: 8,
         rateLimiter: this._dwdLimiter,

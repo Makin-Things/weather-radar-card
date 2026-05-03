@@ -83,7 +83,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   private _rainviewerLimiter = new RateLimiter(500);
   private _noaaLimiter = new RateLimiter(120);
-  private _dwdLimiter = new RateLimiter(120);
+  // DWD via maps.dwd.de is fronted by Akamai with no documented per-IP
+  // limit. 500/min (matches RainViewer) is well within polite budget for
+  // a single user — burst pan/zoom can pull ~80 tiles in one move and
+  // the previous 120/min cap was visibly throttling without ever seeing
+  // 429s from the server.
+  private _dwdLimiter = new RateLimiter(500);
   private _dwdCoverageWarned = false;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
