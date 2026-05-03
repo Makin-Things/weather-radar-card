@@ -10,7 +10,7 @@ import {
 import { centroidLngLat, haversineKm } from './geo-utils';
 import { escapeHtml, truncate } from './string-utils';
 
-// NWS public API — see nws-alerts-feature-design.md.
+// NWS public API — see docs/nws-alerts-feature-design.md.
 const NWS_ALERTS_URL = 'https://api.weather.gov/alerts/active?status=actual';
 // We deliberately do NOT set a User-Agent header from JavaScript even though
 // NWS recommends it. User-Agent is on the Fetch spec's "forbidden header"

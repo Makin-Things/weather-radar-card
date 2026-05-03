@@ -15,7 +15,7 @@ import { localize } from './localize/localize';
 //
 // TODO: once PR #114 (DWD) merges, add a warning when data_source === 'DWD'
 // and country isn't DE or an immediate neighbour (NL, BE, FR, CH, AT, CZ, PL).
-// See nws-alerts-feature-design.md / wildfire-feature-design.md for context.
+// See docs/nws-alerts-feature-design.md / docs/wildfire-feature-design.md for context.
 export function getRegionWarnings(
   hass: HomeAssistant | undefined,
   cfg: WeatherRadarCardConfig,

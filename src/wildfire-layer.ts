@@ -7,7 +7,7 @@ import { localize } from './localize/localize';
 import { centroidLngLat, geometryLngLatBounds, haversineKm } from './geo-utils';
 import { escapeHtml, slugify } from './string-utils';
 
-// NIFC WFIGS Current Interagency Fire Perimeters — see wildfire-feature-design.md.
+// NIFC WFIGS Current Interagency Fire Perimeters — see docs/wildfire-feature-design.md.
 // outFields trimmed to just what the popup renders. geometryPrecision=4 keeps
 // coordinates to ~11m precision and shrinks the payload substantially without
 // any visible difference at our zoom range.

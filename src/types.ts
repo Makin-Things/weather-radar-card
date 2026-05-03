@@ -66,7 +66,7 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   show_snow?: boolean;
   show_progress_bar?: boolean;
   show_color_bar?: boolean;
-  // Wildfire overlay (US-only — see wildfire-feature-design.md)
+  // Wildfire overlay (US-only — see docs/wildfire-feature-design.md)
   show_wildfires?: boolean;
   wildfire_min_acres?: number;
   wildfire_radius_km?: number;
@@ -74,7 +74,7 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   wildfire_contained_color?: string;
   wildfire_fill_opacity?: number;
   wildfire_refresh_minutes?: number;
-  // NWS watches & warnings overlay (US-only — see nws-alerts-feature-design.md)
+  // NWS watches & warnings overlay (US-only — see docs/nws-alerts-feature-design.md)
   show_alerts?: boolean;
   alerts_categories?: string[];        // category keys; default: all except 'marine'
   alerts_types?: string[];             // explicit event-string allowlist; overrides alerts_categories when set
