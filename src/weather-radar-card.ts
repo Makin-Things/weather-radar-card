@@ -286,14 +286,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       this._darkModeQuery.addEventListener('change', this._darkModeHandler);
     }
 
-    // DWD's radar network covers Germany + ~50–150 km into immediate neighbours.
-    // Warn (once) when the HA instance is plainly outside that footprint — users
-    // see only the no-data grey wash and would otherwise assume the card is broken.
+    // Warn once if the HA location is outside DWD's coverage (Germany + ~50–150 km buffer).
     if (cfg.data_source === 'DWD' && !this._dwdCoverageWarned && (haLat !== 0 || haLon !== 0)) {
       const inside = haLat >= 46 && haLat <= 56 && haLon >= 5 && haLon <= 16;
       if (!inside) {
         console.warn(
-          `[weather-radar-card] data_source: DWD selected, but HA's home (lat ${haLat.toFixed(2)}, lon ${haLon.toFixed(2)}) is outside DWD's radar coverage (Germany + immediate neighbours). The map will render but show only the DWD no-data grey wash. Use data_source: RainViewer for global coverage or NOAA for the US.`,
+          `[weather-radar-card] DWD selected but HA location (${haLat.toFixed(2)}, ${haLon.toFixed(2)}) is outside DWD coverage; the map will show only no-data.`,
         );
       }
       this._dwdCoverageWarned = true;

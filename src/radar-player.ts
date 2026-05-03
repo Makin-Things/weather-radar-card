@@ -354,7 +354,7 @@ export class RadarPlayer {
         const parsed = new Date(override).getTime();
         if (Number.isNaN(parsed)) {
           console.warn(
-            `[weather-radar-card] Invalid dwd_time_override "${override}" — expected an ISO 8601 timestamp. Falling back to current time.`,
+            `[weather-radar-card] Invalid dwd_time_override "${override}"; expected ISO 8601. Using current time instead.`,
           );
         } else {
           base = parsed;
@@ -402,7 +402,7 @@ export class RadarPlayer {
       const layerName = this._cfg.dwd_layer ?? (wantsForecast ? 'Radar_wn-product_1x1km_ger' : DWD_WMS_LAYER_DEFAULT);
       if (autoSwap && !this._dwdSwapLogged) {
         console.info(
-          `[weather-radar-card] dwd_forecast_hours > 0 — switching DWD layer from "${DWD_WMS_LAYER_DEFAULT}" (mm/h) to "${layerName}" (dBZ) to access nowcast frames. Set dwd_layer explicitly to override.`,
+          `[weather-radar-card] dwd_forecast_hours > 0; switched DWD layer ${DWD_WMS_LAYER_DEFAULT} (mm/h) → ${layerName} (dBZ) for nowcast frames. Set dwd_layer to override.`,
         );
         this._dwdSwapLogged = true;
       }
@@ -412,7 +412,7 @@ export class RadarPlayer {
         transparent: true,
         version: '1.3.0',
         TIME: isoTime,
-        // DWD's radar grid is 1 km — one native zoom level finer than NOAA's MRMS (4 km, capped at 7).
+        // DWD's 1 km grid supports zoom 8; NOAA's 4 km MRMS is capped at 7.
         maxNativeZoom: 8,
         rateLimiter: this._dwdLimiter,
         on429: () => this._onRateLimited(),
