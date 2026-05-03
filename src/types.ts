@@ -57,6 +57,12 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   name?: string;
   map_style?: string;
   data_source?: string;
+  /** DWD-only: ISO timestamp to anchor frames at instead of "now" — for testing with historical rain. */
+  dwd_time_override?: string;
+  /** DWD-only: WMS layer name override. Default Niederschlagsradar (past-only); auto-switches to Radar_wn-product_1x1km_ger when dwd_forecast_hours > 0 since that one carries the +2h nowcast. */
+  dwd_layer?: string;
+  /** DWD-only: include this many hours of nowcast forecast in the playback range. Default 0. */
+  dwd_forecast_hours?: number;
   show_snow?: boolean;
   show_progress_bar?: boolean;
   show_color_bar?: boolean;

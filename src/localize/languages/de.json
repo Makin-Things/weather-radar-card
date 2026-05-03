@@ -20,6 +20,7 @@
       "radar_source": "Radarquelle",
       "source_rainviewer": "RainViewer (Global)",
       "source_noaa": "NOAA/NWS (nur USA — experimentell)",
+      "source_dwd": "DWD (Deutschland — 5 Min., +2 h Vorhersage)",
       "map_style": "Kartenstil",
       "style_auto": "Auto (folgt dem hellen/dunklen Modus des Systems)",
       "style_light": "CARTO Light (nur Englisch)",

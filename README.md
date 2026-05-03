@@ -1,6 +1,6 @@
 # Weather Radar Card
 
-A Home Assistant rain radar card using tiled radar imagery from RainViewer and NOAA/NWS.
+A Home Assistant rain radar card using tiled radar imagery from RainViewer, NOAA/NWS, and DWD (Deutscher Wetterdienst).
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)
 [![GitHub Release][releases-shield]][releases]
@@ -90,7 +90,7 @@ All options can be configured using the GUI editor — there is no need to edit 
 | smooth_animation     | boolean         | **Optional** | When `true`, the crossfade fully spans the inter-frame interval — the radar appears to flow continuously instead of stepping. Overrides `transition_time`.                                                                                                   | `false`                               |
 | radar_opacity        | number          | **Optional** | Opacity of the active radar frame (0.1–1.0). Lower values let more of the basemap show through                                                                                                                                                               | `1.0`                                 |
 | show_snow            | boolean         | **Optional** | Include snow in the precipitation display (RainViewer only)                                                                                                                                                                                                  | `false`                               |
-| show_color_bar       | boolean         | **Optional** | Show the radar colour scale bar (RainViewer only)                                                                                                                                                                                                            | `true`                                |
+| show_color_bar       | boolean         | **Optional** | Show the radar colour scale bar (per-source palette: RainViewer universal-blue, NWS reflectivity for NOAA, DWD precipitation gradient for DWD)                                                                                                               | `true`                                |
 | show_progress_bar    | boolean         | **Optional** | Show the frame progress / timeline bar                                                                                                                                                                                                                       | `true`                                |
 | show_scale           | boolean         | **Optional** | Show a distance scale bar on the map                                                                                                                                                                                                                         | `false`                               |
 | double_tap_action    | string / object | **Optional** | Action on double-tap: `'recenter'`, `'toggle_play'`, `'none'`, or any HA action object                                                                                                                                                                       | `'none'`                              |
@@ -110,12 +110,17 @@ All options can be configured using the GUI editor — there is no need to edit 
 
 Selects where radar tile data comes from.
 
-| Value        | Coverage | Notes                                                                                                                                                                     |
-| ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `RainViewer` | Global   | Default. Updated every 5 minutes, ~1–6 minute lag. No API key required. Personal/educational use only per RainViewer terms.                                               |
-| `NOAA`       | US only  | Experimental. Uses NOAA/NWS MRMS base reflectivity composite via `mapservices.weather.noaa.gov`. Government data — free, no API key. 15-minute lag, 5-minute frame steps. |
+| Value        | Coverage | Notes                                                                                                                                                                                                                                            |
+| ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `RainViewer` | Global   | Default. Updated every 5 minutes, ~1–6 minute lag. No API key required. Personal/educational use only per RainViewer terms.                                                                                                                      |
+| `NOAA`       | US only  | Experimental. Uses NOAA/NWS MRMS base reflectivity composite via `mapservices.weather.noaa.gov`. Government data — free, no API key. 15-minute lag, 5-minute frame steps.                                                                        |
+| `DWD`        | Germany  | Deutscher Wetterdienst's `Niederschlagsradar` WMS at `maps.dwd.de`. 5-minute frame steps, ~3 days of history. Government data — free, no API key. Coverage is the German radar network footprint (Germany + ~50–150 km into immediate neighbours). |
 
 > **NOAA note:** This is an experimental feature using a public government service with no documented rate limits. It is US-only. Radar tiles are fetched at a maximum of zoom 7 (the native 1 km MRMS resolution) and upscaled for display.
+
+> **DWD note:** The default layer is `Niederschlagsradar` (precipitation rate, mm/h). Override via `dwd_layer`; `Radar_wn-product_1x1km_ger` gives reflectivity (dBZ) plus a 2-hour nowcast. Outside the German radar coverage you'll see a faint grey wash from the no-data mask; the card emits a one-time `console.warn` if HA's configured location falls outside the bounding box of Germany and its immediate neighbours. `dwd_time_override` accepts an ISO timestamp to anchor frames at a fixed point in the past instead of "now", useful for verifying the overlay renders when current weather is dry. `dwd_forecast_hours` includes that many hours of nowcast forecast in the playback range as "current" frames (DWD's WarnWetter app default is 2); when set, the layer auto-switches to `Radar_wn-product_1x1km_ger` unless you've explicitly set `dwd_layer`. The colour-bar uses DWD's `Niederschlagsradar` palette sampled from DWD's official legend; units are mm/h. The same gradient is reused for the dBZ layer since the relative colours stay close enough for a quick visual cue.
+>
+> **Forecast leading edge:** when `dwd_forecast_hours` is set, the newest frames in the timeline are timestamped in the future. DWD's WMS only returns tiles for frames its nowcast has actually computed; if a future timestamp is past the nowcast horizon (or hasn't been published yet), those tiles come back transparent and you'll see a brief blank section at the leading edge of the loop. This resolves itself as DWD publishes new forecast frames.
 
 ### Map Style
 
