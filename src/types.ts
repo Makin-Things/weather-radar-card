@@ -37,6 +37,7 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   animated_transitions?: boolean;
   transition_time?: number;
   radar_opacity?: number;
+  smooth_animation?: boolean;
   center_longitude?: CoordinateConfig;
   center_latitude?: CoordinateConfig;
   zoom_level?: number;

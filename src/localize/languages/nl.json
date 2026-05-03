@@ -85,7 +85,8 @@
       "default_1000": "Standaard: 1000",
       "animated_transitions": "Geanimeerde overgangen",
       "transition_time": "Overgangstijd (ms)",
-      "transition_time_helper": "Standaard: 40 % van frame-vertraging — max: frame-vertraging"
+      "transition_time_helper": "Standaard: 40 % van frame-vertraging — max: frame-vertraging",
+      "smooth_animation": "Vloeiende animatie (doorlopende overgang)"
     },
     "appearance": {
       "height": "Hoogte",

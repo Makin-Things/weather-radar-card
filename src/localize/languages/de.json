@@ -86,7 +86,8 @@
       "default_1000": "Standard: 1000",
       "animated_transitions": "Animierte Übergänge",
       "transition_time": "Übergangsdauer (ms)",
-      "transition_time_helper": "Standard: 40 % der Bildverzögerung — max: Bildverzögerung"
+      "transition_time_helper": "Standard: 40 % der Bildverzögerung — max: Bildverzögerung",
+      "smooth_animation": "Sanfte Animation (kontinuierliche Überblendung)"
     },
     "appearance": {
       "height": "Höhe",

@@ -85,7 +85,8 @@
       "default_1000": "Padrão: 1000",
       "animated_transitions": "Transições animadas",
       "transition_time": "Duração da transição (ms)",
-      "transition_time_helper": "Padrão: 40 % do atraso entre quadros — máx: atraso entre quadros"
+      "transition_time_helper": "Padrão: 40 % do atraso entre quadros — máx: atraso entre quadros",
+      "smooth_animation": "Animação suave (transição contínua)"
     },
     "appearance": {
       "height": "Altura",
