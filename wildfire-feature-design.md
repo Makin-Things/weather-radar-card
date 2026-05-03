@@ -2,6 +2,23 @@
 
 US wildfire perimeters as a toggleable map overlay, sourced from NIFC's WFIGS GeoJSON feed. Designed with future NWS watches/warnings overlay in mind.
 
+## Status — shipped in v3.5.0-alpha
+
+Released as part of [v3.5.0-alpha](https://github.com/Makin-Things/weather-radar-card/releases/tag/v3.5.0-alpha) (alpha cut from the `nws-alerts` branch, not yet merged to `main`). Tracking issue [#115](https://github.com/Makin-Things/weather-radar-card/issues/115) stays open until 3.5.0 stable.
+
+**Implementation:** [src/wildfire-layer.ts](src/wildfire-layer.ts), with shared helpers in [src/geo-utils.ts](src/geo-utils.ts), [src/string-utils.ts](src/string-utils.ts), and [src/region-warning.ts](src/region-warning.ts). Editor surface in the new "Hazard Overlays" subpage of [src/editor.ts](src/editor.ts). Tests in [tests/](tests/) (geo helpers, string helpers, region-warning composition, plus the wildfire layer's internals via test-only exports).
+
+**Deviations from this design**:
+
+- **Layer-menu control deferred.** The design called for an on-map session-toggle menu (`mdi:layers` button → expanding panel). Replaced by the editor's Hazard Overlays subpage, which covers the configuration use case without a custom Leaflet control. The menu can still be added later if there's demand for "session-only toggle without opening the editor".
+- **InciWeb URL gating** added — not in the original design. The popup link now suppresses itself when the computed slug isn't in InciWeb's RSS index, since most WFIGS incidents don't have a public InciWeb page. Both `{slug}` and `{slug}-fire` variants are tested before suppressing.
+- **Popup `autoPan: true` + 12 px inset** so off-edge clicks slide the map into view inside the card.
+- **Performance work** picked up from the alerts implementation — pause when card hidden, shared rate limiters, dynamic radar tile size — also benefit the wildfire layer indirectly.
+
+The rest of the design — adaptive 5/30 min refresh, polygon-vs-icon swap by pixel bbox, binary containment colour, US-only banner, lifecycle, no-rebuild-on-tick guard — landed as written.
+
+---
+
 ## Data source
 
 NIFC WFIGS Current Interagency Fire Perimeters — GeoJSON via ArcGIS Online:

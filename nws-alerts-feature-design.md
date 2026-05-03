@@ -4,6 +4,26 @@ US National Weather Service active alerts as a toggleable map overlay. Polygons 
 
 This design also introduces a **session-only layer-toggle menu** on the map for switching individual warning types and the wildfire layer on/off without editing config.
 
+## Status — shipped in v3.5.0-alpha
+
+Both Phase 1 (polygon-only alerts) and Phase 2 (zone resolution) released in [v3.5.0-alpha](https://github.com/Makin-Things/weather-radar-card/releases/tag/v3.5.0-alpha) (alpha cut from the `nws-alerts` branch, not yet merged to `main`). Tracking issue [#116](https://github.com/Makin-Things/weather-radar-card/issues/116) stays open until 3.5.0 stable.
+
+**Implementation:** [src/nws-alerts-layer.ts](src/nws-alerts-layer.ts), [src/nws-alert-colors.ts](src/nws-alert-colors.ts), [src/nws-alert-categories.ts](src/nws-alert-categories.ts). Shared helpers in [src/geo-utils.ts](src/geo-utils.ts), [src/string-utils.ts](src/string-utils.ts), [src/region-warning.ts](src/region-warning.ts). Editor surface in the "Hazard Overlays" subpage of [src/editor.ts](src/editor.ts). Tests in [tests/nws-alert-categories.test.ts](tests/nws-alert-categories.test.ts), [tests/nws-alert-colors.test.ts](tests/nws-alert-colors.test.ts), [tests/nws-alerts-helpers.test.ts](tests/nws-alerts-helpers.test.ts), [tests/region-warning.test.ts](tests/region-warning.test.ts).
+
+**Deviations from this design**:
+
+- **Layer-menu control deferred.** The design called for a custom on-map `LayerMenuControl` (`mdi:layers` button → expanding panel) for session-only category toggles. Replaced by the editor's Hazard Overlays subpage with a 2-column grid of category checkboxes (persistent in config rather than session-only). Simpler, covers the configuration use case, and avoids the design's biggest piece of new code. The session-only menu can still be added later if there's demand.
+- **localStorage zone cache** added — not in the original design (which only specified an in-memory `_zoneCache`). Persists across browser sessions for the typical user (TTL 30 days, versioned key prefix `wrc-zone-v1:`), so a returning user has zero zone fetches in steady state.
+- **Bug fixed during implementation: empty `alerts_categories: []` now means "render nothing"** instead of falling back to defaults. Required a shared `getActiveAlertCategories(configured)` helper to distinguish `undefined` (use defaults) from `[]` (explicit empty). Previously the editor's "uncheck everything" toggle reverted to the default set on next render.
+- **Bug fixed during implementation: `_zoneFetches` ordering race** — refactored so `_fetchZone` self-registers as its first action, so the matching `finally { delete }` always pairs with a real entry. Without this, localStorage cache hits left stale entries in the dedupe map.
+- **WCAG-style relative-luminance check** for popup accent colour — replaces a hardcoded list of "light" hex values, so future palette additions get the right text colour automatically.
+- **Popup `autoPan: true` + 12 px inset** so off-edge alerts slide into view.
+- **No-rebuild-on-tick guard** wired in from day 1 (per the lessons section above): `_renderDecisions` map keyed by stable `feature.id` (NWS URL), with `zones:N/M` count baked into the decision string so re-renders fire only when new zones actually arrive.
+
+The rest of the design — colour palette, severity-sort overlap, adaptive 60s/5min refresh, category-not-events filter, US-only banner, marine off by default, multi-language localization, README `[!CAUTION]` disclaimer — landed as written.
+
+---
+
 ## Lessons from the wildfire build
 
 Concrete refinements to this design folded back from implementing the wildfire overlay (PR off `wildfire-overlay`, issue #115):
