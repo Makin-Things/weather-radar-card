@@ -86,7 +86,33 @@ preserving pinch-to-zoom, so mobile users can scroll past the card.
 
 ## Other Backlog Items
 
-All historically tracked items are now shipped:
+### Open
+
+- **Time-based playback range instead of frame count.** Today the user
+  configures `frame_count` (number of frames) and `frame_delay` (ms per
+  frame), and the resulting playback duration is implicit:
+  `frame_count × source-specific frame interval`. For RainViewer the
+  frame interval is 10 min, for NOAA 5 min, for DWD 5 min — so "I want
+  the last hour of radar" becomes 6 / 12 / 12 frames depending on the
+  source. Not intuitive, breaks when the user switches sources.
+
+  Replace `frame_count` with `history_minutes` (default e.g. 60). The
+  card computes the right frame count for the active source's interval.
+  For sources that publish a forecast (currently DWD via
+  `dwd_forecast_hours`, future NWS HRRR / others), also expose
+  `forecast_minutes` — the playback range becomes `[now - history,
+  now + forecast]`. Editor shows two text fields ("History (min)",
+  "Forecast (min)" — the second only when the active source supports
+  forecast); legacy `frame_count` keeps working with a one-release
+  deprecation warning.
+
+  Touches: `WeatherRadarCardConfig`, `RadarPlayer._fetchPaths` for each
+  source, the editor's Animation section, the README config table,
+  migration in `setConfig` (frame_count → history_minutes at the source's
+  default interval). Per-source interval becomes a constant lookup
+  (`SOURCE_FRAME_INTERVAL_MS[ds]`) so the math is consistent.
+
+### Shipped
 
 - Clickable / draggable timeline ✅
 - AM / PM vs 24 h time display (browser locale) ✅
@@ -96,3 +122,7 @@ All historically tracked items are now shipped:
 - Dynamic map style (Auto) ✅
 - Marker clustering ✅
 - Multi-marker support ✅
+- Wildfire perimeter overlay ✅ — 3.4.0 work, in nws-alerts branch chain
+- NWS watches & warnings overlay ✅ — 3.4.0 work, in nws-alerts branch
+- DWD radar source ✅ — 3.4.0-beta
+- Crossfade alpha-dip fix + smooth_animation ✅ — 3.4.0-beta
