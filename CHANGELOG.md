@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0-beta2] - 2026-05-03
+
+> Animation polish on top of `3.4.0-beta`. Same fixes shipping in `3.5.0-alpha2`.
+
+### Added
+
+- **`smooth_overlap` config knob (0–1)** — tunable crossfade overlap when `smooth_animation: true`. `0` = sequential (no brightness dip; cushion held), `0.5` = 50% overlap, `1` = fully simultaneous (default; brief mid-transition dip). Fade duration auto-calibrates so the full cycle still equals `frame_delay` regardless of overlap. Exposed in the editor as a 0–1 slider.
+- **Editor mutual gating for animation timing** — `transition_time` is disabled when Smooth Animation is on (the smooth path computes its own fade); `smooth_overlap` is disabled when Smooth Animation is off. Both fields stay visible so the relationship is obvious.
+
+### Fixed
+
+- **Trail on first cycle after editing animation settings.** Changing animation settings used to leave stale CSS-transition state on the radar layers, producing a visible trail on the first cycle after the change. setConfig now does a full teardown + reinit on any structural config change. Exception: when the user pans/zooms the live map in editor mode, the back-propagated `center_latitude` / `center_longitude` / `zoom_level` keys are diffed and skipped — a teardown there would interrupt the user's active interaction. Direct YAML edits to those keys still move the map (via `setView`), guarded against re-firing as a back-prop bounce.
+
+### Localization
+
+11 language files updated for the new `smooth_overlap` editor strings.
+
 ## [3.4.0-beta] - 2026-05-03
 
 ### Added
