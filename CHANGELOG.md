@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0-alpha] - 2026-05-03
+
+> First alpha cut from the `nws-alerts` branch. Layered on top of
+> `3.4.0-beta` (DWD radar + crossfade fix). **US-only data** in the new
+> overlays — see the strong life-safety disclaimers in the README.
+
+### Added
+
+- **Wildfire perimeter overlay** (US-only) — `show_wildfires: true` overlays active US wildfire perimeters from NIFC's [WFIGS Current Interagency Fire Perimeters](https://data-nifc.opendata.arcgis.com/datasets/nifc::wfigs-current-interagency-fire-perimeters/about) feed. Active fires draw red, fully-contained ones grey. Small incidents render as a fire icon at the centroid; larger ones as a polygon outline. Click any fire for a popup with name, acreage, containment %, discovery date, and a link to NIFC's InciWeb (gated against InciWeb's RSS index so we don't link to 404s). Adaptive 5/30-minute refresh. Filter knobs: `wildfire_min_acres` (default 10), `wildfire_radius_km`, plus colour / fill / refresh overrides.
+- **NWS watches & warnings overlay** (US-only) — `show_alerts: true` overlays active US National Weather Service watches and warnings from `api.weather.gov/alerts/active`. Alerts render as translucent polygons coloured per [NWS's standard warning palette](https://www.weather.gov/help-map). Both polygon-bearing and zone-based alerts render: zone shapes are fetched on-demand from `api.weather.gov/zones/...` and cached in localStorage (TTL 30 days, versioned key prefix `wrc-zone-v1:`) so they're zero-network on subsequent sessions. Click any alert for a popup with event, headline, severity / certainty / urgency, effective and expiry windows, full description (preserves NWS's line breaks), and a link to weather.gov.
+- **Hazard Overlays editor subpage** — new top-level "Markers and Overlays" section in the editor groups two nav rows: **Markers** (the existing list) and **Hazard Overlays** (new). The Hazard Overlays subpage exposes the wildfire and alerts toggles, their per-overlay knobs (min_acres, radius_km, min_severity), and a 2-column grid of NWS alert-category checkboxes (Tornado, Thunderstorm, Flood, Winter, Tropical, Fire Weather, Heat, Wind, Marine, Other; marine off by default).
+- **Build timestamp in console signon** — the card's startup signon now reads `WEATHER-RADAR-CARD Version X.Y.Z (built YYYY-MM-DD HH:MM:SS UTC)` so users can confirm a hard refresh actually loaded the new bundle vs a cached older one. Injected by a tiny inline rollup plugin.
+- **Region-warning utility** — surfaces a banner when any US-only feature (wildfires, alerts, NOAA radar) is enabled with `hass.config.country !== 'US'`. Multiple US-only features collapse into a single combined banner instead of stacking.
+
+### Changed
+
+- **WYSIWYG map editing** — when this card's edit dialog is open, every pan/zoom in the live map auto-propagates to the editor's Lat/Long/Zoom fields in real time. The "Save as map center" button is removed entirely. Detection via window-level events from the editor element's connect/disconnect lifecycle (so the auto-propagate is OFF when only the dashboard is in edit mode but no card editor is open — fixes a pre-existing bug where the save button was visible in that state).
+- **Toggle layout standardised** — every `<label>` switch now renders as `[switch] [text]` left-aligned with a gap. Single source of truth.
+- **Per-source rate limiters are now module-level singletons** — survive card teardown (config edits no longer reset the count) and shared across multiple weather-radar-cards on the same dashboard.
+- **Pause when hidden** — wildfire and NWS-alerts layers stop their refresh timers when the card scrolls off-screen or the tab is hidden, and refetch on resume if the pause was longer than the visible-refresh interval. Radar player already paused itself.
+- **Dynamic radar tile size** — picks 256/512/1024/2048 from `map.getSize()` so panel-view / fullscreen maps load with bigger tiles (fewer requests for the same coverage). All three radar sources support this. **Confirmed empirically to noticeably cut load time and rate-limit hits on larger maps.**
+
+### Fixed
+
+- **Bug — alerts_categories: [] now correctly hides everything.** Previously an explicit empty array fell back to the default category set, so unchecking every category in the editor reverted to "show everything". New `getActiveAlertCategories(configured)` helper distinguishes `undefined` (use defaults) from `[]` (none).
+- **Bug — popup `[wildfire]` race during zone resolution.** `_zoneFetches` could be left with stale entries on localStorage cache hits because the function returned synchronously before the caller registered it. Refactored so `_fetchZone` self-registers as its first action, eliminating the order-of-operations bug.
+- **Popup accent colour uses WCAG-style relative luminance** — replaces a hardcoded list of "light" hex values, so any future palette additions get the right text colour automatically.
+
+### Localization
+
+11 language files updated for the new editor strings (Hazard Overlays subpage, alert categories, severity levels, region warnings, popup labels). Coverage 92–99% per language; brand acronyms (NWS, NOAA, NIFC, README) and the "Acres" US unit intentionally retained in source form.
+
+### Tests
+
+128 → 223 unit tests (95 added). New coverage: geo helpers (centroid, haversine, bbox), string helpers (escapeHtml XSS injection patterns, slugify, truncate), NWS alert categories (regression guard for the empty-array bug), NWS alert colour table, region-warning composition, alert-layer helpers (featureKey, decisionsEqual including zone-arrival diff, severity-sort, luminance, formatDateTime, localStorage zone cache round-trip + TTL eviction + corrupt JSON + quota-exceeded handling). Pure-helper extraction (`src/geo-utils.ts`, `src/string-utils.ts`) deduplicates code that was previously identical between the wildfire and alerts layers.
+
 ## [3.4.0-beta] - 2026-05-03
 
 ### Added
