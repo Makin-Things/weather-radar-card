@@ -37,7 +37,7 @@ console.info(
 (window as any).customCards.push({
   type: 'weather-radar-card',
   name: 'Weather Radar Card',
-  description: 'A rain radar card using tiled imagery from RainViewer and NOAA/NWS',
+  description: 'A rain radar card using tiled imagery from RainViewer, NOAA/NWS, and DWD',
 });
 
 @customElement('weather-radar-card')
@@ -83,6 +83,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   private _rainviewerLimiter = new RateLimiter(500);
   private _noaaLimiter = new RateLimiter(120);
+  private _dwdLimiter = new RateLimiter(120);
+  private _dwdCoverageWarned = false;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -197,7 +199,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     const showColourBar = this._config.show_color_bar !== false;
     const colourBarSrc = dataSource === 'NOAA'
       ? '/local/community/weather-radar-card/radar-colour-bar-nws.png'
-      : '/local/community/weather-radar-card/radar-colour-bar-universalblue.png';
+      : dataSource === 'DWD'
+        ? '/local/community/weather-radar-card/radar-colour-bar-dwd.png'
+        : '/local/community/weather-radar-card/radar-colour-bar-universalblue.png';
     return html`
       <ha-card class=${isMapDark ? 'map-dark' : ''} style="${this._config.width && this._validateCssSize(this._config.width) ? `width:${this._config.width}` : ''}">
         <div id="color-bar" style="height:8px;display:${showColourBar ? '' : 'none'}">
@@ -282,12 +286,24 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       this._darkModeQuery.addEventListener('change', this._darkModeHandler);
     }
 
+    // Warn once if the HA location is outside DWD's coverage (Germany + ~50–150 km buffer).
+    if (cfg.data_source === 'DWD' && !this._dwdCoverageWarned && (haLat !== 0 || haLon !== 0)) {
+      const inside = haLat >= 46 && haLat <= 56 && haLon >= 5 && haLon <= 16;
+      if (!inside) {
+        console.warn(
+          `[weather-radar-card] DWD selected but HA location (${haLat.toFixed(2)}, ${haLon.toFixed(2)}) is outside DWD coverage; the map will show only no-data.`,
+        );
+      }
+      this._dwdCoverageWarned = true;
+    }
+
     this._player = new RadarPlayer({
       map: this._map,
       shadowRoot: this.shadowRoot!,
       getConfig: () => this._config,
       rainviewerLimiter: this._rainviewerLimiter,
       noaaLimiter: this._noaaLimiter,
+      dwdLimiter: this._dwdLimiter,
     });
     this._player.toolbar = this._toolbar;
     this._player.start(cfg.frame_count ?? 5);
@@ -374,7 +390,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     const ds = this._config.data_source ?? 'RainViewer';
     const radarCredit = ds === 'NOAA'
       ? 'Radar: <a href="https://www.weather.gov" target="_blank">NOAA/NWS</a>'
-      : 'Radar: <a href="https://rainviewer.com" target="_blank">RainViewer</a>';
+      : ds === 'DWD'
+        ? 'Radar: <a href="https://www.dwd.de" target="_blank">DWD</a>'
+        : 'Radar: <a href="https://rainviewer.com" target="_blank">RainViewer</a>';
     const mapCredit = mapStyle === 'osm'
       ? '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
       : mapStyle === 'satellite'
