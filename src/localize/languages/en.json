@@ -85,7 +85,8 @@
       "default_1000": "Default: 1000",
       "animated_transitions": "Animated Transitions",
       "transition_time": "Transition Time (ms)",
-      "transition_time_helper": "Default: 40% of frame delay — max: frame delay"
+      "transition_time_helper": "Default: 40% of frame delay — max: frame delay",
+      "smooth_animation": "Smooth Animation (continuous cross-fade)"
     },
     "appearance": {
       "height": "Height",

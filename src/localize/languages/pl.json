@@ -85,7 +85,8 @@
       "default_1000": "Domyślnie: 1000",
       "animated_transitions": "Animowane przejścia",
       "transition_time": "Czas przejścia (ms)",
-      "transition_time_helper": "Domyślnie: 40 % opóźnienia klatki — maks: opóźnienie klatki"
+      "transition_time_helper": "Domyślnie: 40 % opóźnienia klatki — maks: opóźnienie klatki",
+      "smooth_animation": "Płynna animacja (ciągłe przenikanie)"
     },
     "appearance": {
       "height": "Wysokość",

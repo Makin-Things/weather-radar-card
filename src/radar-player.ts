@@ -51,6 +51,21 @@ export class RadarPlayer {
   private _currentSlot = 0;
   private _loopGen = 0;
 
+  // Monotonic — each new current slot gets a higher z so it covers the previous one.
+  private _zCounter = 0;
+
+  // Crossfade chain — at any moment we keep up to three layers in flight:
+  //   - the current slot (fading IN at the top of the z-stack)
+  //   - _prev1Slot   (the most-recent previous, sits fully visible
+  //                   underneath the incoming one so transparent pixels
+  //                   in the new frame don't expose the basemap)
+  //   - _prev2Slot   (the one before that — fades OUT during this same
+  //                   transition, so old data dissolves smoothly rather
+  //                   than snapping to 0)
+  // Older slots stay at opacity 0 (set when they aged out of _prev2Slot).
+  private _prev1Slot = -1;
+  private _prev2Slot = -1;
+
   // Web worker timer (used only for the periodic 5-min radar update)
   private _worker: Worker | null = null;
   private _workerBlobUrl: string | null = null;
@@ -80,6 +95,7 @@ export class RadarPlayer {
   private get _restartDelay(): number { return this._cfg.restart_delay ?? 1000; }
   private get _fadeMs(): number {
     if (this._cfg.animated_transitions === false) return 0;
+    if (this._cfg.smooth_animation) return this._timeout;
     return this._cfg.transition_time ?? Math.floor(this._timeout * 0.4);
   }
   private get _activeOpacity(): string {
@@ -209,30 +225,93 @@ export class RadarPlayer {
     const delay = this._currentSlot === n - 1
       ? this._timeout + this._restartDelay
       : this._timeout;
+    const isLoopBack = this._currentSlot === n - 1;
     setTimeout(() => {
       if (gen !== this._loopGen) return;
       this._currentSlot = (this._currentSlot + 1) % this._loadedSlots.length;
-      this._showSlot(this._currentSlot);
+      // Snap (no fade) when wrapping from the last frame back to the
+      // first — the restart-delay pause already breaks the perceived
+      // continuity of the animation, so a smooth crossfade across the
+      // loop reads as "time went backwards" instead of "loop reset".
+      this._showSlot(this._currentSlot, { snap: isLoopBack });
       this._scheduleNext(gen);
     }, delay);
   }
 
-  /** Show one slot: set its container to opacity 1, all others to 0, update UI. */
-  private _showSlot(slot: number): void {
+  /**
+   * Bring `slot` to the top of the z-stack, fading it in over the previous
+   * frame while the frame BEFORE that fades out.
+   *
+   * `opts.snap` skips all transitions (instant in/out). Used at the loop
+   * boundary — after the restart pause, jumping from the last frame back
+   * to the first looks wrong as a smooth crossfade because the user just
+   * watched time pause. A clean snap reads as "the loop restarted".
+   */
+  private _showSlot(slot: number, opts?: { snap?: boolean }): void {
     const n = this._loadedSlots.length;
     if (n === 0 || slot < 0 || slot >= n) return;
-    const fade = this._fadeMs;
-    const transition = fade > 0 ? `opacity ${fade}ms linear` : 'none';
+    const fade = opts?.snap ? 0 : this._fadeMs;
+    const transition = fade > 0 ? `opacity ${fade}ms ease-in-out` : 'none';
     const active = this._activeOpacity;
+
+    // Three-layer chain (see _prev1Slot / _prev2Slot field comments). Each
+    // call shifts the chain by one — the just-arrived `slot` becomes the
+    // new top, the prior `_prev1Slot` slides into the "fully visible
+    // underneath" role, and the prior `_prev2Slot` is the one that's
+    // already faded out (or about to). At the same time, the layer that
+    // WAS fully visible last call (`_prev1Slot`) must now begin fading
+    // OUT, since on the next call it'll have no special slot in the chain.
+    //
+    // For snap mode we skip the chain logic and just hard-set every
+    // layer's opacity — the old chain becomes meaningless after a jump.
+    this._zCounter++;
+    const newZ = 100 + this._zCounter;
+    const prev1 = this._prev1Slot;   // currently-fully-visible
+    const prev2 = this._prev2Slot;   // currently-fading-out (or already 0)
+
     for (let s = 0; s < n; s++) {
       const fi = this._loadedSlots[s];
       const layer = this._radarImage[fi];
       const el = layer && (layer as any).getContainer?.() as HTMLElement | undefined;
-      if (el) {
+      if (!el) continue;
+
+      if (s === slot) {
+        // The newest frame: snap to 0 at high z, then transition in.
+        el.style.zIndex = String(newZ);
+        el.style.transition = 'none';
+        el.style.opacity = '0';
+        // Reflow before changing back, or the browser coalesces both
+        // writes and skips the transition.
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+        void el.offsetHeight;
         el.style.transition = transition;
-        el.style.opacity = s === slot ? active : '0';
+        el.style.opacity = active;
+      } else if (!opts?.snap && s === prev1) {
+        // Was the newest last call; now the "fully in" middle of the
+        // sandwich. Stays at active opacity for this entire transition.
+        // (Nothing to animate — just make sure transition is none so
+        // a stray previous transition doesn't bleed in.)
+        el.style.transition = 'none';
+        el.style.opacity = active;
+      } else if (!opts?.snap && s === prev2) {
+        // Was the "fully in" last call; now fades OUT during this call's
+        // fade duration so old data dissolves smoothly instead of
+        // snapping. Browser handles the active→0 transition.
+        el.style.transition = transition;
+        el.style.opacity = '0';
+      } else {
+        // Anything older — hidden, no animation.
+        el.style.transition = 'none';
+        el.style.opacity = '0';
       }
     }
+
+    // Shift the chain. After a snap the chain is broken (no smooth
+    // continuity from before the snap), so reset prev2 — there's no
+    // legitimate "two ago" to fade out on the next call.
+    this._prev2Slot = opts?.snap ? -1 : prev1;
+    this._prev1Slot = slot;
+
     const fi = this._loadedSlots[slot];
     if (fi !== undefined) {
       const ts = this._shadowRoot.getElementById('timestamp');
@@ -319,6 +398,11 @@ export class RadarPlayer {
     this._radarImage = [];
     this._radarTime = [];
     this._loadedSlots = [];
+    // Reset crossfade state — stale prev/z counters would point at slots
+    // that no longer exist after a teardown + re-init.
+    this._prev1Slot = -1;
+    this._prev2Slot = -1;
+    this._zCounter = 0;
   }
 
   // ── Radar fetching ───────────────────────────────────────────────────────

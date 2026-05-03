@@ -85,7 +85,8 @@
       "default_1000": "Predeterminado: 1000",
       "animated_transitions": "Transiciones animadas",
       "transition_time": "Tiempo de transición (ms)",
-      "transition_time_helper": "Predeterminado: 40 % del retardo entre fotogramas — máx: retardo entre fotogramas"
+      "transition_time_helper": "Predeterminado: 40 % del retardo entre fotogramas — máx: retardo entre fotogramas",
+      "smooth_animation": "Animación suave (transición continua)"
     },
     "appearance": {
       "height": "Altura",

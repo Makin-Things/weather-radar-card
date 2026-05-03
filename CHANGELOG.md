@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - TBD
+
+### Added
+
+- **`smooth_animation` config option** — when `true`, the crossfade fully spans the inter-frame interval so the radar appears to flow continuously instead of stepping. Overrides `transition_time`.
+
+### Fixed
+
+- **Crossfade no longer pulses against light basemaps.** The previous symmetric crossfade animated the outgoing layer 1→0 while the incoming layer animated 0→1. At the midpoint both layers sat at opacity 0.5 and alpha-composed to ~0.75 visibility — letting 25% of the basemap show through at every transition. Replaced with a three-layer z-stack: the new current frame gets a higher z-index, snaps to opacity 0, then animates to the configured `radar_opacity` with `ease-in-out`; the immediately-previous frame stays at full opacity underneath (so transparent pixels of the incoming frame don't briefly expose the basemap); the frame BEFORE that simultaneously fades from full opacity to 0 (so old data dissolves smoothly instead of snapping out). Older frames stay hidden throughout. At the loop boundary — when the player wraps from the last frame back to the first after the restart pause — transitions snap instead of fading, since the natural pause makes a smooth fade across the loop read as "time ran backwards".
+
 ## [3.3.0] - 2026-04-30
 
 ### Added
