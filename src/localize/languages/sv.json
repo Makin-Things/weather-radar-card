@@ -5,36 +5,36 @@
   "ui": {
     "rate_limited": "Förfrågningsgräns nådd — väntar på återställning av kvot",
     "region_warning": {
-      "wildfires_us_only": "Wildfire data is US-only. Your Home Assistant location is outside the US — no fires will show.",
-      "noaa_us_only": "NOAA radar is US-only. Your Home Assistant location is outside the US — radar may not load.",
-      "combined": "{features} are US-only. Your Home Assistant location is outside the US — these will not load.",
-      "and": "and",
-      "alerts_us_only": "NWS watches & warnings are US-only. Your Home Assistant location is outside the US — alerts will not load.",
+      "wildfires_us_only": "Skogsbrand-data är endast för USA. Din Home Assistant-plats är utanför USA – inga bränder kommer att visas.",
+      "noaa_us_only": "NOAA-radar är endast för USA. Din Home Assistant-plats är utanför USA – radarn kanske inte laddas.",
+      "combined": "{features} är endast för USA. Din Home Assistant-plats är utanför USA – dessa kommer inte att laddas.",
+      "and": "och",
+      "alerts_us_only": "NWS-varningar är endast för USA. Din Home Assistant-plats är utanför USA – varningar kommer inte att laddas.",
       "label": {
-        "wildfires": "Wildfires",
-        "alerts": "NWS alerts",
-        "noaa": "NOAA radar"
+        "wildfires": "Skogsbränder",
+        "alerts": "NWS-varningar",
+        "noaa": "NOAA-radar"
       }
     },
     "wildfire": {
       "acres": "Acres",
-      "contained": "Contained",
-      "discovered": "Discovered",
-      "more_info": "More info → NIFC",
-      "unknown_name": "Unnamed incident",
-      "disclaimer": "Informational only — not a substitute for official alerts.",
-      "see_readme": "See README"
+      "contained": "Under kontroll",
+      "discovered": "Upptäckt",
+      "more_info": "Mer info → NIFC",
+      "unknown_name": "Namnlös händelse",
+      "disclaimer": "Endast för information – ersätter inte officiella varningar.",
+      "see_readme": "Se README"
     },
     "alerts": {
-      "severity": "Severity",
-      "certainty": "Certainty",
-      "urgency": "Urgency",
-      "effective": "Effective",
-      "expires": "Expires",
-      "more_info": "More info → NWS",
-      "unknown_event": "Alert",
-      "disclaimer": "INFORMATIONAL ONLY — not for life-safety decisions.",
-      "see_readme": "See README"
+      "severity": "Allvarlighetsgrad",
+      "certainty": "Säkerhet",
+      "urgency": "Brådska",
+      "effective": "Gäller från",
+      "expires": "Upphör",
+      "more_info": "Mer info → NWS",
+      "unknown_event": "Varning",
+      "disclaimer": "ENDAST FÖR INFORMATION – inte för livsavgörande beslut.",
+      "see_readme": "Se README"
     }
   },
   "editor": {
@@ -46,8 +46,8 @@
       "interaction": "Interaktion",
       "animation": "Animation",
       "appearance": "Utseende",
-      "overlays": "Hazard Overlays",
-      "markers_and_overlays": "Markers and Overlays"
+      "overlays": "Riskskikt",
+      "markers_and_overlays": "Markörer och skikt"
     },
     "map": {
       "radar_source": "Radarkälla",
@@ -85,8 +85,8 @@
       "icon_colour": "Ikonfärg",
       "reset": "Återställ",
       "mobile_only": "Endast mobil",
-      "count_summary": "{n} configured",
-      "back": "Back to settings"
+      "count_summary": "{n} konfigurerade",
+      "back": "Tillbaka till inställningar"
     },
     "display": {
       "show_zoom": "Visa zoom",
@@ -101,16 +101,16 @@
       "show_snow": "Visa snö",
       "show_color_bar": "Visa färgskala",
       "show_progress_bar": "Visa förloppsindikator",
-      "show_wildfires": "Show Wildfires (US only)",
-      "show_alerts": "Show NWS Alerts (US only)",
-      "alerts_min_severity": "Alerts: minimum severity",
-      "alerts_min_severity_helper": "Hide alerts below this severity level",
+      "show_wildfires": "Visa skogsbränder (endast USA)",
+      "show_alerts": "Visa NWS-varningar (endast USA)",
+      "alerts_min_severity": "Varningar: lägsta allvarlighetsgrad",
+      "alerts_min_severity_helper": "Dölj varningar under denna allvarlighetsgrad",
       "alerts_severity": {
-        "extreme": "Extreme",
-        "severe": "Severe",
-        "moderate": "Moderate",
-        "minor": "Minor",
-        "unknown": "Unknown"
+        "extreme": "Extrem",
+        "severe": "Allvarlig",
+        "moderate": "Måttlig",
+        "minor": "Liten",
+        "unknown": "Okänd"
       }
     },
     "interaction": {
@@ -141,30 +141,30 @@
       "radar_opacity_helper": "1.0 = helt ogenomskinlig (standard), lägre = mer genomskinlig över bakgrundskartan"
     },
     "overlays": {
-      "back": "Back to settings",
-      "none_enabled": "None enabled",
-      "wildfires_header": "Wildfires (US only)",
-      "wildfires_description": "Active US wildfire perimeters from NIFC's WFIGS feed.",
-      "alerts_header": "NWS Watches & Warnings (US only)",
-      "alerts_description": "Active US National Weather Service watches and warnings.",
-      "wildfire_min_acres": "Minimum acreage",
-      "wildfire_min_acres_helper": "Hide fires below this size (default 10)",
-      "wildfire_radius_km": "Radius (km)",
-      "wildfire_radius_km_helper": "Only show fires within N km of map centre",
-      "alerts_radius_km": "Radius (km)",
-      "alerts_radius_km_helper": "Only show alerts within N km of map centre",
-      "alerts_categories_label": "Alert categories — toggle which event types render",
+      "back": "Tillbaka till inställningar",
+      "none_enabled": "Ingen aktiverad",
+      "wildfires_header": "Skogsbränder (endast USA)",
+      "wildfires_description": "Aktiva skogsbrandsperimetrar i USA från NIFC:s WFIGS-feed.",
+      "alerts_header": "NWS observationer och varningar (endast USA)",
+      "alerts_description": "Aktiva observationer och varningar från US National Weather Service.",
+      "wildfire_min_acres": "Minsta yta",
+      "wildfire_min_acres_helper": "Dölj bränder mindre än denna storlek (standard 10)",
+      "wildfire_radius_km": "Radie (km)",
+      "wildfire_radius_km_helper": "Visa bara bränder inom N km från kartans mittpunkt",
+      "alerts_radius_km": "Radie (km)",
+      "alerts_radius_km_helper": "Visa bara varningar inom N km från kartans mittpunkt",
+      "alerts_categories_label": "Varningskategorier – välj vilka händelsetyper som visas",
       "alerts_category": {
         "tornado": "Tornado",
-        "thunderstorm": "Thunderstorm",
-        "flood": "Flood",
-        "winter": "Winter",
-        "tropical": "Tropical",
-        "fire_weather": "Fire Weather",
-        "heat": "Heat",
-        "wind": "Wind",
-        "marine": "Marine",
-        "other": "Other"
+        "thunderstorm": "Åska",
+        "flood": "Översvämning",
+        "winter": "Vinter",
+        "tropical": "Tropisk",
+        "fire_weather": "Brandrisk",
+        "heat": "Värme",
+        "wind": "Vind",
+        "marine": "Marint",
+        "other": "Övrigt"
       }
     }
   }

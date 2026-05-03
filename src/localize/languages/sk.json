@@ -5,36 +5,36 @@
   "ui": {
     "rate_limited": "Prekročený limit požiadaviek — čaká sa na obnovenie kvóty",
     "region_warning": {
-      "wildfires_us_only": "Wildfire data is US-only. Your Home Assistant location is outside the US — no fires will show.",
-      "noaa_us_only": "NOAA radar is US-only. Your Home Assistant location is outside the US — radar may not load.",
-      "combined": "{features} are US-only. Your Home Assistant location is outside the US — these will not load.",
-      "and": "and",
-      "alerts_us_only": "NWS watches & warnings are US-only. Your Home Assistant location is outside the US — alerts will not load.",
+      "wildfires_us_only": "Údaje o lesných požiaroch sú len pre USA. Vaša poloha Home Assistant je mimo USA – nebudú zobrazené žiadne požiare.",
+      "noaa_us_only": "NOAA radar je len pre USA. Vaša poloha Home Assistant je mimo USA – radar sa nemusí načítať.",
+      "combined": "{features} sú len pre USA. Vaša poloha Home Assistant je mimo USA – tieto údaje sa nenačítajú.",
+      "and": "a",
+      "alerts_us_only": "Výstrahy NWS sú len pre USA. Vaša poloha Home Assistant je mimo USA – výstrahy sa nenačítajú.",
       "label": {
-        "wildfires": "Wildfires",
-        "alerts": "NWS alerts",
+        "wildfires": "Lesné požiare",
+        "alerts": "Výstrahy NWS",
         "noaa": "NOAA radar"
       }
     },
     "wildfire": {
-      "acres": "Acres",
-      "contained": "Contained",
-      "discovered": "Discovered",
-      "more_info": "More info → NIFC",
-      "unknown_name": "Unnamed incident",
-      "disclaimer": "Informational only — not a substitute for official alerts.",
-      "see_readme": "See README"
+      "acres": "Akrov",
+      "contained": "Zvládnutý",
+      "discovered": "Zistený",
+      "more_info": "Viac info → NIFC",
+      "unknown_name": "Nepomenovaný incident",
+      "disclaimer": "Len pre informáciu – nenahrádza oficiálne výstrahy.",
+      "see_readme": "Pozri README"
     },
     "alerts": {
-      "severity": "Severity",
-      "certainty": "Certainty",
-      "urgency": "Urgency",
-      "effective": "Effective",
-      "expires": "Expires",
-      "more_info": "More info → NWS",
-      "unknown_event": "Alert",
-      "disclaimer": "INFORMATIONAL ONLY — not for life-safety decisions.",
-      "see_readme": "See README"
+      "severity": "Závažnosť",
+      "certainty": "Istota",
+      "urgency": "Naliehavosť",
+      "effective": "Platnosť od",
+      "expires": "Vyprší",
+      "more_info": "Viac info → NWS",
+      "unknown_event": "Výstraha",
+      "disclaimer": "LEN PRE INFORMÁCIU – nie pre rozhodnutia ohrozujúce život.",
+      "see_readme": "Pozri README"
     }
   },
   "editor": {
@@ -46,8 +46,8 @@
       "interaction": "Interakcia",
       "animation": "Animácia",
       "appearance": "Vzhľad",
-      "overlays": "Hazard Overlays",
-      "markers_and_overlays": "Markers and Overlays"
+      "overlays": "Vrstvy nebezpečenstiev",
+      "markers_and_overlays": "Značky a vrstvy"
     },
     "map": {
       "radar_source": "Zdroj radaru",
@@ -85,8 +85,8 @@
       "icon_colour": "Farba ikony",
       "reset": "Obnoviť",
       "mobile_only": "Iba mobil",
-      "count_summary": "{n} configured",
-      "back": "Back to settings"
+      "count_summary": "{n} nakonfigurovaných",
+      "back": "Späť na nastavenia"
     },
     "display": {
       "show_zoom": "Zobraziť priblíženie",
@@ -101,16 +101,16 @@
       "show_snow": "Zobraziť sneh",
       "show_color_bar": "Zobraziť farebnú stupnicu",
       "show_progress_bar": "Zobraziť ukazovateľ priebehu",
-      "show_wildfires": "Show Wildfires (US only)",
-      "show_alerts": "Show NWS Alerts (US only)",
-      "alerts_min_severity": "Alerts: minimum severity",
-      "alerts_min_severity_helper": "Hide alerts below this severity level",
+      "show_wildfires": "Zobraziť lesné požiare (len USA)",
+      "show_alerts": "Zobraziť výstrahy NWS (len USA)",
+      "alerts_min_severity": "Výstrahy: minimálna závažnosť",
+      "alerts_min_severity_helper": "Skryť výstrahy pod touto úrovňou závažnosti",
       "alerts_severity": {
-        "extreme": "Extreme",
-        "severe": "Severe",
-        "moderate": "Moderate",
-        "minor": "Minor",
-        "unknown": "Unknown"
+        "extreme": "Extrémna",
+        "severe": "Vážna",
+        "moderate": "Mierna",
+        "minor": "Malá",
+        "unknown": "Neznáma"
       }
     },
     "interaction": {
@@ -141,30 +141,30 @@
       "radar_opacity_helper": "1.0 = úplne nepriehľadný (predvolené), nižšie = viac priehľadný cez podkladovú mapu"
     },
     "overlays": {
-      "back": "Back to settings",
-      "none_enabled": "None enabled",
-      "wildfires_header": "Wildfires (US only)",
-      "wildfires_description": "Active US wildfire perimeters from NIFC's WFIGS feed.",
-      "alerts_header": "NWS Watches & Warnings (US only)",
-      "alerts_description": "Active US National Weather Service watches and warnings.",
-      "wildfire_min_acres": "Minimum acreage",
-      "wildfire_min_acres_helper": "Hide fires below this size (default 10)",
-      "wildfire_radius_km": "Radius (km)",
-      "wildfire_radius_km_helper": "Only show fires within N km of map centre",
-      "alerts_radius_km": "Radius (km)",
-      "alerts_radius_km_helper": "Only show alerts within N km of map centre",
-      "alerts_categories_label": "Alert categories — toggle which event types render",
+      "back": "Späť na nastavenia",
+      "none_enabled": "Žiadna povolená",
+      "wildfires_header": "Lesné požiare (len USA)",
+      "wildfires_description": "Aktívne perimetre lesných požiarov v USA z WFIGS feedu NIFC.",
+      "alerts_header": "NWS pozorovania a výstrahy (len USA)",
+      "alerts_description": "Aktívne pozorovania a výstrahy US National Weather Service.",
+      "wildfire_min_acres": "Minimálna plocha",
+      "wildfire_min_acres_helper": "Skryť požiare menšie ako táto veľkosť (predvolené 10)",
+      "wildfire_radius_km": "Polomer (km)",
+      "wildfire_radius_km_helper": "Zobraziť iba požiare do N km od stredu mapy",
+      "alerts_radius_km": "Polomer (km)",
+      "alerts_radius_km_helper": "Zobraziť iba výstrahy do N km od stredu mapy",
+      "alerts_categories_label": "Kategórie výstrah – vyberte, ktoré typy udalostí sa zobrazia",
       "alerts_category": {
-        "tornado": "Tornado",
-        "thunderstorm": "Thunderstorm",
-        "flood": "Flood",
-        "winter": "Winter",
-        "tropical": "Tropical",
-        "fire_weather": "Fire Weather",
-        "heat": "Heat",
-        "wind": "Wind",
-        "marine": "Marine",
-        "other": "Other"
+        "tornado": "Tornádo",
+        "thunderstorm": "Búrka",
+        "flood": "Povodeň",
+        "winter": "Zima",
+        "tropical": "Tropické",
+        "fire_weather": "Riziko požiaru",
+        "heat": "Horúčava",
+        "wind": "Vietor",
+        "marine": "Morské",
+        "other": "Iné"
       }
     }
   }

@@ -5,36 +5,36 @@
   "ui": {
     "rate_limited": "Límite de solicitudes alcanzado — esperando restablecimiento de la cuota",
     "region_warning": {
-      "wildfires_us_only": "Wildfire data is US-only. Your Home Assistant location is outside the US — no fires will show.",
-      "noaa_us_only": "NOAA radar is US-only. Your Home Assistant location is outside the US — radar may not load.",
-      "combined": "{features} are US-only. Your Home Assistant location is outside the US — these will not load.",
-      "and": "and",
-      "alerts_us_only": "NWS watches & warnings are US-only. Your Home Assistant location is outside the US — alerts will not load.",
+      "wildfires_us_only": "Los datos de incendios forestales son solo para EE. UU. Su ubicación de Home Assistant está fuera de EE. UU.: no se mostrarán incendios.",
+      "noaa_us_only": "El radar NOAA es solo para EE. UU. Su ubicación de Home Assistant está fuera de EE. UU.: es posible que el radar no cargue.",
+      "combined": "{features} son solo para EE. UU. Su ubicación de Home Assistant está fuera de EE. UU.: no se cargarán.",
+      "and": "y",
+      "alerts_us_only": "Los avisos y advertencias del NWS son solo para EE. UU. Su ubicación de Home Assistant está fuera de EE. UU.: las alertas no se cargarán.",
       "label": {
-        "wildfires": "Wildfires",
-        "alerts": "NWS alerts",
-        "noaa": "NOAA radar"
+        "wildfires": "Incendios forestales",
+        "alerts": "Alertas NWS",
+        "noaa": "Radar NOAA"
       }
     },
     "wildfire": {
       "acres": "Acres",
-      "contained": "Contained",
-      "discovered": "Discovered",
-      "more_info": "More info → NIFC",
-      "unknown_name": "Unnamed incident",
-      "disclaimer": "Informational only — not a substitute for official alerts.",
-      "see_readme": "See README"
+      "contained": "Contenido",
+      "discovered": "Detectado",
+      "more_info": "Más info → NIFC",
+      "unknown_name": "Incidente sin nombre",
+      "disclaimer": "Solo informativo, no sustituye a las alertas oficiales.",
+      "see_readme": "Consultar README"
     },
     "alerts": {
-      "severity": "Severity",
-      "certainty": "Certainty",
-      "urgency": "Urgency",
-      "effective": "Effective",
-      "expires": "Expires",
-      "more_info": "More info → NWS",
-      "unknown_event": "Alert",
-      "disclaimer": "INFORMATIONAL ONLY — not for life-safety decisions.",
-      "see_readme": "See README"
+      "severity": "Gravedad",
+      "certainty": "Certeza",
+      "urgency": "Urgencia",
+      "effective": "Vigente",
+      "expires": "Expira",
+      "more_info": "Más info → NWS",
+      "unknown_event": "Alerta",
+      "disclaimer": "SOLO INFORMATIVO: no apto para decisiones de seguridad vital.",
+      "see_readme": "Consultar README"
     }
   },
   "editor": {
@@ -46,8 +46,8 @@
       "interaction": "Interacción",
       "animation": "Animación",
       "appearance": "Apariencia",
-      "overlays": "Hazard Overlays",
-      "markers_and_overlays": "Markers and Overlays"
+      "overlays": "Capas de riesgo",
+      "markers_and_overlays": "Marcadores y capas"
     },
     "map": {
       "radar_source": "Fuente del radar",
@@ -85,8 +85,8 @@
       "icon_colour": "Color del icono",
       "reset": "Restablecer",
       "mobile_only": "Solo móvil",
-      "count_summary": "{n} configured",
-      "back": "Back to settings"
+      "count_summary": "{n} configurados",
+      "back": "Volver a la configuración"
     },
     "display": {
       "show_zoom": "Mostrar zoom",
@@ -101,16 +101,16 @@
       "show_snow": "Mostrar nieve",
       "show_color_bar": "Mostrar barra de colores",
       "show_progress_bar": "Mostrar barra de progreso",
-      "show_wildfires": "Show Wildfires (US only)",
-      "show_alerts": "Show NWS Alerts (US only)",
-      "alerts_min_severity": "Alerts: minimum severity",
-      "alerts_min_severity_helper": "Hide alerts below this severity level",
+      "show_wildfires": "Mostrar incendios (solo EE. UU.)",
+      "show_alerts": "Mostrar alertas NWS (solo EE. UU.)",
+      "alerts_min_severity": "Alertas: gravedad mínima",
+      "alerts_min_severity_helper": "Ocultar alertas por debajo de este nivel de gravedad",
       "alerts_severity": {
-        "extreme": "Extreme",
-        "severe": "Severe",
-        "moderate": "Moderate",
-        "minor": "Minor",
-        "unknown": "Unknown"
+        "extreme": "Extrema",
+        "severe": "Grave",
+        "moderate": "Moderada",
+        "minor": "Leve",
+        "unknown": "Desconocida"
       }
     },
     "interaction": {
@@ -141,30 +141,30 @@
       "radar_opacity_helper": "1.0 = totalmente opaco (predeterminado), menor = más transparente sobre el mapa base"
     },
     "overlays": {
-      "back": "Back to settings",
-      "none_enabled": "None enabled",
-      "wildfires_header": "Wildfires (US only)",
-      "wildfires_description": "Active US wildfire perimeters from NIFC's WFIGS feed.",
-      "alerts_header": "NWS Watches & Warnings (US only)",
-      "alerts_description": "Active US National Weather Service watches and warnings.",
-      "wildfire_min_acres": "Minimum acreage",
-      "wildfire_min_acres_helper": "Hide fires below this size (default 10)",
-      "wildfire_radius_km": "Radius (km)",
-      "wildfire_radius_km_helper": "Only show fires within N km of map centre",
-      "alerts_radius_km": "Radius (km)",
-      "alerts_radius_km_helper": "Only show alerts within N km of map centre",
-      "alerts_categories_label": "Alert categories — toggle which event types render",
+      "back": "Volver a la configuración",
+      "none_enabled": "Ninguna activada",
+      "wildfires_header": "Incendios forestales (solo EE. UU.)",
+      "wildfires_description": "Perímetros de incendios forestales activos en EE. UU. desde el feed WFIGS del NIFC.",
+      "alerts_header": "Avisos y advertencias NWS (solo EE. UU.)",
+      "alerts_description": "Avisos y advertencias activos del National Weather Service de EE. UU.",
+      "wildfire_min_acres": "Superficie mínima",
+      "wildfire_min_acres_helper": "Ocultar incendios por debajo de este tamaño (predeterminado 10)",
+      "wildfire_radius_km": "Radio (km)",
+      "wildfire_radius_km_helper": "Mostrar solo incendios a menos de N km del centro del mapa",
+      "alerts_radius_km": "Radio (km)",
+      "alerts_radius_km_helper": "Mostrar solo alertas a menos de N km del centro del mapa",
+      "alerts_categories_label": "Categorías de alertas: elija qué tipos de eventos se muestran",
       "alerts_category": {
         "tornado": "Tornado",
-        "thunderstorm": "Thunderstorm",
-        "flood": "Flood",
-        "winter": "Winter",
+        "thunderstorm": "Tormenta",
+        "flood": "Inundación",
+        "winter": "Invierno",
         "tropical": "Tropical",
-        "fire_weather": "Fire Weather",
-        "heat": "Heat",
-        "wind": "Wind",
-        "marine": "Marine",
-        "other": "Other"
+        "fire_weather": "Riesgo de incendio",
+        "heat": "Calor",
+        "wind": "Viento",
+        "marine": "Marino",
+        "other": "Otros"
       }
     }
   }
