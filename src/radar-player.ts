@@ -26,6 +26,7 @@ export interface RadarPlayerOptions {
   getConfig: () => WeatherRadarCardConfig;
   rainviewerLimiter: RateLimiter;
   noaaLimiter: RateLimiter;
+  dwdLimiter: RateLimiter;
 }
 
 // ── RadarPlayer ──────────────────────────────────────────────────────────────
@@ -42,6 +43,8 @@ export class RadarPlayer {
   private _getConfig: () => WeatherRadarCardConfig;
   private _rainviewerLimiter: RateLimiter;
   private _noaaLimiter: RateLimiter;
+  private _dwdLimiter: RateLimiter;
+  private _dwdSwapLogged = false;
 
   private _radarImage: (FetchTileLayer | FetchWmsTileLayer)[] = [];
   private _radarTime: string[] = [];
@@ -76,6 +79,7 @@ export class RadarPlayer {
     this._getConfig = opts.getConfig;
     this._rainviewerLimiter = opts.rainviewerLimiter;
     this._noaaLimiter = opts.noaaLimiter;
+    this._dwdLimiter = opts.dwdLimiter;
     this._startWorker();
   }
 
@@ -394,14 +398,23 @@ export class RadarPlayer {
       // Niederschlagsradar (default) is past-only. When the user has asked for forecast
       // hours, switch to the analysis+nowcast layer which carries +2h frames too.
       const wantsForecast = (this._cfg.dwd_forecast_hours ?? 0) > 0;
+      const autoSwap = wantsForecast && this._cfg.dwd_layer === undefined;
       const layerName = this._cfg.dwd_layer ?? (wantsForecast ? 'Radar_wn-product_1x1km_ger' : DWD_WMS_LAYER_DEFAULT);
+      if (autoSwap && !this._dwdSwapLogged) {
+        console.info(
+          `[weather-radar-card] dwd_forecast_hours > 0 — switching DWD layer from "${DWD_WMS_LAYER_DEFAULT}" (mm/h) to "${layerName}" (dBZ) to access nowcast frames. Set dwd_layer explicitly to override.`,
+        );
+        this._dwdSwapLogged = true;
+      }
       return new FetchWmsTileLayer(DWD_WMS_URL, {
         layers: layerName,
         format: 'image/png',
         transparent: true,
         version: '1.3.0',
         TIME: isoTime,
+        // DWD's radar grid is 1 km — one native zoom level finer than NOAA's MRMS (4 km, capped at 7).
         maxNativeZoom: 8,
+        rateLimiter: this._dwdLimiter,
         on429: () => this._onRateLimited(),
         animationOwnsOpacity: true,
       } as any);

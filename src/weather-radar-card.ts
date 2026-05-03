@@ -83,6 +83,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
 
   private _rainviewerLimiter = new RateLimiter(500);
   private _noaaLimiter = new RateLimiter(120);
+  private _dwdLimiter = new RateLimiter(120);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -288,6 +289,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       getConfig: () => this._config,
       rainviewerLimiter: this._rainviewerLimiter,
       noaaLimiter: this._noaaLimiter,
+      dwdLimiter: this._dwdLimiter,
     });
     this._player.toolbar = this._toolbar;
     this._player.start(cfg.frame_count ?? 5);
