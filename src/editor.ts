@@ -63,6 +63,11 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
 
   @state() private _helpers?: any;
 
+  // Which sub-view of the editor is showing. Defaults to 'main' (the
+  // top-level settings). Routing happens entirely in-memory — closing and
+  // re-opening the editor returns to 'main', matching HA editor conventions.
+  @state() private _view: 'main' | 'markers' = 'main';
+
   private _initialized = false;
 
   public setConfig(config: WeatherRadarCardConfig): void {
@@ -107,11 +112,13 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
     if (!this.hass || !this._helpers) {
       return html``;
     }
+    if (!this._config) return html``;
+    return this._view === 'markers'
+      ? this._renderMarkersView(this._config)
+      : this._renderMainView(this._config);
+  }
 
-    let config;
-    // eslint-disable-next-line prefer-const
-    config = this._config;
-
+  private _renderMainView(config: WeatherRadarCardConfig): TemplateResult {
     return html`
       <div class="values">
 
@@ -197,8 +204,16 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
 
         <!-- MARKERS -->
         <h3 class="section-header">${localize('editor.section.markers')}</h3>
-        ${(config.markers ?? []).map((m, i) => this._renderMarkerRow(m, i))}
-        <button class="add-marker-btn" @click=${this._addMarker}>${localize('editor.markers.add')}</button>
+        <button
+          class="subpage-nav-row"
+          @click=${() => this._setView('markers')}
+        >
+          <span class="subpage-nav-label">${localize('editor.section.markers')}</span>
+          <span class="subpage-nav-summary">
+            ${localize('editor.markers.count_summary').replace('{n}', String((config.markers ?? []).length))}
+          </span>
+          <span class="subpage-nav-chevron">›</span>
+        </button>
 
         <!-- DISPLAY -->
         <h3 class="section-header">${localize('editor.section.display')}</h3>
@@ -341,6 +356,27 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
 
       </div>
     `;
+  }
+
+  private _renderMarkersView(config: WeatherRadarCardConfig): TemplateResult {
+    const markers = config.markers ?? [];
+    return html`
+      <div class="values">
+        <button class="subpage-back" @click=${() => this._setView('main')}>
+          ‹ ${localize('editor.markers.back')}
+        </button>
+        <h3 class="section-header">${localize('editor.section.markers')}</h3>
+        ${markers.map((m, i) => this._renderMarkerRow(m, i))}
+        <button class="add-marker-btn" @click=${this._addMarker}>${localize('editor.markers.add')}</button>
+      </div>
+    `;
+  }
+
+  private _setView(view: 'main' | 'markers'): void {
+    this._view = view;
+    // Scroll the editor pane back to the top so the user always lands at the
+    // start of the new view, not part-way down where they were on the old one.
+    this.shadowRoot?.querySelector('.values')?.scrollIntoView({ block: 'start', behavior: 'auto' });
   }
 
   private _renderMarkerRow(m: Marker, i: number) {
@@ -862,6 +898,48 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
       font-size: 0.9em;
       margin-bottom: 8px;
     }
+    /* Subpage navigation row on the main editor page — clickable, looks
+       like a settings list item with chevron. */
+    .subpage-nav-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 8px;
+      border: 1px solid var(--divider-color);
+      border-radius: 6px;
+      background: var(--card-background-color, var(--ha-card-background, transparent));
+      color: var(--primary-text-color);
+      cursor: pointer;
+      font-size: 0.95em;
+      margin-bottom: 8px;
+      text-align: left;
+    }
+    .subpage-nav-row:hover {
+      border-color: var(--primary-color);
+    }
+    .subpage-nav-label { flex: 1; }
+    .subpage-nav-summary {
+      color: var(--secondary-text-color);
+      font-size: 0.9em;
+    }
+    .subpage-nav-chevron {
+      color: var(--secondary-text-color);
+      font-size: 1.4em;
+      line-height: 1;
+    }
+    /* Back-button at the top of a subpage view. */
+    .subpage-back {
+      display: inline-block;
+      margin: 4px 0 8px 0;
+      padding: 4px 10px 4px 6px;
+      border: none;
+      background: none;
+      color: var(--primary-color);
+      font-size: 0.9em;
+      cursor: pointer;
+    }
+    .subpage-back:hover { text-decoration: underline; }
     .marker-mobile-only {
       font-size: 0.85em;
     }

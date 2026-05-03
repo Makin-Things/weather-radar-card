@@ -51,7 +51,9 @@
       "track_always": "Zawsze śledź",
       "icon_colour": "Kolor ikony",
       "reset": "Resetuj",
-      "mobile_only": "Tylko mobilne"
+      "mobile_only": "Tylko mobilne",
+      "count_summary": "{n} configured",
+      "back": "Back to settings"
     },
     "display": {
       "show_zoom": "Pokaż powiększenie",

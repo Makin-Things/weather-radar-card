@@ -51,7 +51,9 @@
       "track_always": "Altijd volgen",
       "icon_colour": "Pictogramkleur",
       "reset": "Herstellen",
-      "mobile_only": "Alleen mobiel"
+      "mobile_only": "Alleen mobiel",
+      "count_summary": "{n} configured",
+      "back": "Back to settings"
     },
     "display": {
       "show_zoom": "Zoom tonen",
