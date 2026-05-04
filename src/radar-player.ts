@@ -45,6 +45,7 @@ export class RadarPlayer {
   private _noaaLimiter: RateLimiter;
   private _dwdLimiter: RateLimiter;
   private _dwdSwapLogged = false;
+  private _dwdRangeClampLogged = false;
 
   private _radarImage: (FetchTileLayer | FetchWmsTileLayer)[] = [];
   private _radarTime: string[] = [];
@@ -432,7 +433,18 @@ export class RadarPlayer {
     }
     if (dataSource === 'DWD') {
       const override = this._cfg.dwd_time_override;
-      const forecastMs = (this._cfg.dwd_forecast_hours ?? 0) * 3_600_000;
+      // DWD WMS GetCapabilities advertises ~84h past + 2h forecast at 5-min steps; clamp to that.
+      const rawForecast = this._cfg.dwd_forecast_hours ?? 0;
+      const rawPast = this._cfg.dwd_past_hours ?? -2;
+      const forecastHours = Math.max(0, Math.min(2, rawForecast));
+      const pastHours = Math.max(-84, Math.min(0, rawPast));
+      if (!this._dwdRangeClampLogged && (rawForecast !== forecastHours || rawPast !== pastHours)) {
+        this._dwdRangeClampLogged = true;
+        console.warn(
+          `[weather-radar-card] DWD time range clamped to API limits: forecast ${rawForecast}→${forecastHours} (0..2), past ${rawPast}→${pastHours} (-84..0).`,
+        );
+      }
+      const forecastMs = forecastHours * 3_600_000;
       let base = Date.now() - DWD_LAG_MS;
       if (override) {
         const parsed = new Date(override).getTime();
@@ -446,8 +458,11 @@ export class RadarPlayer {
       }
       const anchor = base + forecastMs;
       const snap = Math.trunc(anchor / DWD_FRAME_INTERVAL_MS) * DWD_FRAME_INTERVAL_MS;
+      // Span the full [past, forecast] window at 5-min intervals; frame_count is ignored for DWD.
+      const spanHours = Math.max(0, forecastHours - pastHours);
+      const frameCount = Math.round(spanHours * 60 / 5) + 1;
       const frames: RadarFrame[] = [];
-      for (let i = this._configFrameCount - 1; i >= 0; i--) {
+      for (let i = frameCount - 1; i >= 0; i--) {
         frames.push({ time: (snap - i * DWD_FRAME_INTERVAL_MS) / 1000, path: '' });
       }
       return frames;
