@@ -68,7 +68,8 @@
       "cluster_markers": "Cluster Markers",
       "show_snow": "Show Snow",
       "show_color_bar": "Show Colour Bar",
-      "show_progress_bar": "Show Progress Bar"
+      "show_progress_bar": "Show Progress Bar",
+      "show_loading_spinner": "Show Loading Spinner"
     },
     "interaction": {
       "disable_scroll": "Disable Scroll (allow page swipe through map)",

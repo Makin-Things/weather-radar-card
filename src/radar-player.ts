@@ -370,7 +370,8 @@ export class RadarPlayer {
   private _updateLoadingSpinner(): void {
     const spinner = this._shadowRoot.getElementById('loading-spinner');
     if (!spinner) return;
-    const isLoading = this._frameStatuses.some(s => s === 'loading');
+    const enabled = this._cfg.show_loading_spinner !== false;
+    const isLoading = enabled && this._frameStatuses.some(s => s === 'loading');
     spinner.style.display = isLoading ? '' : 'none';
   }
 
