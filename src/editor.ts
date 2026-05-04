@@ -140,6 +140,26 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
           .configValue=${'data_source'}
           @value-changed=${this._handleSelectorChanged}
         ></ha-selector>
+        ${config.data_source === 'DWD' ? html`
+          <div class="side-by-side">
+            <ha-selector
+              .hass=${this.hass}
+              .selector=${{ number: { min: -24, max: 0, step: 1, mode: 'box' } }}
+              .value=${config.dwd_past_hours ?? -2}
+              .label=${localize('editor.map.dwd_past_hours')}
+              .configValue=${'dwd_past_hours'}
+              @value-changed=${this._handleSelectorChanged}
+            ></ha-selector>
+            <ha-selector
+              .hass=${this.hass}
+              .selector=${{ number: { min: 0, max: 2, step: 1, mode: 'box' } }}
+              .value=${config.dwd_forecast_hours ?? 2}
+              .label=${localize('editor.map.dwd_forecast_hours')}
+              .configValue=${'dwd_forecast_hours'}
+              @value-changed=${this._handleSelectorChanged}
+            ></ha-selector>
+          </div>
+        ` : ''}
         <div class="side-by-side">
           <ha-selector
             .hass=${this.hass}
@@ -287,13 +307,15 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
         <!-- ANIMATION -->
         <h3 class="section-header">${localize('editor.section.animation')}</h3>
         <div class="side-by-side">
-          <ha-textfield
-            label=${localize('editor.animation.frame_count')}
-            .value=${config.frame_count ? config.frame_count : ''}
-            .configValue=${'frame_count'}
-            @input=${this._valueChangedNumber}
-            helper=${localize('editor.animation.default_5')}
-          ></ha-textfield>
+          ${config.data_source !== 'DWD' ? html`
+            <ha-textfield
+              label=${localize('editor.animation.frame_count')}
+              .value=${config.frame_count ? config.frame_count : ''}
+              .configValue=${'frame_count'}
+              @input=${this._valueChangedNumber}
+              helper=${localize('editor.animation.default_5')}
+            ></ha-textfield>
+          ` : ''}
           <ha-textfield
             label=${localize('editor.animation.frame_delay')}
             .value=${config.frame_delay ? config.frame_delay : ''}
