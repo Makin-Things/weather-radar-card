@@ -61,7 +61,7 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   dwd_time_override?: string;
   /** DWD-only: WMS layer name override. Default Niederschlagsradar (past-only); auto-switches to Radar_wn-product_1x1km_ger when dwd_forecast_hours > 0 since that one carries the +2h nowcast. */
   dwd_layer?: string;
-  /** DWD-only: include this many hours of nowcast forecast in the playback range. Default 0, max 2. */
+  /** DWD-only: include this many hours of nowcast forecast in the playback range. Default 2, max 2. */
   dwd_forecast_hours?: number;
   /** DWD-only: how far into the past to include, in hours (negative). Default -2. Editor caps at -24; YAML accepts down to -84 (DWD WMS API limit, ~3.5 days). Frame count auto-derives from (forecast - past) * 12 + 1 at 5-min intervals. */
   dwd_past_hours?: number;

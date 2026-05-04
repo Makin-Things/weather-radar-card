@@ -434,7 +434,7 @@ export class RadarPlayer {
     if (dataSource === 'DWD') {
       const override = this._cfg.dwd_time_override;
       // DWD WMS GetCapabilities advertises ~84h past + 2h forecast at 5-min steps; clamp to that.
-      const rawForecast = this._cfg.dwd_forecast_hours ?? 0;
+      const rawForecast = this._cfg.dwd_forecast_hours ?? 2;
       const rawPast = this._cfg.dwd_past_hours ?? -2;
       const forecastHours = Math.max(0, Math.min(2, rawForecast));
       const pastHours = Math.max(-84, Math.min(0, rawPast));

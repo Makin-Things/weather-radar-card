@@ -153,7 +153,7 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             <ha-selector
               .hass=${this.hass}
               .selector=${{ number: { min: 0, max: 2, step: 1, mode: 'box' } }}
-              .value=${config.dwd_forecast_hours ?? 0}
+              .value=${config.dwd_forecast_hours ?? 2}
               .label=${localize('editor.map.dwd_forecast_hours')}
               .configValue=${'dwd_forecast_hours'}
               @value-changed=${this._handleSelectorChanged}
