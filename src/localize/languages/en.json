@@ -20,7 +20,7 @@
       "radar_source": "Radar Source",
       "source_rainviewer": "RainViewer (Global)",
       "source_noaa": "NOAA/NWS (US Only — Experimental)",
-      "source_dwd": "DWD (Germany Only - 5 min resolution)",
+      "source_dwd": "DWD (Germany Only — 5 min resolution)",
       "dwd_past_hours": "Past time (h)",
       "dwd_forecast_hours": "Forecast time (h)",
       "map_style": "Map Style",
