@@ -798,6 +798,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       #bottom-container a { color: var(--primary-color); }
       .map-dark .leaflet-control-scale-line {
         color: #bbb; border-color: #bbb; background: rgba(0,0,0,0.5);
+        text-shadow: none;
       }
       .save-center-btn {
         position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%);
