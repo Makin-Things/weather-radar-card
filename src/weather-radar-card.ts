@@ -102,6 +102,7 @@ import { NwsAlertsLayer } from './nws-alerts-layer';
 import { LightningLayer } from './lightning-layer';
 import { isBlitzortungLoaded } from './lightning-helpers';
 import { getRegionWarnings } from './region-warning';
+import { escapeHtml } from './string-utils';
 import { resolveCardLayout, isValidCssSize } from './card-layout';
 import { PopupPanRestore } from './popup-pan-restore';
 import { isOnlyKeysChanged } from './config-diff';
@@ -959,8 +960,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       const defaultColor = isDark ? '#EEEEEE' : '#333333';
       const iconColor = repCfg?.color ?? defaultColor;
       const iconHtml = repIcon?.startsWith('mdi:')
-        ? `<ha-icon icon="${repIcon}" style="--mdc-icon-size:${iconSize}px;color:${iconColor};display:block"></ha-icon>`
-        : `<svg viewBox="0 0 24 24" width="${iconSize}" height="${iconSize}"><path fill="${iconColor}" d="${HOME_PATH}"/></svg>`;
+        ? `<ha-icon icon="${escapeHtml(repIcon)}" style="--mdc-icon-size:${iconSize}px;color:${escapeHtml(iconColor)};display:block"></ha-icon>`
+        : `<svg viewBox="0 0 24 24" width="${iconSize}" height="${iconSize}"><path fill="${escapeHtml(iconColor)}" d="${HOME_PATH}"/></svg>`;
 
       const otherCount = count - zoneCount;
       const badge = otherCount > 0 ? (() => {
