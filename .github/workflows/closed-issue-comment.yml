@@ -26,6 +26,17 @@ jobs:
       - uses: actions/github-script@v7
         with:
           script: |
+            // "Close with comment" fires issue_comment too, with no flag
+            // distinguishing it from an independent later comment — so
+            // the person closing the issue would otherwise get told to
+            // go file a new one. Skip comments that land within a few
+            // seconds of the issue closing; a genuine bump won't.
+            const closedAt = new Date(context.payload.issue.closed_at).getTime();
+            const commentAt = new Date(context.payload.comment.created_at).getTime();
+            if (Math.abs(commentAt - closedAt) < 60_000) {
+              console.log('Comment landed within 60s of the issue closing — likely the closing comment itself. Skipping.');
+              return;
+            }
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
