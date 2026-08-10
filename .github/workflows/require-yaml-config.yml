@@ -1,0 +1,45 @@
+name: "Require YAML Config on Bug Reports"
+
+# The bug report template asks for a ```yaml card config block, but
+# nothing stops someone from leaving it empty. Missing config is one of
+# the most common reasons a bug report stalls waiting on a reply — check
+# for it up front instead.
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    name: Check for a card config
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'bug')
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const body = context.payload.issue.body ?? '';
+            const match = body.match(/```yaml\r?\n([\s\S]*?)```/);
+            const config = match ? match[1].trim() : '';
+            if (config.length > 0) return;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                "Thanks for the report! This looks like it's missing a card config, which is usually essential for tracking down the cause.",
+                '',
+                'Could you edit your issue and add it under **Card config**? Wrap your YAML in triple backticks so it renders correctly:',
+                '',
+                '```yaml',
+                'type: custom:weather-radar-card',
+                '...(your config)...',
+                '```',
+                '',
+                '(Get it from Home Assistant: edit the card → **Show code editor** (top-right toggle) → copy everything.)',
+              ].join('\n'),
+            });

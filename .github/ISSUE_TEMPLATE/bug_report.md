@@ -1,15 +1,14 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: ''
+title: '[BUG] '
 labels: bug
 assignees: ''
 
 ---
 
 <!-- READ THIS FIRST:
-- If you need additional help with this template please refer to https://www.home-assistant.io/help/reporting_issues/
-- Make sure you are running the latest version of Home Assistant before reporting an issue: https://github.com/home-assistant/home-assistant/releases
+- Make sure you are running the latest version of the card before reporting an issue.
 - Provide as many details as possible. Do not delete any text from this template!
 -->
 
@@ -25,21 +24,43 @@ assignees: ''
 
 **Browser and Operating System:**
 
-**Card Config (click Show Code Editor and copy paste your config, remove a few of the least significant digits of your lat/lon to avoid posting you exact home address):**
-
-<!--
-Provide details about what browser (and version) you are seeing the issue in. And also which operating system this is on. If possible try to replicate the issue in other browsers and include your findings here.
--->
-
 **Description of problem:**
 
+<!-- What's happening, and what did you expect instead? -->
+
+**Screenshots:**
+
 <!--
-Explain what the issue is, and how things should look/behave. If possible provide a screenshot with a description.
+If this is a visual issue (something rendering wrong, misaligned,
+missing, etc.), a screenshot makes it much faster to diagnose — drag an
+image into this box, or paste one from your clipboard. Not needed for
+non-visual issues (e.g. a config option not being respected).
 -->
 
-**Javascript errors shown in the web inspector (if applicable):**
+**Card config:**
+
+<!--
+Home Assistant dashboard -> the card -> pencil/edit icon -> "Show code
+editor" (toggle in the top-right of the card editor) -> copy everything
+and paste it below, between the ```yaml and ``` lines (this is what
+makes it render as a readable code block instead of one long line).
+Please redact your exact location — trimming the last digit or two off
+your latitude/longitude is enough.
+-->
+
+```yaml
 
 ```
+
+**Browser console log (optional):**
+
+<!--
+Only needed if you saw an error, or if a maintainer asks for it. Open
+DevTools (F12, or Cmd+Opt+I on Mac), the Console tab, reproduce the
+issue, then paste anything relevant below.
+-->
+
+```text
 
 ```
 
