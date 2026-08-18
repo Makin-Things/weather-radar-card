@@ -153,6 +153,8 @@
       },
       "square_map_disabled_helper": "Deaktiviert, wenn eine Höhe festgelegt ist oder die Karte in einer Sections-Zelle mit fester Zeilenanzahl liegt — diese Beschränkungen legen die Kartenhöhe bereits fest.",
       "show_loading_spinner": "Ladeanzeige anzeigen",
+      "preload_while_hidden": "Im Hintergrund vorladen",
+      "preload_while_hidden_helper": "Lädt weiterhin aktuelle Radar- und Gefahrenüberlagerungsdaten, während die Karte außerhalb des Bildschirms, in einem geschlossenen Pop-up oder in einem Hintergrund-Tab liegt, damit sie sofort statt mit Neuladen fortsetzt. Die Animation bleibt in jedem Fall pausiert, solange die Karte verborgen ist. Verbraucht im Hintergrund Netzwerk/Bandbreite — standardmäßig deaktiviert.",
       "show_lightning": "Blitze anzeigen (Blitzortung)"
     },
     "interaction": {

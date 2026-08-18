@@ -153,6 +153,8 @@
       },
       "square_map_disabled_helper": "Inaktiverad när en höjd är angiven eller kortet ligger i en sections-rutnätscell med ett fast antal rader — dessa begränsningar fixerar redan kortets höjd.",
       "show_loading_spinner": "Visa laddningsindikator",
+      "preload_while_hidden": "Förladda i bakgrunden",
+      "preload_while_hidden_helper": "Fortsätter hämta färsk radar- och riskoverlay-data medan kortet är utanför skärmen, i en stängd popup eller på en bakgrundsflik, så det återupptas direkt istället för att laddas om. Animationen förblir ändå pausad medan kortet är dolt. Använder nätverk/bandbredd i bakgrunden — avstängt som standard.",
       "show_lightning": "Visa blixtar (Blitzortung)"
     },
     "interaction": {
