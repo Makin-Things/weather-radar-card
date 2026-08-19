@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.3-beta3] - 2026-08-18
+
+> **Beta pre-release.** New opt-in `preload_while_hidden` option, plus a marker config-escaping hardening fix. Continues the 3.7.3 beta line — drop-in upgrade from 3.7.3-beta2, no config changes required.
+
 ### Added
 
 - **`preload_while_hidden` option** — keep fetching fresh radar and hazard-overlay data (wildfires, NWS alerts, wind) on their normal cadence while the card is hidden, instead of the default full pause. Fixes the "popup card reloads from scratch every time it opens" experience (e.g. inside a Bubble Card pop-up): the card resumes playback instantly from already-warm data instead of a multi-second reload. Animation and canvas rendering stay paused while hidden either way — only the underlying data stays fresh. Opt-in, since it means real network/bandwidth use while the card isn't visible. ([#234](https://github.com/jpettitt/weather-radar-card/issues/234))
@@ -884,7 +888,8 @@ Multi-marker overhaul. **Breaking:** single-marker config fields (`show_marker`,
 
 For changes in versions prior to 2.0.4, please refer to the git commit history.
 
-[Unreleased]: https://github.com/jpettitt/weather-radar-card/compare/v3.7.3-beta2...HEAD
+[Unreleased]: https://github.com/jpettitt/weather-radar-card/compare/v3.7.3-beta3...HEAD
+[3.7.3-beta3]: https://github.com/jpettitt/weather-radar-card/compare/v3.7.3-beta2...v3.7.3-beta3
 [3.7.3-beta2]: https://github.com/jpettitt/weather-radar-card/compare/v3.7.3-beta1...v3.7.3-beta2
 [3.7.3-beta1]: https://github.com/jpettitt/weather-radar-card/compare/v3.7.2...v3.7.3-beta1
 [3.7.2]: https://github.com/jpettitt/weather-radar-card/compare/v3.7.2-beta1...v3.7.2
