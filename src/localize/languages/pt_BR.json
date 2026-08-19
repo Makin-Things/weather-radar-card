@@ -153,6 +153,8 @@
       },
       "square_map_disabled_helper": "Desativado quando uma altura é definida ou o cartão está em uma célula de grade de seções com número fixo de linhas — essas restrições já fixam a altura do cartão.",
       "show_loading_spinner": "Mostrar indicador de carregamento",
+      "preload_while_hidden": "Pré-carregar em segundo plano",
+      "preload_while_hidden_helper": "Continua buscando dados atualizados de radar e das camadas de risco enquanto o cartão está fora da tela, dentro de um pop-up fechado ou em uma aba em segundo plano, para retomar instantaneamente em vez de recarregar. A animação permanece pausada de qualquer forma enquanto oculto. Usa rede/largura de banda em segundo plano — desativado por padrão.",
       "show_lightning": "Mostrar raios (Blitzortung)"
     },
     "interaction": {

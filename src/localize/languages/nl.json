@@ -153,6 +153,8 @@
       },
       "square_map_disabled_helper": "Uitgeschakeld wanneer een hoogte is ingesteld of de kaart in een sections-rastercel met een vast aantal rijen staat — die beperkingen leggen de kaarthoogte al vast.",
       "show_loading_spinner": "Laadindicator weergeven",
+      "preload_while_hidden": "Vooraf laden op de achtergrond",
+      "preload_while_hidden_helper": "Blijft actuele radar- en gevarenoverlay-gegevens ophalen terwijl de kaart buiten beeld is, in een gesloten pop-up zit, of op een tabblad op de achtergrond staat, zodat deze direct hervat in plaats van opnieuw te laden. De animatie blijft sowieso gepauzeerd zolang de kaart verborgen is. Gebruikt netwerk/bandbreedte op de achtergrond — standaard uitgeschakeld.",
       "show_lightning": "Bliksem weergeven (Blitzortung)"
     },
     "interaction": {

@@ -885,6 +885,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         size: cfg.dwd_wind_size,
         timeMs,
         source: windSource,
+        preloadWhileHidden: cfg.preload_while_hidden === true,
       });
     }
     if (cfg.dwd_wind_flow === true) {
@@ -911,6 +912,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
         timeMs,
         particleColor: customColor ?? defaultColor,
         source: windSource,
+        preloadWhileHidden: cfg.preload_while_hidden === true,
       });
     }
   }

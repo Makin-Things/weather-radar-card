@@ -346,6 +346,11 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             <span>${localize('editor.display.show_loading_spinner')}</span>
           </label>
         </div>
+        <label>
+          <ha-switch .checked=${config.preload_while_hidden === true} .configValue=${'preload_while_hidden'} @change=${this._valueChangedSwitch}></ha-switch>
+          <span>${localize('editor.display.preload_while_hidden')}</span>
+        </label>
+        <div class="section-description">${localize('editor.display.preload_while_hidden_helper')}</div>
 
         <!-- INTERACTION -->
         <h3 class="section-header">${localize('editor.section.interaction')}</h3>

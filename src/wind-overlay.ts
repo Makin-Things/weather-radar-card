@@ -37,6 +37,8 @@ export interface WindOverlayOptions {
   timeMs?: number;
   /** Wind data source. Defaults to ICON-D2 globally; pass 'ndfd_wind' for NWS NDFD over US regions. */
   source?: WindSource;
+  /** Keep the hourly refresh running while the host card is hidden. See preload_while_hidden. */
+  preloadWhileHidden?: boolean;
 }
 
 export class WindOverlay {
@@ -51,6 +53,7 @@ export class WindOverlay {
   private _moveHandler: () => void;
   private _debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private _refreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private _preloadWhileHidden: boolean;
 
   constructor(map: L.Map, opts: WindOverlayOptions) {
     this._map = map;
@@ -70,6 +73,7 @@ export class WindOverlay {
       this._timeIso = null;
     }
     this._source = opts.source ?? DEFAULT_WIND_SOURCE;
+    this._preloadWhileHidden = opts.preloadWhileHidden === true;
     this._layer = L.layerGroup().addTo(map);
     this._moveHandler = (): void => {
       if (this._debounceTimer) clearTimeout(this._debounceTimer);
@@ -98,6 +102,7 @@ export class WindOverlay {
   private _paused = false;
 
   pause(): void {
+    if (this._preloadWhileHidden) return;
     if (this._paused) return;
     this._paused = true;
     if (this._refreshTimer) { clearTimeout(this._refreshTimer); this._refreshTimer = null; }

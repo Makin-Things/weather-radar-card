@@ -153,6 +153,8 @@
       },
       "square_map_disabled_helper": "Desactivado cuando se establece una altura o la tarjeta está en una celda de cuadrícula de secciones con un número fijo de filas — esas restricciones ya fijan la altura de la tarjeta.",
       "show_loading_spinner": "Mostrar indicador de carga",
+      "preload_while_hidden": "Precargar en segundo plano",
+      "preload_while_hidden_helper": "Sigue obteniendo datos actualizados de radar y superposiciones de riesgo mientras la tarjeta está fuera de pantalla, dentro de una ventana emergente cerrada o en una pestaña en segundo plano, para reanudar al instante en lugar de recargar. La animación permanece pausada mientras esté oculta, de todos modos. Usa red/ancho de banda en segundo plano — desactivado de forma predeterminada.",
       "show_lightning": "Mostrar rayos (Blitzortung)"
     },
     "interaction": {

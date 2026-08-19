@@ -153,6 +153,8 @@
       },
       "square_map_disabled_helper": "Deaktivert når en høyde er angitt eller kortet er i en sections-rutenettcelle med fast radantall — disse begrensningene fastsetter allerede kortets høyde.",
       "show_loading_spinner": "Vis lasteindikator",
+      "preload_while_hidden": "Forhåndslast i bakgrunnen",
+      "preload_while_hidden_helper": "Fortsetter å hente ferske radar- og faresonedata mens kortet er utenfor skjermen, inne i en lukket pop-up, eller i en bakgrunnsfane, slik at det gjenopptas umiddelbart i stedet for å lastes på nytt. Animasjonen forblir uansett pauset mens kortet er skjult. Bruker nettverk/båndbredde i bakgrunnen — av som standard.",
       "show_lightning": "Vis lyn (Blitzortung)"
     },
     "interaction": {

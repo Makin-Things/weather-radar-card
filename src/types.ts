@@ -96,6 +96,18 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
    */
   start_paused?: boolean;
   /**
+   * Keep fetching fresh radar frames and hazard-overlay data (wildfires,
+   * NWS alerts, wind) on their normal cadence even while the card is
+   * hidden — off-screen, inside a closed popup, or on a backgrounded
+   * browser tab — instead of the default full pause. Animation and
+   * canvas rendering still stop while hidden (nothing to see, no reason
+   * to spend CPU/GPU on it); only the data stays warm, so the card can
+   * resume playback instantly instead of reloading from scratch. Opt-in
+   * because it means real network/bandwidth use while the card isn't
+   * visible — off by default, matching the existing auto-pause.
+   */
+  preload_while_hidden?: boolean;
+  /**
    * Slide each radar layer in the estimated direction of rain motion
    * during the crossfade transition, so the rain appears to drift
    * smoothly between frames instead of appearing in its new position

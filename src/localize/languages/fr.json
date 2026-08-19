@@ -153,6 +153,8 @@
       },
       "square_map_disabled_helper": "Désactivé lorsqu'une hauteur est définie ou que la carte est dans une cellule de grille de sections avec un nombre de lignes fixe — ces contraintes fixent déjà la hauteur de la carte.",
       "show_loading_spinner": "Afficher l’indicateur de chargement",
+      "preload_while_hidden": "Précharger en arrière-plan",
+      "preload_while_hidden_helper": "Continue à récupérer les données radar et de superposition des risques les plus récentes pendant que la carte est hors écran, dans une fenêtre contextuelle fermée ou dans un onglet en arrière-plan, afin de reprendre instantanément au lieu de recharger. L'animation reste en pause tant que la carte est masquée. Utilise le réseau/la bande passante en arrière-plan — désactivé par défaut.",
       "show_lightning": "Afficher la foudre (Blitzortung)"
     },
     "interaction": {

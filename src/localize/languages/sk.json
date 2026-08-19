@@ -153,6 +153,8 @@
       },
       "square_map_disabled_helper": "Deaktivované, keď je nastavená výška alebo je karta v bunke sekčnej mriežky s pevným počtom riadkov — tieto obmedzenia už fixujú výšku karty.",
       "show_loading_spinner": "Zobraziť indikátor načítavania",
+      "preload_while_hidden": "Prednačítať na pozadí",
+      "preload_while_hidden_helper": "Naďalej sťahuje aktuálne radarové údaje a údaje prekrytí rizík, kým je karta mimo obrazovky, v zatvorenom vyskakovacom okne alebo na karte prehliadača na pozadí, takže sa obnoví okamžite namiesto opätovného načítania. Animácia zostáva pozastavená, kým je karta skrytá, v každom prípade. Používa sieť/šírku pásma na pozadí — predvolene vypnuté.",
       "show_lightning": "Zobraziť blesky (Blitzortung)"
     },
     "interaction": {

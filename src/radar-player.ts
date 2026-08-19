@@ -2468,7 +2468,17 @@ export class RadarPlayer {
       // A teardown / re-init happened after this timer was armed. The
       // re-init path arms its own chain; acting here would fork.
       if (genAtArm !== this._frameGeneration) return;
-      if (this._radarReady && !this.navPaused && !this.viewPaused) {
+      // navPaused (mid pan/zoom gesture) always defers — unrelated to
+      // hidden-card preloading. viewPaused defers too UNLESS
+      // preload_while_hidden opts out of that: _updateRadar() re-arms
+      // this chain at its own tail, so allowing it through here keeps
+      // fetching on the normal cadence while hidden instead of going
+      // silent after one no-op tick. It's still safe to call while
+      // hidden — _showSlot/_startLoop only touch invisible DOM/opacity,
+      // and _scheduleNext (inside _startLoop) independently refuses to
+      // animate while viewPaused is true.
+      const viewBlocksUpdate = this.viewPaused && this._cfg.preload_while_hidden !== true;
+      if (this._radarReady && !this.navPaused && !viewBlocksUpdate) {
         this._updateRadar();
       } else {
         this._doRadarUpdate = true;

@@ -153,6 +153,8 @@
       },
       "square_map_disabled_helper": "Wyłączone, gdy ustawiono wysokość lub karta znajduje się w komórce siatki sekcji o stałej liczbie wierszy — te ograniczenia już ustalają wysokość karty.",
       "show_loading_spinner": "Pokaż wskaźnik ładowania",
+      "preload_while_hidden": "Wstępne ładowanie w tle",
+      "preload_while_hidden_helper": "Kontynuuje pobieranie świeżych danych radaru i nakładek zagrożeń, gdy karta jest poza ekranem, w zamkniętym okienku popup lub na karcie przeglądarki w tle, dzięki czemu wznawia natychmiast zamiast ładować od nowa. Animacja i tak pozostaje wstrzymana, gdy karta jest ukryta. Zużywa sieć/przepustowość w tle — domyślnie wyłączone.",
       "show_lightning": "Pokaż pioruny (Blitzortung)"
     },
     "interaction": {

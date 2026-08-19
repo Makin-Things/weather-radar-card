@@ -272,7 +272,83 @@ describe('_scheduleUpdate single-chain invariant', () => {
   });
 });
 
-// ── 5. Coverage clip-path builder ────────────────────────────────────────
+// ── 5. preload_while_hidden ───────────────────────────────────────────────
+//
+// The armed timer used to go silent while viewPaused: it fired once, found
+// itself paused, set _doRadarUpdate and did NOT re-arm — so a card hidden
+// inside a closed popup fetched nothing at all until manually shown, then
+// paid the full stale-reinit cost. preload_while_hidden lets it keep
+// fetching (and re-arming) on the normal cadence while hidden.
+
+describe('_scheduleUpdate with preload_while_hidden', () => {
+  it('without the flag, a viewPaused tick defers instead of fetching (existing behaviour)', () => {
+    const p = makePlayer() as any;
+    p._radarReady = true;
+    p.viewPaused = true;
+    p._updateRadar = vi.fn();
+
+    p._scheduleUpdate();
+    vi.advanceTimersByTime(400_000);
+
+    expect(p._updateRadar).not.toHaveBeenCalled();
+    expect(p._doRadarUpdate).toBe(true);
+  });
+
+  it('with the flag, a viewPaused tick still fetches', () => {
+    const p = makePlayer({ preload_while_hidden: true }) as any;
+    p._radarReady = true;
+    p.viewPaused = true;
+    p._updateRadar = vi.fn();
+
+    p._scheduleUpdate();
+    vi.advanceTimersByTime(400_000);
+
+    expect(p._updateRadar).toHaveBeenCalledOnce();
+    expect(p._doRadarUpdate).toBe(false);
+  });
+
+  it('with the flag, the fetch chain keeps re-arming itself across multiple ticks while hidden', () => {
+    const p = makePlayer({ preload_while_hidden: true }) as any;
+    p._radarReady = true;
+    p.viewPaused = true;
+    // _updateRadar normally re-arms _scheduleUpdate at its own tail;
+    // stub it to do exactly that without the rest of its network/DOM work.
+    p._updateRadar = vi.fn(() => { p._scheduleUpdate(); });
+
+    p._scheduleUpdate();
+    vi.advanceTimersByTime(400_000);   // 1st tick
+    vi.advanceTimersByTime(400_000);   // 2nd tick — only happens if re-armed
+    vi.advanceTimersByTime(400_000);   // 3rd tick
+
+    expect(p._updateRadar).toHaveBeenCalledTimes(3);
+  });
+
+  it('navPaused still defers even with the flag on — mid-gesture pausing is unrelated to hidden-card preloading', () => {
+    const p = makePlayer({ preload_while_hidden: true }) as any;
+    p._radarReady = true;
+    p.navPaused = true;
+    p._updateRadar = vi.fn();
+
+    p._scheduleUpdate();
+    vi.advanceTimersByTime(400_000);
+
+    expect(p._updateRadar).not.toHaveBeenCalled();
+    expect(p._doRadarUpdate).toBe(true);
+  });
+
+  it('the flag has no effect when the card is not paused at all', () => {
+    const p = makePlayer({ preload_while_hidden: true }) as any;
+    p._radarReady = true;
+    p._updateRadar = vi.fn();
+
+    p._scheduleUpdate();
+    vi.advanceTimersByTime(400_000);
+
+    expect(p._updateRadar).toHaveBeenCalledOnce();
+  });
+});
+
+// ── 6. Coverage clip-path builder ────────────────────────────────────────
 
 describe('coverageClipPath', () => {
   // Builds the radar pane's clip-path from captured coverage-mask

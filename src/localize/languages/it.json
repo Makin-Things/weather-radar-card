@@ -153,6 +153,8 @@
       },
       "square_map_disabled_helper": "Disattivato quando è impostata un'altezza o la scheda è in una cella di griglia delle sezioni con numero di righe fisso — questi vincoli fissano già l'altezza della scheda.",
       "show_loading_spinner": "Mostra indicatore di caricamento",
+      "preload_while_hidden": "Precarica in background",
+      "preload_while_hidden_helper": "Continua a recuperare dati radar e delle sovrapposizioni di rischio aggiornati mentre la scheda è fuori schermo, in un popup chiuso o in una scheda del browser in background, così riprende istantaneamente invece di ricaricare. L'animazione resta comunque in pausa mentre è nascosta. Usa rete/larghezza di banda in background — disattivato per impostazione predefinita.",
       "show_lightning": "Mostra fulmini (Blitzortung)"
     },
     "interaction": {

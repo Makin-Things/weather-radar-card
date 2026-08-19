@@ -143,6 +143,8 @@
       "show_color_bar": "Show Colour Bar",
       "show_progress_bar": "Show Progress Bar",
       "show_loading_spinner": "Show Loading Spinner",
+      "preload_while_hidden": "Preload while hidden",
+      "preload_while_hidden_helper": "Keep fetching fresh radar and hazard-overlay data while the card is off-screen, inside a closed popup, or on a backgrounded tab, so it resumes instantly instead of reloading. Animation stays paused while hidden either way. Uses network/bandwidth in the background — off by default.",
       "show_wildfires": "Show Wildfires (US only)",
       "show_alerts": "Show NWS Alerts (US only)",
       "alerts_min_severity": "Alerts: minimum severity",

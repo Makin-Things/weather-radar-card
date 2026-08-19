@@ -109,6 +109,8 @@ export interface WindFlowOverlayOptions {
   particleColor?: string;
   /** Wind data source. Defaults to ICON-D2 globally; pass 'ndfd_wind' for NWS NDFD over US regions. */
   source?: WindSource;
+  /** Keep the hourly grid refresh running while the host card is hidden — the particle animation still stops. See preload_while_hidden. */
+  preloadWhileHidden?: boolean;
 }
 
 export class WindFlowOverlay {
@@ -152,6 +154,7 @@ export class WindFlowOverlay {
   private _reducedMotionMql: MediaQueryList | null = null;
   private _onReducedMotionChange: ((e: MediaQueryListEvent) => void) | null = null;
   private _refreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private _preloadWhileHidden: boolean;
   // Recomputed per refresh from the map's current zoom/centre so a single
   // wind speed renders proportionally across the zoom range.
   private _pxPerMpsPerFrame = REFERENCE_PX_PER_MPS_PER_FRAME;
@@ -163,6 +166,7 @@ export class WindFlowOverlay {
     this._map = map;
     this._color = opts.particleColor ?? 'rgba(60,60,80,0.55)';
     this._source = opts.source ?? DEFAULT_WIND_SOURCE;
+    this._preloadWhileHidden = opts.preloadWhileHidden === true;
     if (opts.timeMs != null) {
       const snapped = Math.trunc(opts.timeMs / 3_600_000) * 3_600_000;
       this._timeIso = new Date(snapped).toISOString().split('.')[0] + 'Z';
@@ -231,12 +235,20 @@ export class WindFlowOverlay {
   // Self-rescheduling timer that wakes shortly after each clock hour to
   // pick up the new hour bucket / model run. Independent of map events.
   private _scheduleHourlyRefresh(): void {
-    if (this._paused) return;
+    if (this._paused && !this._preloadWhileHidden) return;
     const now = Date.now();
     const nextHour = Math.ceil(now / 3_600_000) * 3_600_000;
     const delay = nextHour - now + HOURLY_REFRESH_OFFSET_MS;
     this._refreshTimer = setTimeout(() => {
-      void this._restart();
+      if (this._paused) {
+        // preload_while_hidden kept this chain alive — refetch the grid
+        // (only needs map.getBounds(), no canvas/pixel size involved) but
+        // skip the canvas resize + particle respawn + animation restart
+        // that a full _restart() would do into an invisible canvas.
+        void this._fetchGrid();
+      } else {
+        void this._restart();
+      }
       this._scheduleHourlyRefresh();
     }, delay);
   }
@@ -257,7 +269,10 @@ export class WindFlowOverlay {
   pause(): void {
     if (this._paused) return;
     this._paused = true;
+    // Animation always stops while hidden — no benefit to spending CPU/GPU
+    // animating an invisible canvas, preload_while_hidden or not.
     this._stopLoop();
+    if (this._preloadWhileHidden) return;
     if (this._refreshTimer) { clearTimeout(this._refreshTimer); this._refreshTimer = null; }
   }
 

@@ -139,8 +139,12 @@ export class NwsAlertsLayer {
 
   // Stop scheduled fetches while the host card is hidden (off-screen or
   // tab in background). Currently-rendered alerts stay on the map; no
-  // new network activity until resume().
+  // new network activity until resume() — unless preload_while_hidden
+  // opts out of that, in which case fetches keep running on their
+  // normal cadence so the card resumes with fresh data instead of a
+  // stale-then-refetch cycle.
   pause(): void {
+    if (this._getConfig().preload_while_hidden) return;
     if (this._pausedAt != null) return;
     this._pausedAt = Date.now();
     if (this._timer) { clearTimeout(this._timer); this._timer = null; }
