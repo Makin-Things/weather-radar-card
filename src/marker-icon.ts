@@ -1,6 +1,7 @@
 import * as L from 'leaflet';
 import { HomeAssistant } from 'custom-card-helpers';
 import { Marker } from './types';
+import { escapeHtml } from './string-utils';
 
 const ICON_BASE = '/local/community/weather-radar-card/';
 
@@ -78,7 +79,7 @@ export function createMarkerIconForMarker(
   if (iconType === 'default') {
     if (markerCfg.color) {
       return L.divIcon({
-        html: `<svg viewBox="0 0 24 24" width="16" height="16"><path fill="${colour}" d="${HOME_CIRCLE_PATH}"/></svg>`,
+        html: `<svg viewBox="0 0 24 24" width="16" height="16"><path fill="${escapeHtml(colour)}" d="${HOME_CIRCLE_PATH}"/></svg>`,
         iconSize: [16, 16],
         className: 'marker-mdi-icon',
       });
@@ -98,7 +99,7 @@ export function createMarkerIconForMarker(
     // <ha-icon> is registered globally by HA frontend and resolves any MDI
     // icon from HA's bundled database — no need to ship our own path table.
     return L.divIcon({
-      html: `<ha-icon icon="${iconType}" style="--mdc-icon-size: 24px; color: ${colour};"></ha-icon>`,
+      html: `<ha-icon icon="${escapeHtml(iconType)}" style="--mdc-icon-size: 24px; color: ${escapeHtml(colour)};"></ha-icon>`,
       iconSize: [24, 24],
       className: 'marker-mdi-icon',
     });

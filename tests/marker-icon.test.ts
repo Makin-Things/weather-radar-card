@@ -144,6 +144,40 @@ describe('createMarkerIconForMarker', () => {
     // entity_picture returns an L.Icon with the picture URL, not a coloured SVG
     expect(result.iconUrl).toBe('/api/image/john.jpg');
   });
+
+  // ── XSS: color / icon are user config (e.g. pasted from an untrusted
+  // dashboard share), not just a hex string or "mdi:name" — L.divIcon's
+  // html option is assigned via innerHTML, so an unescaped value here can
+  // break out of the SVG/ha-icon attribute it's interpolated into. ────────
+
+  describe('escapes color and icon before interpolating into divIcon html', () => {
+    it('MDI icon: escapes a color value that tries to break out of the style attribute', () => {
+      const malicious = '"><script>alert(1)</script>';
+      const result = createMarkerIconForMarker({ icon: 'mdi:home', color: malicious }, mockHass(), 'light') as any;
+      expect(result.html).not.toContain('<script>');
+      expect(result.html).toContain('&lt;script&gt;');
+      expect(result.html).toContain('&quot;&gt;');
+    });
+
+    it('MDI icon: escapes an icon value that tries to break out of the icon attribute', () => {
+      const malicious = 'mdi:home"><img src=x onerror=alert(1)>';
+      const result = createMarkerIconForMarker({ icon: malicious }, mockHass(), 'light') as any;
+      expect(result.html).not.toContain('<img');
+      expect(result.html).toContain('&lt;img');
+    });
+
+    it('default icon (inline SVG): escapes a color value that tries to break out of the fill attribute', () => {
+      const malicious = '"/><script>alert(1)</script>';
+      const result = createMarkerIconForMarker({ color: malicious }, mockHass(), 'light') as any;
+      expect(result.html).not.toContain('<script>');
+      expect(result.html).toContain('&lt;script&gt;');
+    });
+
+    it('a well-behaved hex color still renders normally (no over-escaping)', () => {
+      const result = createMarkerIconForMarker({ icon: 'mdi:home', color: '#ff0000' }, mockHass(), 'light') as any;
+      expect(result.html).toContain('color: #ff0000');
+    });
+  });
 });
 
 // ── findPersonEntityForDeviceTracker ─────────────────────────────────────────
