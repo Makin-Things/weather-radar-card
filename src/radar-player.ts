@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as L from 'leaflet';
+import { HomeAssistant, formatTime } from 'custom-card-helpers';
 import { WeatherRadarCardConfig } from './types';
 import { Z_RADAR_BASE } from './const';
 import { RateLimiter } from './rate-limiter';
@@ -284,6 +285,16 @@ export interface RadarPlayerOptions {
   rainviewerLimiter: RateLimiter;
   noaaLimiter: RateLimiter;
   dwdLimiter: RateLimiter;
+  /**
+   * Live accessor for hass — used to honour the user's HA-configured
+   * time_format (Settings > General) for the timeline timestamp instead
+   * of guessing from the browser's ambient locale, which is frequently
+   * wrong (many users run an en-US browser/OS language regardless of
+   * where they live, and even an explicit OS 12h/24h override often
+   * isn't honoured by Intl's locale resolution). Optional — falls back
+   * to the previous browser-locale behaviour when absent.
+   */
+  getHass?: () => HomeAssistant | undefined;
 }
 
 // ── RadarPlayer ──────────────────────────────────────────────────────────────
@@ -298,6 +309,7 @@ export class RadarPlayer {
   private _map: L.Map;
   private _shadowRoot: ShadowRoot;
   private _getConfig: () => WeatherRadarCardConfig;
+  private _getHass?: () => HomeAssistant | undefined;
   private _rainviewerLimiter: RateLimiter;
   private _noaaLimiter: RateLimiter;
   private _dwdLimiter: RateLimiter;
@@ -512,6 +524,7 @@ export class RadarPlayer {
     this._map = opts.map;
     this._shadowRoot = opts.shadowRoot;
     this._getConfig = opts.getConfig;
+    this._getHass = opts.getHass;
     this._rainviewerLimiter = opts.rainviewerLimiter;
     this._noaaLimiter = opts.noaaLimiter;
     this._dwdLimiter = opts.dwdLimiter;
@@ -1039,6 +1052,7 @@ export class RadarPlayer {
   // ── Config helpers ───────────────────────────────────────────────────────
 
   private get _cfg(): WeatherRadarCardConfig { return this._getConfig(); }
+  private get _hass(): HomeAssistant | undefined { return this._getHass?.(); }
   // Effective per-frame delay = configured frame_delay divided by the user's
   // playback-speed multiplier. Multiplier > 1 plays faster, < 1 plays slower.
   // Defaults to 1× (unchanged) when the user hasn't touched the speed button.
@@ -2204,16 +2218,25 @@ export class RadarPlayer {
   // Format date and time as separate parts. The bottom-row template
   // wraps each in its own span so a container query can hide the date
   // when the card is narrow (~< 398 px) and only the time stays
-  // visible. Uses the user's browser locale via Intl.DateTimeFormat.
+  // visible. Date stays on the browser's ambient locale (day/month
+  // naming — not what was reported wrong). Time defers to HA's own
+  // time_format setting (Settings > General) via custom-card-helpers'
+  // formatTime, the same helper HA's own frontend uses — the browser's
+  // ambient locale is an unreliable signal for 12h/24h specifically:
+  // many users run an en-US browser/OS language regardless of where
+  // they live, and even an explicit OS 24-hour override often isn't
+  // honoured by Intl's locale resolution. Falls back to the previous
+  // browser-locale behaviour when hass/locale isn't available.
   private _getTimeString(epochMs: number): { date: string; time: string } {
     const d = new Date(epochMs);
+    const locale = this._hass?.locale;
     return {
       date: new Intl.DateTimeFormat(undefined, {
         weekday: 'short', day: 'numeric', month: 'short',
       }).format(d),
-      time: new Intl.DateTimeFormat(undefined, {
-        hour: 'numeric', minute: '2-digit',
-      }).format(d),
+      time: locale
+        ? formatTime(d, locale)
+        : new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(d),
     };
   }
 

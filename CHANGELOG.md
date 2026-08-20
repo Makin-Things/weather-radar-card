@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Timestamps now follow Home Assistant's own Time format setting instead of guessing from the browser.** The radar timeline and NWS alert Effective/Expires times used `Intl.DateTimeFormat`/`Date#toLocaleString` with the browser's ambient locale to decide 12h vs 24h — an unreliable signal, since many users run an en-US browser/OS language regardless of where they live, and even an explicit OS 24-hour override often isn't honoured by `Intl`'s locale resolution. Both now defer to `hass.locale.time_format` (Settings → General) via `custom-card-helpers`' `formatTime`/`formatDateTime` — the same helpers HA's own frontend uses — falling back to the previous browser-locale behavior when unavailable. ([#239](https://github.com/jpettitt/weather-radar-card/issues/239))
+
 ## [3.7.3] - 2026-08-20
 
 > **Stable release.** Graduates the 3.7.3 line (`start_paused`, `preload_while_hidden`, DWD server-error handling, marker config-escaping hardening) to stable. Drop-in upgrade from 3.7.2 — no config changes required. The entries below are what changed since `3.7.2`.
