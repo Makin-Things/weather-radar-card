@@ -1575,6 +1575,14 @@ export class RadarPlayer {
 
   private _segColor(status: FrameStatus, isCurrent: boolean): string {
     const cfg = this._cfg;
+    // "At rest" (empty/loaded) is the cosmetic part of the palette a user
+    // would theme — loading/failed stay hardcoded since they're status
+    // signals (still fetching / fetch failed), not decoration.
+    const atRest = status === 'empty' || status === 'loaded';
+    if (atRest) {
+      const override = isCurrent ? cfg.progress_bar_active_color : cfg.progress_bar_background_color;
+      if (override) return override;
+    }
     const mapStyle = cfg.map_style?.toLowerCase() ?? '';
     const dark = mapStyle === 'dark' || mapStyle === 'satellite';
     const map = dark
@@ -1619,7 +1627,8 @@ export class RadarPlayer {
       if (!seg) return;
       seg.title = isNow ? localize('ui.now_tooltip') : '';
       // boxShadow (not backgroundColor) so _segColor doesn't clobber it on each tick.
-      seg.style.boxShadow = isNow ? 'inset 0 2px 0 0 var(--warning-color, #ff9800)' : '';
+      const nowColor = this._cfg.progress_bar_now_color || 'var(--warning-color, #ff9800)';
+      seg.style.boxShadow = isNow ? `inset 0 2px 0 0 ${nowColor}` : '';
     };
     if (this._lastNowMarkerIndex >= 0) apply(this._lastNowMarkerIndex, false);
     if (this._nowFrameIndex >= 0) apply(this._nowFrameIndex, true);
