@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Progress bar colors are now themeable via YAML** — `progress_bar_background_color`, `progress_bar_active_color`, and `progress_bar_now_color` override the built-in light/dark palette for the timeline's at-rest, currently-playing, and wall-clock "now" marker colors. Loading/failed status colors stay fixed since they signal real state, not decoration. YAML-only (matches the existing `dwd_wind_flow_color_*`/`wildfire_color` convention) — not exposed in the visual editor. ([#233](https://github.com/jpettitt/weather-radar-card/issues/233))
+
 ### Changed
 
 - **Wildfire popup now shows area in acres or hectares to match your Home Assistant unit system**, instead of always showing NIFC's raw acres. Metric users get hectares (not km² — hectares is the international convention for wildfire/land area, matching Australia's RFS, Canada's CIFFC, and Europe's EFFIS). The number itself, and the discovery date below it, now also follow your HA locale (thousands separator / date ordering) instead of guessing from the browser. The popup label changed from "Acres" to "Area" to match.

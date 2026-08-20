@@ -186,6 +186,15 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   show_progress_bar?: boolean;
   /** YAML-only: height in pixels of the tappable/draggable progress region. The visible track remains 8px. Default 8px. */
   progress_bar_touch_height?: number;
+  /** YAML-only: overrides the "at rest" segment colour (unloaded + already-loaded, non-current
+   * frames), replacing the built-in light/dark palette. Loading/failed status colours are left
+   * alone — they signal state, not theme. Any CSS colour string. */
+  progress_bar_background_color?: string;
+  /** YAML-only: overrides the currently-playing segment's colour (the loaded/at-rest states only —
+   * see progress_bar_background_color). Any CSS colour string. */
+  progress_bar_active_color?: string;
+  /** YAML-only: overrides the wall-clock "now" marker stripe. Defaults to var(--warning-color, #ff9800). Any CSS colour string. */
+  progress_bar_now_color?: string;
   show_color_bar?: boolean;
   show_loading_spinner?: boolean;
   // Wildfire overlay (US-only — see docs/wildfire-feature-design.md)
