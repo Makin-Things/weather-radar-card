@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.3] - 2026-08-20
+
+> **Stable release.** Graduates the 3.7.3 line (`start_paused`, `preload_while_hidden`, DWD server-error handling, marker config-escaping hardening) to stable. Drop-in upgrade from 3.7.2 — no config changes required. The entries below are what changed since `3.7.2`.
+
+### Added
+
+- **`start_paused` option** — start the card paused on the latest radar frame instead of auto-playing the animation loop. The card still refreshes periodically so the displayed frame stays current; tap play to see the full animation. Configurable via YAML or the visual editor's Animation section. Contributed by [@knobunc](https://github.com/knobunc).
+- **`preload_while_hidden` option** — keep fetching fresh radar and hazard-overlay data (wildfires, NWS alerts, wind) on their normal cadence while the card is hidden, instead of the default full pause. Fixes the "popup card reloads from scratch every time it opens" experience (e.g. inside a Bubble Card pop-up): the card resumes playback instantly from already-warm data instead of a multi-second reload. Animation and canvas rendering stay paused while hidden either way — only the underlying data stays fresh. Opt-in, since it means real network/bandwidth use while the card isn't visible. ([#234](https://github.com/jpettitt/weather-radar-card/issues/234))
+
+### Fixed
+
+- **`show_playback` no longer offers a dead playback toolbar for single-frame configs.** A card configured with `past_minutes: 0` and no forecast shows one static (auto-refreshing) frame — the animation loop never starts, so play/pause/skip had no effect if `show_playback` was on. The editor now hides the `show_playback` toggle in that case, and the toolbar stays off even for hand-written YAML.
+- **A source's own server errors (502/503/504) no longer show as "Rate limited."** A tile fetch that failed with a generic non-OK status wasn't tagged with its HTTP status code, so it fell into the same handling as a rate-limit response — wrong banner, wrong retry pacing for a server that's up but struggling rather than one we're self-throttling against. 5xx responses now get their own "Radar server error — retrying" banner and a longer, capped exponential backoff (up to ~30s between attempts) better suited to a transient outage. ([#223](https://github.com/jpettitt/weather-radar-card/issues/223))
+- **Both the rate-limit and server-error banners now clear themselves as soon as a tile loads successfully again**, instead of the rate-limit banner sitting there indefinitely (it previously had no hide path at all) or waiting on a fixed 10-second timer. Recovering also cancels the rate-limit path's fallback full-reinit, so a freshly-recovered loop isn't torn down and rebuilt for no reason. If both conditions are detected at once, each still shows its own banner, but a confirmed server error suppresses the disruptive fallback reinit, since the per-tile backoff is already handling recovery.
+- **Marker `color`/`icon` config values are now HTML-escaped before rendering.** A security audit of external-data rendering (NWS alerts, wildfires, lightning — all already consistently escaped) turned up one gap: `markers:` config's `color` and `icon` fields were interpolated unescaped into the marker's inline SVG/`<ha-icon>` HTML. Not externally reachable — it's the dashboard owner's own YAML — but a crafted value in a copy-pasted config could break out of the attribute. Closed with the same `escapeHtml()` helper already used everywhere else.
+
 ## [3.7.3-beta3] - 2026-08-18
 
 > **Beta pre-release.** New opt-in `preload_while_hidden` option, plus a marker config-escaping hardening fix. Continues the 3.7.3 beta line — drop-in upgrade from 3.7.3-beta2, no config changes required.
@@ -888,7 +904,8 @@ Multi-marker overhaul. **Breaking:** single-marker config fields (`show_marker`,
 
 For changes in versions prior to 2.0.4, please refer to the git commit history.
 
-[Unreleased]: https://github.com/jpettitt/weather-radar-card/compare/v3.7.3-beta3...HEAD
+[Unreleased]: https://github.com/jpettitt/weather-radar-card/compare/v3.7.3...HEAD
+[3.7.3]: https://github.com/jpettitt/weather-radar-card/compare/v3.7.3-beta3...v3.7.3
 [3.7.3-beta3]: https://github.com/jpettitt/weather-radar-card/compare/v3.7.3-beta2...v3.7.3-beta3
 [3.7.3-beta2]: https://github.com/jpettitt/weather-radar-card/compare/v3.7.3-beta1...v3.7.3-beta2
 [3.7.3-beta1]: https://github.com/jpettitt/weather-radar-card/compare/v3.7.2...v3.7.3-beta1
