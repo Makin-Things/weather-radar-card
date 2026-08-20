@@ -99,7 +99,7 @@ The user-facing knobs are summarised here. For the rendering architecture (two-s
 
 **Timeline scrubbing** — click anywhere on the progress bar to jump to that frame, or click and drag to scrub through the loop. Dragging pauses the animation; releasing resumes it if playback was active. On touchscreen dashboards, set `progress_bar_touch_height: 44` to create a larger scrub target. The extra touch area overlays the lower edge of the map; it does not increase the visible 8 px track or bottom chrome height.
 
-**Timestamp** — uses the browser's locale via `Intl.DateTimeFormat`, so 12 h (AM/PM) or 24 h format is chosen automatically based on the user's regional settings. On narrow cards (≤ 397 px) the date prefix is hidden; only the time remains visible.
+**Timestamp** — the time (hour:minute) follows Home Assistant's own **Time format** setting (your profile → General), the same as the rest of the HA frontend; falls back to the browser's locale if `hass`/locale isn't available for some reason. The date part (weekday/day/month) always follows the browser's locale. On narrow cards (≤ 397 px) the date prefix is hidden; only the time remains visible.
 
 **Crossfade** (`animated_transitions: true`) — a two-slot crossfade. The new frame fades in over a "cushion" of the previous frame held at full opacity; the cushion then fades out via CSS `transition-delay`. Avoids the alpha-compositing dip that a naive symmetric crossfade produces against light basemaps.
 

@@ -1,5 +1,5 @@
 import * as L from 'leaflet';
-import { HomeAssistant } from 'custom-card-helpers';
+import { HomeAssistant, formatDateTime as haFormatDateTime, type FrontendLocaleData } from 'custom-card-helpers';
 import { WeatherRadarCardConfig } from './types';
 import { localize } from './localize/localize';
 import { colorForEvent, NWS_ALERT_DEFAULT_COLOR } from './nws-alert-colors';
@@ -494,7 +494,7 @@ export class NwsAlertsLayer {
         // height so a long alert description never spills outside the card;
         // Leaflet adds an internal scrollbar past the cap.
         layer.bindPopup(
-          buildPopupHtml(feature.properties as AlertProps | null),
+          buildPopupHtml(feature.properties as AlertProps | null, this._hass?.locale),
           { autoPan: true, autoPanPadding: [12, 12], maxHeight: this._popupMaxHeight() },
         );
       },
@@ -615,13 +615,13 @@ function paintOrderAscending(a: GeoJSON.Feature, b: GeoJSON.Feature): number {
   return ca - cb;
 }
 
-function buildPopupHtml(props: AlertProps | null): string {
+function buildPopupHtml(props: AlertProps | null, locale: FrontendLocaleData | undefined): string {
   const event = props?.event ?? localize('ui.alerts.unknown_event');
   const severity = props?.severity ?? '—';
   const certainty = props?.certainty ?? '—';
   const urgency = props?.urgency ?? '—';
-  const effective = formatDateTime(props?.effective);
-  const expires = formatDateTime(props?.expires ?? props?.ends);
+  const effective = formatDateTime(props?.effective, locale);
+  const expires = formatDateTime(props?.expires ?? props?.ends, locale);
   const headline = props?.headline ?? '';
   // NWS descriptions are free-text bodies of the alert (winds, hail size,
   // location, recommended actions). They preserve their own line breaks —
@@ -673,11 +673,17 @@ function relativeLuminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-function formatDateTime(s: string | undefined): string {
+// Defers to HA's own time_format setting (Settings > General) via
+// custom-card-helpers' formatDateTime when locale is available — the
+// browser's ambient locale is an unreliable signal for 12h/24h
+// specifically (see the equivalent note in radar-player.ts's
+// _getTimeString). Falls back to the previous browser-locale behaviour
+// otherwise.
+function formatDateTime(s: string | undefined, locale: FrontendLocaleData | undefined): string {
   if (!s) return '—';
   const d = new Date(s);
   if (Number.isNaN(d.getTime())) return s;
-  return d.toLocaleString();
+  return locale ? haFormatDateTime(d, locale) : d.toLocaleString();
 }
 
 // Re-export for the editor to enumerate available categories without

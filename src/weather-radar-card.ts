@@ -741,6 +741,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       map: this._map,
       shadowRoot: this.shadowRoot!,
       getConfig: () => this._config,
+      getHass: () => this.hass,
       rainviewerLimiter,
       noaaLimiter,
       dwdLimiter,

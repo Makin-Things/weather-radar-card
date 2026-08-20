@@ -289,15 +289,15 @@ describe('relativeLuminance', () => {
 
 describe('formatDateTime', () => {
   it('returns "—" for undefined', () => {
-    expect(formatDateTime(undefined)).toBe('—');
+    expect(formatDateTime(undefined, undefined)).toBe('—');
   });
 
   it('returns "—" for empty string', () => {
-    expect(formatDateTime('')).toBe('—');
+    expect(formatDateTime('', undefined)).toBe('—');
   });
 
-  it('formats a valid ISO timestamp via Date.toLocaleString', () => {
-    const result = formatDateTime('2026-05-02T17:25:00-07:00');
+  it('without a locale, formats via Date.toLocaleString (browser-locale fallback)', () => {
+    const result = formatDateTime('2026-05-02T17:25:00-07:00', undefined);
     // toLocaleString output varies by environment locale, but it should
     // be non-trivial and contain a year.
     expect(result.length).toBeGreaterThan(5);
@@ -305,7 +305,26 @@ describe('formatDateTime', () => {
   });
 
   it('returns the input unchanged when it isn\'t parseable', () => {
-    expect(formatDateTime('not a date')).toBe('not a date');
+    expect(formatDateTime('not a date', undefined)).toBe('not a date');
+  });
+
+  // ── hass.locale.time_format (issue #239) ──────────────────────────────
+  //
+  // The browser's ambient locale is an unreliable signal for 12h/24h —
+  // many users run an en-US browser/OS language regardless of where they
+  // live. When a locale is available, defer to HA's own time_format
+  // setting instead (via custom-card-helpers' formatDateTime).
+
+  it('with time_format: "24", never renders AM/PM regardless of language', () => {
+    const locale = { language: 'en', number_format: 'language', time_format: '24' } as any;
+    const result = formatDateTime('2026-05-02T17:25:00-07:00', locale);
+    expect(result).not.toMatch(/AM|PM/i);
+  });
+
+  it('with time_format: "12", renders AM/PM', () => {
+    const locale = { language: 'en', number_format: 'language', time_format: '12' } as any;
+    const result = formatDateTime('2026-05-02T05:25:00-07:00', locale);
+    expect(result).toMatch(/AM|PM/i);
   });
 });
 
@@ -326,7 +345,7 @@ describe('buildPopupHtml — link URL escaping', () => {
 
   it('escapes attribute-breakout characters in the linkUrl', () => {
     const malicious = 'https://api.weather.gov/alerts/foo"><script>alert(1)</script>';
-    const html = buildPopupHtml(minimal(malicious));
+    const html = buildPopupHtml(minimal(malicious), undefined);
     // Raw " must NOT appear in the href value — that would close the attribute.
     expect(html).not.toContain('"><script>');
     // Escaped form must appear instead.
@@ -337,25 +356,25 @@ describe('buildPopupHtml — link URL escaping', () => {
 
   it('a normal NWS uri appears unescaped (only HTML-significant chars are touched)', () => {
     const normal = 'https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.1234';
-    const html = buildPopupHtml(minimal(normal));
+    const html = buildPopupHtml(minimal(normal), undefined);
     expect(html).toContain(`href="${normal}"`);
   });
 
   it('javascript: URIs trigger the fallback to the alerts index (scheme check)', () => {
-    const html = buildPopupHtml(minimal('javascript:alert(1)'));
+    const html = buildPopupHtml(minimal('javascript:alert(1)'), undefined);
     expect(html).toContain('href="https://www.weather.gov/alerts"');
     expect(html).not.toContain('javascript:');
   });
 
   it('null / undefined uri falls back to the alerts index', () => {
-    expect(buildPopupHtml(minimal(null))).toContain('href="https://www.weather.gov/alerts"');
-    expect(buildPopupHtml(minimal(undefined))).toContain('href="https://www.weather.gov/alerts"');
+    expect(buildPopupHtml(minimal(null), undefined)).toContain('href="https://www.weather.gov/alerts"');
+    expect(buildPopupHtml(minimal(undefined), undefined)).toContain('href="https://www.weather.gov/alerts"');
   });
 
   it('escapes < > & in the uri without converting them back', () => {
     // Hypothetical NWS uri with HTML-unsafe characters — verifies the
     // escapeHtml call covers all the standard set, not just the quote.
-    const html = buildPopupHtml(minimal('https://api.weather.gov/alerts/?a=<b>&c=d'));
+    const html = buildPopupHtml(minimal('https://api.weather.gov/alerts/?a=<b>&c=d'), undefined);
     expect(html).toContain('a=&lt;b&gt;&amp;c=d');
     expect(html).not.toContain('?a=<b>');
   });
