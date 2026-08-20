@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { geometryLngLatBounds, centroidLngLat, haversineKm, formatDistance } from '../src/geo-utils';
+import { geometryLngLatBounds, centroidLngLat, haversineKm, formatDistance, formatArea } from '../src/geo-utils';
 
 // A simple unit-square Polygon centred on the origin — easy to reason about
 // for bounds and centroid tests.
@@ -152,6 +152,41 @@ describe('formatDistance — display in HA preferred length unit', () => {
   it('handles exactly zero distance', () => {
     expect(formatDistance(0, 'km')).toBe('0 km');
     expect(formatDistance(0, 'mi')).toBe('0 mi');
+  });
+});
+
+// ── formatArea (wildfire acreage → HA preferred unit system) ────────────
+//
+// NIFC's WFIGS feed always reports area in acres. Metric users get
+// hectares, not km² — hectares is the international convention for
+// wildfire/land area (see the doc comment on formatArea for the
+// rationale). "mi" is the imperial signal (matches formatDistance's
+// convention); anything else defaults to metric.
+
+describe('formatArea — wildfire acreage in HA preferred unit system', () => {
+  it('converts to hectares when unit is "km" (metric)', () => {
+    // 1000 acres × 0.404686 = 404.686 -> 405
+    expect(formatArea(1000, 'km', undefined)).toBe('405 ha');
+  });
+
+  it('stays in acres when unit is "mi" (imperial) — no conversion', () => {
+    expect(formatArea(2500, 'mi', undefined)).toBe('2,500 ac');
+  });
+
+  it('defaults to metric (hectares) when unit is undefined or unknown', () => {
+    // 100 acres × 0.404686 = 40.4686 -> 40
+    expect(formatArea(100, undefined, undefined)).toBe('40 ha');
+    expect(formatArea(100, 'lightyears', undefined)).toBe('40 ha');
+  });
+
+  it('handles exactly zero acreage', () => {
+    expect(formatArea(0, 'km', undefined)).toBe('0 ha');
+    expect(formatArea(0, 'mi', undefined)).toBe('0 ac');
+  });
+
+  it('formats large fires with a thousands separator via formatNumber', () => {
+    // 50,000 acres x 0.404686 = 20,234.3 -> 20,234
+    expect(formatArea(50_000, 'km', undefined)).toBe('20,234 ha');
   });
 });
 

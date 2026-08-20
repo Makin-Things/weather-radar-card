@@ -18,7 +18,7 @@
       "dwd_de_only": "Radar DWD pokrýva Nemecko a jeho bezprostredných susedov. Vaša poloha v Home Assistante je mimo tohto regiónu — mapa môže zobrazovať len „žiadne údaje\"."
     },
     "wildfire": {
-      "acres": "Akre",
+      "area": "Rozloha",
       "contained": "Zvládnutý",
       "discovered": "Zistený",
       "more_info": "Viac info → NIFC",

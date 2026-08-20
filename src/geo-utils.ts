@@ -2,6 +2,8 @@
 // NWS alert polygons, future GeoJSON overlays). Kept side-effect-free
 // so they're trivially unit-testable.
 
+import { formatNumber, type FrontendLocaleData } from 'custom-card-helpers';
+
 // Compute the lng/lat bounding box of a Polygon or MultiPolygon. Returns
 // null for unsupported geometry types (Point, LineString, etc.) or empty
 // coordinate arrays. Skips coordinate pairs whose values aren't numbers.
@@ -96,4 +98,24 @@ export function formatDistance(distKm: number, lengthUnit: string | undefined): 
     return `${Math.round(distKm * KM_TO_MILES)} mi`;
   }
   return `${Math.round(distKm)} km`;
+}
+
+// Format a wildfire's acreage (NIFC's WFIGS feed always reports area in
+// acres) for display in HA's preferred unit system. Metric users get
+// hectares, not km² — hectares is the international convention for
+// wildfire/land area (Australia's RFS, Canada's CIFFC, Europe's EFFIS all
+// report this way; km² would be non-idiomatic for this domain). Same
+// `lengthUnit`/fallback convention as formatDistance. `locale` is
+// `hass.locale`, passed through to formatNumber for a thousands-separator
+// style matching the user's HA number-format preference; undefined falls
+// back to the browser's ambient locale (formatNumber's own default).
+const ACRES_TO_HECTARES = 0.404686;
+export function formatArea(
+  acres: number,
+  lengthUnit: string | undefined,
+  locale: FrontendLocaleData | undefined,
+): string {
+  const isImperial = lengthUnit === 'mi';
+  const value = isImperial ? acres : acres * ACRES_TO_HECTARES;
+  return `${formatNumber(value, locale, { maximumFractionDigits: 0 })} ${isImperial ? 'ac' : 'ha'}`;
 }

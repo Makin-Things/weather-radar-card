@@ -18,7 +18,7 @@
       "dwd_de_only": "DWD-radar dekt Duitsland en zijn directe buurlanden. Uw Home Assistant-locatie ligt buiten deze regio — de kaart toont mogelijk alleen «geen data»."
     },
     "wildfire": {
-      "acres": "Acres",
+      "area": "Oppervlakte",
       "contained": "Onder controle",
       "discovered": "Ontdekt",
       "more_info": "Meer info → NIFC",
