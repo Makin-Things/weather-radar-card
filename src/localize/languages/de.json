@@ -18,7 +18,7 @@
       "dwd_de_only": "Das DWD-Radar deckt Deutschland und seine direkten Nachbarn ab. Ihr Home-Assistant-Standort liegt außerhalb dieser Region — die Karte zeigt möglicherweise nur „keine Daten\"."
     },
     "wildfire": {
-      "acres": "Acres",
+      "area": "Fläche",
       "contained": "Eingedämmt",
       "discovered": "Entdeckt",
       "more_info": "Mehr Infos → NIFC",

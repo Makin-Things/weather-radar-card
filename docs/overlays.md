@@ -8,7 +8,7 @@ For non-US instances, the card surfaces a banner reminding the user that the dat
 
 When `show_wildfires: true`, the card overlays active US wildfire perimeters from the National Interagency Fire Center's [WFIGS Current Interagency Fire Perimeters](https://data-nifc.opendata.arcgis.com/datasets/nifc::wfigs-current-interagency-fire-perimeters/about) feed.
 
-Active fires draw red; fires reported as 100% contained draw grey. Small incidents render as a fire icon at the centroid; larger incidents render as a polygon outline with translucent fill. Click any fire to see its name, acreage, containment, and discovery date, with a link to NIFC's InciWeb for further information (gated against InciWeb's RSS index so we don't link to 404s).
+Active fires draw red; fires reported as 100% contained draw grey. Small incidents render as a fire icon at the centroid; larger incidents render as a polygon outline with translucent fill. Click any fire to see its name, area, containment, and discovery date, with a link to NIFC's InciWeb for further information (gated against InciWeb's RSS index so we don't link to 404s). NIFC always reports area in acres; the popup shows it in acres or hectares — whichever matches your Home Assistant unit system — and the discovery date follows your HA locale.
 
 The overlay refreshes every 5 minutes when fires are visible (matching NIFC's update cadence) and every 30 minutes when none are. Defaults filter out incidents under 10 acres; tune with `wildfire_min_acres` or `wildfire_radius_km`.
 

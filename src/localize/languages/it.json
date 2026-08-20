@@ -18,7 +18,7 @@
       "dwd_de_only": "Il radar DWD copre la Germania e i suoi vicini immediati. La posizione di Home Assistant è al di fuori di questa regione — la mappa potrebbe mostrare solo «nessun dato»."
     },
     "wildfire": {
-      "acres": "Acri",
+      "area": "Superficie",
       "contained": "Contenuto",
       "discovered": "Rilevato",
       "more_info": "Maggiori info → NIFC",

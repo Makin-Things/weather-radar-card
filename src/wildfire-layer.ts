@@ -1,9 +1,9 @@
 import * as L from 'leaflet';
-import { HomeAssistant } from 'custom-card-helpers';
+import { HomeAssistant, formatDate } from 'custom-card-helpers';
 import { WeatherRadarCardConfig } from './types';
 import { FIRE_PATH } from './marker-icon';
 import { localize } from './localize/localize';
-import { centroidLngLat, geometryLngLatBounds, haversineKm } from './geo-utils';
+import { centroidLngLat, geometryLngLatBounds, haversineKm, formatArea } from './geo-utils';
 import { sharedCanvasRenderer } from './shared-canvas-renderer';
 import { escapeHtml, slugify } from './string-utils';
 import { mapsEqual } from './map-utils';
@@ -384,6 +384,7 @@ export class WildfireLayer {
               feature.properties as WildfireProps | null,
               this._inciwebSlugs,
               this._inciwebReady,
+              this._hass,
             ),
             { autoPan: true, autoPanPadding: [12, 12], maxHeight: this._popupMaxHeight() },
           );
@@ -406,7 +407,7 @@ export class WildfireLayer {
         });
         const marker = L.marker(item.latLng, { icon });
         marker.bindPopup(
-          buildPopupHtml(props, this._inciwebSlugs, this._inciwebReady),
+          buildPopupHtml(props, this._inciwebSlugs, this._inciwebReady, this._hass),
           { autoPan: true, autoPanPadding: [12, 12], maxHeight: this._popupMaxHeight() },
         );
         marker.addTo(this._iconLayer!);
@@ -458,20 +459,28 @@ function buildPopupHtml(
   props: WildfireProps | null,
   inciwebSlugs: Set<string>,
   inciwebReady: boolean,
+  hass: HomeAssistant | undefined,
 ): string {
+  const locale = hass?.locale;
   const name = props?.poly_IncidentName ?? localize('ui.wildfire.unknown_name');
   const acres = props?.poly_GISAcres;
   const contained = props?.attr_PercentContained;
   const discovered = props?.attr_FireDiscoveryDateTime;
 
-  const acresStr = typeof acres === 'number'
-    ? acres.toLocaleString(undefined, { maximumFractionDigits: 0 })
+  // Hectares for metric users, not raw acres — see formatArea's doc
+  // comment for why hectares (not km²) is the right metric unit here.
+  const areaStr = typeof acres === 'number'
+    ? formatArea(acres, hass?.config?.unit_system?.length, locale)
     : '—';
   const containedStr = typeof contained === 'number'
     ? `${Math.round(contained)}%`
     : '—';
+  // Defers to HA's locale for date ordering (DD/MM vs MM/DD) — same
+  // rationale as the timeline timestamp fix (issue #239): the browser's
+  // ambient locale is an unreliable signal, and a misread date ordering
+  // here could make a fire look more or less recent than it actually is.
   const discoveredStr = typeof discovered === 'number'
-    ? new Date(discovered).toLocaleDateString()
+    ? (locale ? formatDate(new Date(discovered), locale) : new Date(discovered).toLocaleDateString())
     : '—';
 
   // InciWeb URL format: /incident-information/{poo-jurisdictional-unit-lower}-{name-slug}
@@ -510,7 +519,7 @@ function buildPopupHtml(
   return `
     <div style="font:12px/1.4 'Helvetica Neue',Arial,sans-serif;min-width:180px">
       <div style="font-weight:bold;font-size:13px;margin-bottom:4px">${escapeHtml(name)}</div>
-      <div><b>${escapeHtml(localize('ui.wildfire.acres'))}:</b> ${escapeHtml(acresStr)}</div>
+      <div><b>${escapeHtml(localize('ui.wildfire.area'))}:</b> ${escapeHtml(areaStr)}</div>
       <div><b>${escapeHtml(localize('ui.wildfire.contained'))}:</b> ${escapeHtml(containedStr)}</div>
       <div><b>${escapeHtml(localize('ui.wildfire.discovered'))}:</b> ${escapeHtml(discoveredStr)}</div>
       <div style="margin-top:6px;font-size:10px;color:#666">${escapeHtml(localize('ui.wildfire.disclaimer'))} <a href="${DOCS_WILDFIRES_URL}" target="_blank" rel="noopener noreferrer" style="color:#666;text-decoration:underline">${escapeHtml(localize('ui.wildfire.see_readme'))}</a>.</div>
@@ -533,4 +542,4 @@ function featureBboxPx(
 }
 
 // Test-only exports — internal helpers exposed for the unit tests.
-export { featureKey, decisionsEqual, isContained, iconSizeForAcres };
+export { featureKey, decisionsEqual, isContained, iconSizeForAcres, buildPopupHtml };

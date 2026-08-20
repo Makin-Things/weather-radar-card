@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Wildfire popup now shows area in acres or hectares to match your Home Assistant unit system**, instead of always showing NIFC's raw acres. Metric users get hectares (not km² — hectares is the international convention for wildfire/land area, matching Australia's RFS, Canada's CIFFC, and Europe's EFFIS). The number itself, and the discovery date below it, now also follow your HA locale (thousands separator / date ordering) instead of guessing from the browser. The popup label changed from "Acres" to "Area" to match.
+
 ### Fixed
 
 - **Timestamps now follow Home Assistant's own Time format setting instead of guessing from the browser.** The radar timeline and NWS alert Effective/Expires times used `Intl.DateTimeFormat`/`Date#toLocaleString` with the browser's ambient locale to decide 12h vs 24h — an unreliable signal, since many users run an en-US browser/OS language regardless of where they live, and even an explicit OS 24-hour override often isn't honoured by `Intl`'s locale resolution. Both now defer to `hass.locale.time_format` (Settings → General) via `custom-card-helpers`' `formatTime`/`formatDateTime` — the same helpers HA's own frontend uses — falling back to the previous browser-locale behavior when unavailable. ([#239](https://github.com/jpettitt/weather-radar-card/issues/239))

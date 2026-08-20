@@ -18,7 +18,7 @@
       "dwd_de_only": "DWD-radaren dekker Tyskland og umiddelbare naboland. Plasseringen din i Home Assistant er utenfor denne regionen — kartet viser kanskje bare «ingen data»."
     },
     "wildfire": {
-      "acres": "Acres",
+      "area": "Areal",
       "contained": "Begrenset",
       "discovered": "Oppdaget",
       "more_info": "Mer info → NIFC",
