@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.8.0-beta1] - 2026-08-20
+
+> **Beta pre-release.** Themeable progress-bar colors, HA-locale-aware timestamps and wildfire area/date formatting, plus a CI housekeeping fix. Drop-in upgrade from 3.7.3 — no config changes required.
+
 ### Added
 
 - **Progress bar colors are now themeable via YAML** — `progress_bar_background_color`, `progress_bar_active_color`, and `progress_bar_now_color` override the built-in light/dark palette for the timeline's at-rest, currently-playing, and wall-clock "now" marker colors. Loading/failed status colors stay fixed since they signal real state, not decoration. YAML-only (matches the existing `dwd_wind_flow_color_*`/`wildfire_color` convention) — not exposed in the visual editor. ([#233](https://github.com/jpettitt/weather-radar-card/issues/233))
