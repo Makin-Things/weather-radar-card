@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.8.0-beta2] - 2026-08-21
+
+> **Beta pre-release.** Fixes forecast-heavy configs loading their farthest-future frame before "now". Continues the 3.8.0 beta line — drop-in upgrade from 3.8.0-beta1, no config changes required.
+
 ### Fixed
 
 - **Radar init no longer loads the farthest-future forecast frame before "now" on forecast-heavy configs.** The initial load always fetched frames highest-array-index-first, which coincided with "now" only when there was little/no `forecast_minutes` — for a config like `past_minutes: 0, forecast_minutes: 60`, "now" was index 0 and loaded dead last, so the card showed an hour-ahead forecast frame first and took a full sequential pass through every forecast frame before showing current conditions. The load order now always starts at "now" and fans forward through any forecast frames, then backward through any past frames — unchanged for today's common past-only configs. ([#246](https://github.com/jpettitt/weather-radar-card/issues/246))
