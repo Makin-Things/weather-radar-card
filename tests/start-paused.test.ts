@@ -32,7 +32,7 @@ vi.mock('leaflet', () => {
   };
 });
 
-import { RadarPlayer, type RadarFrame } from '../src/radar-player';
+import { RadarPlayer, type RadarFrame, insertSorted } from '../src/radar-player';
 import { RadarToolbar } from '../src/radar-toolbar';
 import type { WeatherRadarCardConfig } from '../src/types';
 
@@ -95,19 +95,16 @@ describe('RadarPlayer with start_paused (run = false before init)', () => {
     p._loadedSlots = [1];
     p._currentSlot = 0;
     p._prev1Slot = 0;
+    p._nowFrameIndex = 1;
     p._radarImage = [fakeLayer(), fakeLayer()];
     p._radarPaths = frames(1000, 1600);
 
-    // Simulate the second frame loading — the two-frames-ready branch
-    // in _initRadarBody now calls _startLoop unconditionally.
-    // _startLoop sets _currentSlot, calls _showSlot (setting _prev1Slot),
-    // then _scheduleNext returns immediately when !this.run.
+    // Simulate the second (older) frame loading via the real insertion +
+    // bootstrap logic _initRadarBody uses, rather than hand-copying it —
+    // a hand-copy here can't catch a regression in the real methods.
     const prevSlotCount = p._loadedSlots.length;
-    p._loadedSlots.unshift(0);
-
-    if (p._loadedSlots.length >= 2 && prevSlotCount < 2) {
-      p._startLoop(p._loadedSlots.length - 1);
-    }
+    const insertPos = insertSorted(p._loadedSlots, 0);
+    p._afterFrameInserted(prevSlotCount, insertPos);
 
     expect(p._startLoop).toHaveBeenCalledWith(1);
   });

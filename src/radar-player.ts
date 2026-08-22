@@ -32,6 +32,45 @@ export function nearestFrameIndex(frames: { time: number }[], nowSec: number): n
   return best;
 }
 
+/**
+ * Frame-load order for the initial radar fetch: "now" first, then forward
+ * through any forecast frames, then backward through any past frames.
+ * Pure function — factored out so it's unit-testable without standing up
+ * a full RadarPlayer.
+ *
+ * For a past-only config (no forecast_minutes), nowIndex is already
+ * frameCount-1, so this degenerates to the plain descending
+ * frameCount-1..0 sequence — i.e. today's behavior is unchanged. It's
+ * only a forecast-heavy config (little/no past_minutes) where nowIndex
+ * sits near 0 that this differs: loading highest-index-first there would
+ * load the farthest-future frame before "now" (issue #246).
+ */
+export function buildLoadOrder(frameCount: number, nowIndex: number): number[] {
+  const now = Math.max(0, Math.min(frameCount - 1, nowIndex));
+  const order: number[] = [];
+  for (let fi = now; fi < frameCount; fi++) order.push(fi);
+  for (let fi = now - 1; fi >= 0; fi--) order.push(fi);
+  return order;
+}
+
+/**
+ * Insert `v` into `arr` (assumed already sorted ascending) at its sorted
+ * position, mutating `arr` in place. Returns the insertion index. Pure
+ * function — factored out so it's unit-testable without standing up a
+ * full RadarPlayer.
+ */
+export function insertSorted(arr: number[], v: number): number {
+  let lo = 0;
+  let hi = arr.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (arr[mid] < v) lo = mid + 1;
+    else hi = mid;
+  }
+  arr.splice(lo, 0, v);
+  return lo;
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type FrameStatus = 'empty' | 'loading' | 'loaded' | 'failed';
@@ -1366,13 +1405,25 @@ export class RadarPlayer {
     if (!this.run || this.navPaused || this.viewPaused) return;
     const n = this._loadedSlots.length;
     if (n < 2) return;
+    // delay is fixed at schedule time — if _loadedSlots grows before
+    // this timer fires (the init loop's forward leg appends new frames
+    // at the true tail while the loop is already animating; see
+    // buildLoadOrder), a delay chosen for "this is the last frame"
+    // can end up longer than it needed to be for one tick. Cosmetic
+    // and self-correcting on the very next tick; not worth the timer
+    // cancel/reschedule plumbing a fully-live recompute would need.
     const delay = this._currentSlot === n - 1
       ? this._timeout + this._restartDelay
       : this._timeout;
-    const isLoopBack = this._currentSlot === n - 1;
     setTimeout(() => {
       if (gen !== this._loopGen) return;
-      this._currentSlot = (this._currentSlot + 1) % this._loadedSlots.length;
+      // Re-read _loadedSlots.length fresh rather than closing over `n`
+      // — unlike `delay` above, isLoopBack only affects which transition
+      // style renders on THIS tick, so there's no reason not to use the
+      // current, correct value.
+      const freshN = this._loadedSlots.length;
+      const isLoopBack = this._currentSlot === freshN - 1;
+      this._currentSlot = (this._currentSlot + 1) % freshN;
       // Snap (no fade) when wrapping from the last frame back to the
       // first — the restart-delay pause already breaks the perceived
       // continuity of the animation, so a smooth crossfade across the
@@ -2324,9 +2375,16 @@ export class RadarPlayer {
     // half the captures are still in their decode-wait.
     const snapshotPromises: Promise<void>[] = [];
 
-    let newestShown = false;
+    let firstShown = false;
 
-    for (let fi = frameCount - 1; fi >= 0; fi--) {
+    // "Now" first, then forward through any forecast frames, then
+    // backward through any past frames — see buildLoadOrder's doc-block.
+    // For a past-only config this is exactly the old descending
+    // frameCount-1..0 sequence (nowIndex is already frameCount-1 there).
+    const order = buildLoadOrder(frameCount, this._nowFrameIndex);
+
+    for (let idx = 0; idx < order.length; idx++) {
+      const fi = order[idx];
       if (myGen !== this._frameGeneration || !this._map) return;
 
       this._setSegment(fi, 'loading');
@@ -2345,14 +2403,16 @@ export class RadarPlayer {
 
       if (status === 'loaded') {
         const prevSlotCount = this._loadedSlots.length;
-        this._loadedSlots.unshift(fi);
+        const insertPos = insertSorted(this._loadedSlots, fi);
 
-        // Motion-comp prep: snapshot this frame, then compute the
-        // motion vector(s) we now have enough data for. Frames load
-        // newest first, so after fi snapshots we may be able to
-        // compute motion FROM fi INTO fi+1 (snapshotted last
-        // iteration). motion[fi] itself needs fi-1, which arrives
-        // next iteration.
+        // Motion-comp prep: snapshot this frame, then compute the motion
+        // vector(s) we now have enough data for. _computeMotionForFrame
+        // no-ops (sets null, doesn't compute garbage) when the adjacent
+        // snapshot isn't captured yet, so this is safe regardless of
+        // load order — and _onLayerLoaded's own 'load' listener (wired
+        // in _createLayer before layerSettled's listener) independently
+        // redoes the same computation as each layer settles, so this is
+        // largely a fire-and-forget head start rather than the only path.
         //
         // Fire and forget: _captureFrameSnapshot awaits each tile's
         // decode() so we don't want to block this loop on it. The
@@ -2373,13 +2433,14 @@ export class RadarPlayer {
           );
         }
 
-        if (!newestShown) {
-          // Show newest frame as a static preview before the loop starts.
-          // Layer opacity is 1 — radar_opacity is carried by the radar
-          // pane (see _ensureRadarPane). The shared coverage mask is
-          // already visible (always on), so the preview has its
-          // coverage overlay from the start.
-          newestShown = true;
+        if (!firstShown) {
+          // Show the first-loaded frame ("now", per the load order
+          // above) as a static preview before the loop starts. Layer
+          // opacity is 1 — radar_opacity is carried by the radar pane
+          // (see _ensureRadarPane). The shared coverage mask is already
+          // visible (always on), so the preview has its coverage
+          // overlay from the start.
+          firstShown = true;
           if (el) el.style.opacity = '1';
           this._setTimestamp(fi);
           this._highlightSegment(fi);
@@ -2393,32 +2454,9 @@ export class RadarPlayer {
           this._prev1Slot = this._loadedSlots.indexOf(fi);
         }
 
-        if (this._loadedSlots.length >= 2) {
-          this._radarReady = true;
-          if (prevSlotCount >= 2) {
-            // A new older frame was prepended; shift _currentSlot to keep the
-            // same frame (newest) showing — the running timer continues unaffected.
-            this._currentSlot++;
-            // _prev1Slot is also an index into _loadedSlots, and that array
-            // just grew at the front, so the previously shown slot is now
-            // one step up. Without this shift the next _showSlot tries to
-            // fade out the wrong layer (the freshly loaded one, already at
-            // 0) and the previously visible frame stays orphaned at active
-            // opacity until the loop wraps to slot 0, where snap mode
-            // resets every other layer. That's the ghost trail of stacked
-            // frames visible while later frames are still loading.
-            if (this._prev1Slot >= 0) this._prev1Slot++;
-          } else {
-            // Two frames ready: show the newest and start the loop.
-            // _startLoop sets _currentSlot, calls _showSlot (which sets
-            // _prev1Slot), then _scheduleNext — which returns immediately
-            // when !this.run, so this works for both playing and paused
-            // (start_paused) states without a separate branch.
-            this._startLoop(this._loadedSlots.length - 1);
-          }
-        }
+        this._afterFrameInserted(prevSlotCount, insertPos);
       } else {
-        for (let j = fi - 1; j >= 0; j--) this._setSegment(j, 'failed');
+        this._markRemainingFailed(order, idx + 1);
         break;
       }
     }
@@ -2455,6 +2493,42 @@ export class RadarPlayer {
       this._radarReady = true;
       this._scheduleUpdate();
     }
+  }
+
+  // Record a successfully-loaded frame's effect on playback bootstrap
+  // state, once it's been inserted into _loadedSlots at `insertPos`
+  // (see insertSorted). Frames no longer always load in strict
+  // newest-to-oldest order (see buildLoadOrder), so a new frame can
+  // land at any position, not just the front — inserting at `insertPos`
+  // only shifts existing positions >= insertPos up by one.
+  private _afterFrameInserted(prevSlotCount: number, insertPos: number): void {
+    if (this._loadedSlots.length < 2) return;
+    this._radarReady = true;
+    if (prevSlotCount >= 2) {
+      if (insertPos <= this._currentSlot) this._currentSlot++;
+      if (this._prev1Slot >= 0 && insertPos <= this._prev1Slot) this._prev1Slot++;
+    } else {
+      // First time reaching 2 loaded frames: show "now" and start the
+      // loop. "now" is guaranteed already loaded here — it's always the
+      // first frame attempted (see buildLoadOrder), and a failure on it
+      // aborts the whole init immediately (see _markRemainingFailed's
+      // caller) — so indexOf never misses. _startLoop sets _currentSlot,
+      // calls _showSlot (which sets _prev1Slot), then _scheduleNext —
+      // which returns immediately when !this.run, so this works for
+      // both playing and paused (start_paused) states without a
+      // separate branch.
+      this._startLoop(this._loadedSlots.indexOf(this._nowFrameIndex));
+    }
+  }
+
+  // Mark every not-yet-attempted frame in `order` (from `fromIdx` on) as
+  // failed. Called when a frame fails to load — the init loop aborts
+  // entirely at that point, so everything later in the load order never
+  // gets attempted. `order` isn't a contiguous numeric range once
+  // loading walks outward from "now" (see buildLoadOrder), so this
+  // can't be a simple counting loop over frame indices.
+  private _markRemainingFailed(order: number[], fromIdx: number): void {
+    for (let k = fromIdx; k < order.length; k++) this._setSegment(order[k], 'failed');
   }
 
   // ── Periodic update ──────────────────────────────────────────────────────
