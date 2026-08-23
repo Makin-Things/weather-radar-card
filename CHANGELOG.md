@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The periodic background refresh could corrupt the current playback position, causing the timeline to jump backward on loop and skip-back to jump to "Latest" instead of the previous frame.** Every ~5-6 min refresh renumbers frame indices and temporarily shrinks the loaded-frame list while the new frame's tiles load, but didn't stop the running animation timer or adjust the current position for the shift first — a tick or button press landing in that window read a stale position against the shrunk list, landing on an arbitrary wrapped frame. ([#249](https://github.com/jpettitt/weather-radar-card/issues/249))
+
 ## [3.8.0-beta2] - 2026-08-21
 
 > **Beta pre-release.** Fixes forecast-heavy configs loading their farthest-future frame before "now". Continues the 3.8.0 beta line — drop-in upgrade from 3.8.0-beta1, no config changes required.
