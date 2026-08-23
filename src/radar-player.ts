@@ -2632,6 +2632,16 @@ export class RadarPlayer {
     }
     const frameCount = this._configFrameCount;
 
+    // Stop the loop before renumbering frame indices below — otherwise an
+    // already-armed animation tick can fire mid-shift against a
+    // temporarily-shrunk _loadedSlots (frameCount -> frameCount-1 until
+    // the new frame settles) using a now-stale _currentSlot, landing on
+    // an arbitrary wrapped position instead of continuing smoothly.
+    // _stopLoop's _settleVisibility runs first, against the still-valid
+    // pre-shift state. _startLoop() below re-arms a fresh generation
+    // once the new frame is ready.
+    this._stopLoop();
+
     const newLayer = this._createLayer(latestFrame);
     newLayer.addTo(this._map);
     const newTime = this._getTimeString(latestFrame.time * 1000);
@@ -2639,6 +2649,11 @@ export class RadarPlayer {
     // create or shift on refresh; the no-data geometry doesn't change.
 
     this._radarImage[0]?.remove();
+    // _loadedSlots holds raw frame indices; if frame 0 was loaded it's
+    // about to be dropped below, and every position after it shifts down
+    // by one — track that so _currentSlot/_prev1Slot keep pointing at
+    // the same frame instead of going stale.
+    const droppedOldest = this._loadedSlots[0] === 0;
     // _radarPaths shifts alongside the others because nearestFrameIndex() reads .time off it.
     for (let i = 0; i < frameCount - 1; i++) {
       this._radarImage[i] = this._radarImage[i + 1];
@@ -2651,6 +2666,10 @@ export class RadarPlayer {
     this._radarPaths[frameCount - 1] = latestFrame;
     this._lastFrameRefreshAt = Date.now();
     this._loadedSlots = this._loadedSlots.map(fi => fi - 1).filter(fi => fi >= 0);
+    if (droppedOldest) {
+      this._currentSlot = Math.max(0, this._currentSlot - 1);
+      if (this._prev1Slot >= 0) this._prev1Slot = Math.max(0, this._prev1Slot - 1);
+    }
     // Shift motion-compensation state alongside the radar frames.
     // The old frame 0 is dropped, so old motion[1] (which described
     // the 0→1 transition) is also dropped — its predecessor no
