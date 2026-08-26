@@ -16,6 +16,7 @@ import { getEffectiveTimeRange, shouldShowPlayback } from './source-caps';
 import { localize } from './localize/localize';
 import { rainviewerLimiter, noaaLimiter, dwdLimiter } from './rate-limiters';
 import { FetchTileLayer } from './fetch-tile-layer';
+import { getBasemapTiles, getBasemapTone, isDarkBasemapStyle } from './basemap-styles';
 import { WindOverlay } from './wind-overlay';
 import { defaultWindSourceForLocation, DEFAULT_WIND_SOURCE } from './wind-source-caps';
 import { WindFlowOverlay } from './wind-flow-overlay';
@@ -580,7 +581,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       `;
     }
     const mapStyle = this._effectiveMapStyle();
-    const isMapDark = mapStyle === 'dark' || mapStyle === 'satellite';
+    const isMapDark = isDarkBasemapStyle(mapStyle);
     const dataSource = this._config.data_source ?? 'RainViewer';
     const showColourBar = this._config.show_color_bar !== false;
     const progressBarTouchHeight = resolveProgressBarTouchHeight(this._config.progress_bar_touch_height);
@@ -824,34 +825,12 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     const cfg = this._config;
     const tileSize = cfg.extra_labels ? 128 : 256;
     const zoomOffset = cfg.extra_labels ? 1 : 0;
+    const { url, subdomains, labelUrl, labelsBakedIn } = getBasemapTiles(mapStyle, cfg.carto_api_key);
 
-    let url: string, style = '', subdomains = 'abcd', labelUrl = '', osmLabels = false;
-    switch (mapStyle) {
-      case 'dark':
-        url = 'https://{s}.basemaps.cartocdn.com/{style}/{z}/{x}/{y}.png';
-        style = 'dark_nolabels';
-        labelUrl = 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png'; break;
-      case 'voyager':
-        url = 'https://{s}.basemaps.cartocdn.com/{style}/{z}/{x}/{y}.png';
-        style = 'rastertiles/voyager_nolabels';
-        labelUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png'; break;
-      case 'satellite':
-        url = 'https://server.arcgisonline.com/ArcGIS/rest/services/{style}/MapServer/tile/{z}/{y}/{x}';
-        style = 'World_Imagery';
-        labelUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png'; break;
-      case 'osm':
-        osmLabels = true; subdomains = 'abc';
-        url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; break;
-      default:
-        url = 'https://{s}.basemaps.cartocdn.com/{style}/{z}/{x}/{y}.png';
-        style = 'light_nolabels';
-        labelUrl = 'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png';
-    }
-
-    new FetchTileLayer(url, { style, subdomains, detectRetina: false, tileSize, zoomOffset } as any)
+    new FetchTileLayer(url, { subdomains, detectRetina: false, tileSize, zoomOffset } as any)
       .addTo(this._map).setZIndex(Z_BASEMAP);
 
-    if (!osmLabels && labelUrl) {
+    if (!labelsBakedIn && labelUrl) {
       this._townLayer = new FetchTileLayer(labelUrl, {
         subdomains: 'abcd', detectRetina: false, tileSize, zoomOffset,
       } as any).addTo(this._map);
@@ -900,10 +879,14 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       // theming or custom basemap palettes.
       let defaultColor: string;
       let customColor: string | undefined;
-      if (this._currentMapStyle === 'satellite') {
+      const tone = getBasemapTone(this._currentMapStyle ?? undefined);
+      if (tone === 'satellite') {
         defaultColor = 'rgba(255,255,255,1)';
         customColor = cfg.dwd_wind_flow_color_sat;
-      } else if (this._currentMapStyle === 'dark') {
+      } else if (tone === 'dark') {
+        // Reused for greydark too — near-white reads fine on both the
+        // dark Carto slate and ESRI's dark grey canvas; no separate
+        // override key needed for it.
         defaultColor = 'rgba(220,225,235,1)';
         customColor = cfg.dwd_wind_flow_color_dark;
       } else {
@@ -932,7 +915,9 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       ? '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
       : mapStyle === 'satellite'
         ? '&copy; <a href="http://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9" target="_blank">ESRI</a>'
-        : '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attribution" target="_blank">CARTO</a>';
+        : mapStyle === 'grey' || mapStyle === 'greydark'
+          ? '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://www.esri.com" target="_blank">Esri</a>, HERE, Garmin'
+          : '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attribution" target="_blank">CARTO</a>';
     el.innerHTML = `<a href="https://leafletjs.com" target="_blank">Leaflet</a> | ${mapCredit} | ${radarCredit}`;
   }
 
@@ -1007,7 +992,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     this._trackedMarkerIdx = initialWinner?.markerIndex ?? -1;
 
     if (useClustering) {
-      const isDark = mapStyle === 'dark' || mapStyle === 'satellite';
+      const isDark = isDarkBasemapStyle(mapStyle);
       this._clusterGroup = L.markerClusterGroup({
         iconCreateFunction: (c) => this._createClusterIcon(c, isDark),
         maxClusterRadius: 60,

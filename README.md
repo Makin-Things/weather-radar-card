@@ -19,34 +19,26 @@ Full-screen capture with every feature enabled — radar with motion compensatio
 
 [![Watch the demo on YouTube](https://img.youtube.com/vi/xfbZRElOi0o/maxresdefault.jpg)](https://youtu.be/xfbZRElOi0o)
 
-## What's new in 3.8 (current stable)
+## What's new in 3.9 (current stable)
 
-**Headline features:**
+CARTO began requiring an API key to avoid a watermark on their free basemap tiles (Light/Voyager/Dark/Satellite) — this release adds an option to remove it, plus two new basemap styles that never need a key at all.
+
+- **`carto_api_key` config option** — free CARTO API key (no account needed — [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/)) removes the watermark. Set it in the editor's Map section or via YAML; leaving it unset keeps the previous (watermarked but working) tiles.
+- **Two new no-key map styles: `Grey` and `GreyDark`** — Esri Light/Dark Grey Canvas basemaps, for anyone who'd rather not sign up for a CARTO key at all.
+
+For the full release history see [CHANGELOG](https://github.com/jpettitt/weather-radar-card/blob/main/CHANGELOG.md).
+
+## What's new in 3.8
 
 - **Themeable progress-bar colors** — `progress_bar_background_color`, `progress_bar_active_color`, and `progress_bar_now_color` override the timeline's built-in light/dark palette via YAML, to match your dashboard theme. ([3.8.0-beta1](https://github.com/jpettitt/weather-radar-card/releases/tag/v3.8.0-beta1))
 - **Timestamps follow Home Assistant's own Time format setting** — the radar timeline and NWS alert times defer to your HA profile's 12h/24h preference (Settings → General) instead of guessing from the browser locale. ([3.8.0-beta1](https://github.com/jpettitt/weather-radar-card/releases/tag/v3.8.0-beta1))
-
-**Also in 3.8 — fixes:**
-
 - **Wildfire popup area and discovery date now follow your HA unit system and locale** — hectares for metric users instead of always showing NIFC's raw acres, and locale-aware date ordering. ([3.8.0-beta1](https://github.com/jpettitt/weather-radar-card/releases/tag/v3.8.0-beta1))
 - **Forecast-heavy configs no longer load the farthest-future frame before "now"** — for a config like `past_minutes: 0, forecast_minutes: 60`, the initial load now always starts at "now" and fans outward, instead of loading highest-index-first. ([3.8.0-beta2](https://github.com/jpettitt/weather-radar-card/releases/tag/v3.8.0-beta2))
 - **Fixed a periodic-refresh race that could corrupt playback position** — the timeline drifting backward on loop, or skip-back jumping to "Latest" instead of the previous frame. ([3.8.0-beta3](https://github.com/jpettitt/weather-radar-card/releases/tag/v3.8.0-beta3))
 
-For the full release history see [CHANGELOG](https://github.com/jpettitt/weather-radar-card/blob/main/CHANGELOG.md).
-
-## What's new in 3.7
-
-- **Smooth motion** — opt-in `motion_compensation: true`. During each frame transition, rain slides along its actual direction of travel instead of crossfading in place, so the loop reads as one continuously drifting rain field. Pyramidal Lucas-Kanade optical flow, runs in a Web Worker, source-agnostic across DWD / RainViewer / NOAA. Built on top of [@genericJE](https://github.com/genericJE)'s [#156](https://github.com/jpettitt/weather-radar-card/pull/156). Pairs naturally with `smooth_animation`. ([3.7.0-alpha2](https://github.com/jpettitt/weather-radar-card/releases/tag/v3.7.0-alpha2))
-- **Adjustable playback speed** — toolbar button cycles ¼× / ½× / 1× / 2× / 4×; editor dropdown sets the YAML default. Optional per-user persistence via the `viewer_layer_control` admin opt-in: each viewer's chosen speed follows them across browsers and devices. Contributed by [@genericJE](https://github.com/genericJE). ([3.7.0-alpha1](https://github.com/jpettitt/weather-radar-card/releases/tag/v3.7.0-alpha1))
-- **Canvas rendering for lightning and hazard overlays** — strikes, NWS alert polygons, and wildfire perimeters paint to canvas instead of one DOM node per item. Identical visuals and clickability (strike clicks select the most recent within 10 px); soak-validated during live storms at 10,000 simultaneous strikes with the page fully responsive. ([3.7.0-beta1](https://github.com/jpettitt/weather-radar-card/releases/tag/v3.7.0-beta1))
-- **Stability wave** — full-project code-review remediation: refresh/state races fixed (long-running dashboards no longer accumulate duplicate frames), DWD coverage clipping + single shared boundary mask, exponential backoff on alert/wildfire fetch failures, bounded caches, antimeridian fixes for Alaska. ([3.7.0-alpha3](https://github.com/jpettitt/weather-radar-card/releases/tag/v3.7.0-alpha3))
-- **NOAA radar rebuilt on NCEP's opengeo GeoServer** (the backend radar.weather.gov itself runs on) — the newest frame is now **~2 minutes behind real time instead of 15–25**, every frame is a distinct radar scan, and a new **Frame interval** dropdown picks 2 / 5 / 10-minute loop density. ([3.7.0-beta2](https://github.com/jpettitt/weather-radar-card/releases/tag/v3.7.0-beta2))
-- **"Latest" replaces "Now"** on the newest-frame label — radar frames lag real time by source (NOAA ~2 min, DWD ~5 min, RainViewer ~1–2 min), so the label no longer overstates freshness. ([3.7.0-beta2](https://github.com/jpettitt/weather-radar-card/releases/tag/v3.7.0-beta2))
-- **Translations completed** for all 3.7 editor strings across the card's 11 languages.
-
 ## Roadmap
 
-Active threads, no specific version commitment — with 3.8 shipped, these target 3.9 or later. See [docs/todo.md](https://github.com/jpettitt/weather-radar-card/blob/main/docs/todo.md) for the full backlog with status per item.
+Active threads, no specific version commitment — with 3.9 shipped, these target 3.10 or later. See [docs/todo.md](https://github.com/jpettitt/weather-radar-card/blob/main/docs/todo.md) for the full backlog with status per item.
 
 - **Real-time per-user layer visibility control panel** — UI for toggling individual overlays in real time. Persistence framework already shipped (3.6.5); first consumer shipped (playback speed in 3.7.0-alpha1); the on-map panel itself is the remaining piece. Full design in [docs/layer-control-design.md](https://github.com/jpettitt/weather-radar-card/blob/main/docs/layer-control-design.md).
 - **Additional wind sources** — Open-Meteo for global coverage, ICON pressure levels for upper-air wind, regional finer-than-ICON-D2 sources (AROME, MEPS, HRRR). Tiers and trade-offs documented in [docs/todo.md](https://github.com/jpettitt/weather-radar-card/blob/main/docs/todo.md).

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-08-26
+
+> **Stable release.** CARTO began requiring an API key to avoid a watermark on their free basemap tiles (Light/Voyager/Dark/Satellite) — this release adds a `carto_api_key` option to remove it, plus two new basemap styles that never need a key at all. Drop-in upgrade from 3.8.0 — no config changes required for existing setups.
+
+### Added
+
+- **`carto_api_key` config option** — free CARTO API key (no account needed, [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/)), appended to CARTO basemap tile requests to remove the "API key required" watermark CARTO now stamps on anonymous tiles. Leaving it unset keeps the previous (watermarked but working) tiles. Exposed in the editor's Map section.
+- **Two new no-key `map_style` options: `Grey` and `GreyDark`** — Esri Light/Dark Grey Canvas basemaps, a genuinely free, no-signup alternative to CARTO for anyone who'd rather not get an API key at all.
+
 ## [3.8.0] - 2026-08-26
 
 > **Stable release.** Graduates the 3.8.0 line (themeable progress-bar colors, HA-locale-aware timestamps and wildfire formatting, plus two playback-position corruption fixes) to stable. Drop-in upgrade from 3.7.3 — no config changes required. The entries below are what changed since `3.7.3`.

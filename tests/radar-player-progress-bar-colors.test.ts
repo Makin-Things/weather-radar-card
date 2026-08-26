@@ -58,6 +58,17 @@ describe('_segColor — progress_bar_background_color / progress_bar_active_colo
     expect(p._segColor('loaded', true)).toBe('#66d9ff');
   });
 
+  it('greydark map_style gets the dark palette, same as dark/satellite', () => {
+    const p = makePlayer({ map_style: 'greydark' }) as any;
+    expect(p._segColor('empty', false)).toBe('#444');
+    expect(p._segColor('loaded', true)).toBe('#6baed6');
+  });
+
+  it('grey map_style gets the light palette', () => {
+    const p = makePlayer({ map_style: 'grey' }) as any;
+    expect(p._segColor('empty', false)).toBe('#e0e0e0');
+  });
+
   it('progress_bar_background_color overrides non-current empty/loaded segments', () => {
     const p = makePlayer({ progress_bar_background_color: '#123456' }) as any;
     expect(p._segColor('empty', false)).toBe('#123456');
