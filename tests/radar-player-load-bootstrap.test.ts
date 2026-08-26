@@ -59,7 +59,7 @@ describe('_afterFrameInserted', () => {
     const p = makePlayer() as any;
     p._startLoop = vi.fn();
     p._loadedSlots = [3];
-    p._afterFrameInserted(1, 0);
+    p._afterFrameInserted(0);
     expect(p._radarReady).toBe(false);
     expect(p._startLoop).not.toHaveBeenCalled();
   });
@@ -69,7 +69,7 @@ describe('_afterFrameInserted', () => {
     p._startLoop = vi.fn();
     p._loadedSlots = [2, 3]; // second frame (index 2) just inserted ahead of the first (3)
     p._nowFrameIndex = 3;
-    p._afterFrameInserted(1, 0); // prevSlotCount=1 (< 2) -> "first time reaching 2" branch
+    p._afterFrameInserted(0); // insertPos=0; _loadedSlots.length-1 (1) < 2 -> "first time reaching 2" branch
     expect(p._startLoop).toHaveBeenCalledWith(1); // position of nowFrameIndex(3) in [2, 3]
     expect(p._radarReady).toBe(true);
   });
@@ -77,10 +77,13 @@ describe('_afterFrameInserted', () => {
   it('shifts _currentSlot/_prev1Slot when the new frame inserts at or before their position', () => {
     const p = makePlayer() as any;
     p._loadedSlots = [1, 2, 4]; // a frame was just inserted at position 1 (value 2)
-    p._currentSlot = 2;
+    // _currentSlot/_prev1Slot are always equal outside _afterFrameInserted's
+    // own execution (_showSlot keeps them in sync) — before this insert,
+    // position 1 (value 4) was current.
+    p._currentSlot = 1;
     p._prev1Slot = 1;
-    p._afterFrameInserted(2, 1); // prevSlotCount=2 (>=2) -> shift branch, insertPos=1
-    expect(p._currentSlot).toBe(3); // 1 <= 2 -> shifted
+    p._afterFrameInserted(1); // insertPos=1; _loadedSlots.length-1 (2) >= 2 -> shift branch
+    expect(p._currentSlot).toBe(2); // 1 <= 1 -> shifted
     expect(p._prev1Slot).toBe(2);  // 1 <= 1 -> shifted
   });
 
@@ -89,7 +92,7 @@ describe('_afterFrameInserted', () => {
     p._loadedSlots = [0, 1, 3]; // a frame was just inserted at the tail, position 2 (value 3)
     p._currentSlot = 0;
     p._prev1Slot = 0;
-    p._afterFrameInserted(2, 2);
+    p._afterFrameInserted(2);
     expect(p._currentSlot).toBe(0);
     expect(p._prev1Slot).toBe(0);
   });

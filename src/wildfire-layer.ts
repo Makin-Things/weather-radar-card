@@ -479,9 +479,11 @@ function buildPopupHtml(
   // rationale as the timeline timestamp fix (issue #239): the browser's
   // ambient locale is an unreliable signal, and a misread date ordering
   // here could make a fire look more or less recent than it actually is.
-  const discoveredStr = typeof discovered === 'number'
-    ? (locale ? formatDate(new Date(discovered), locale) : new Date(discovered).toLocaleDateString())
-    : '—';
+  let discoveredStr = '—';
+  if (typeof discovered === 'number') {
+    const d = new Date(discovered);
+    discoveredStr = locale ? formatDate(d, locale) : d.toLocaleDateString();
+  }
 
   // InciWeb URL format: /incident-information/{poo-jurisdictional-unit-lower}-{name-slug}
   // e.g. flfnf-sand-drain. We only render the link when the computed slug

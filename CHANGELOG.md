@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-08-26
+
+> **Stable release.** Graduates the 3.8.0 line (themeable progress-bar colors, HA-locale-aware timestamps and wildfire formatting, plus two playback-position corruption fixes) to stable. Drop-in upgrade from 3.7.3 — no config changes required. The entries below are what changed since `3.7.3`.
+
+### Added
+
+- **Progress bar colors are now themeable via YAML** — `progress_bar_background_color`, `progress_bar_active_color`, and `progress_bar_now_color` override the built-in light/dark palette for the timeline's at-rest, currently-playing, and wall-clock "now" marker colors. Loading/failed status colors stay fixed since they signal real state, not decoration. YAML-only (matches the existing `dwd_wind_flow_color_*`/`wildfire_color` convention) — not exposed in the visual editor. ([#233](https://github.com/jpettitt/weather-radar-card/issues/233))
+
+### Changed
+
+- **Wildfire popup now shows area in acres or hectares to match your Home Assistant unit system**, instead of always showing NIFC's raw acres. Metric users get hectares (not km² — hectares is the international convention for wildfire/land area, matching Australia's RFS, Canada's CIFFC, and Europe's EFFIS). The number itself, and the discovery date below it, now also follow your HA locale (thousands separator / date ordering) instead of guessing from the browser. The popup label changed from "Acres" to "Area" to match.
+
+### Fixed
+
+- **Timestamps now follow Home Assistant's own Time format setting instead of guessing from the browser.** The radar timeline and NWS alert Effective/Expires times used `Intl.DateTimeFormat`/`Date#toLocaleString` with the browser's ambient locale to decide 12h vs 24h — an unreliable signal, since many users run an en-US browser/OS language regardless of where they live, and even an explicit OS 24-hour override often isn't honoured by `Intl`'s locale resolution. Both now defer to `hass.locale.time_format` (Settings → General) via `custom-card-helpers`' `formatTime`/`formatDateTime` — the same helpers HA's own frontend uses — falling back to the previous browser-locale behavior when unavailable. ([#239](https://github.com/jpettitt/weather-radar-card/issues/239))
+- **Radar init no longer loads the farthest-future forecast frame before "now" on forecast-heavy configs.** The initial load always fetched frames highest-array-index-first, which coincided with "now" only when there was little/no `forecast_minutes` — for a config like `past_minutes: 0, forecast_minutes: 60`, "now" was index 0 and loaded dead last, so the card showed an hour-ahead forecast frame first and took a full sequential pass through every forecast frame before showing current conditions. The load order now always starts at "now" and fans forward through any forecast frames, then backward through any past frames — unchanged for today's common past-only configs. ([#246](https://github.com/jpettitt/weather-radar-card/issues/246))
+- **The periodic background refresh could corrupt the current playback position, causing the timeline to jump backward on loop and skip-back to jump to "Latest" instead of the previous frame.** Every ~5-6 min refresh renumbers frame indices and temporarily shrinks the loaded-frame list while the new frame's tiles load, but didn't stop the running animation timer or adjust the current position for the shift first — a tick or button press landing in that window read a stale position against the shrunk list, landing on an arbitrary wrapped frame. ([#249](https://github.com/jpettitt/weather-radar-card/issues/249))
+- **Two related edge cases hardened during pre-release review.** A source that fails to publish a fresh "now" frame for several consecutive refresh cycles no longer freezes the display on an invalid position; and if the exact frame you're watching gets pruned as a duplicate, playback now falls back to whichever frame is nearest "now" instead of jumping to the newest (potentially farthest-future) frame.
+
 ## [3.8.0-beta3] - 2026-08-23
 
 > **Beta pre-release.** Fixes a periodic-refresh race that could corrupt playback position (timeline jumping backward on loop, skip-back jumping to "Latest"). Continues the 3.8.0 beta line — drop-in upgrade from 3.8.0-beta2, no config changes required.

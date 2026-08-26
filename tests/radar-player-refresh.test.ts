@@ -231,6 +231,37 @@ describe('_dedupFrames orphan prevention', () => {
   });
 });
 
+describe('_dedupFrames current-frame fallback', () => {
+  it('falls back to nearest-to-now (not "newest") when the currently-displayed frame is deduped away', () => {
+    // Once #246 made "current" normally mean "now" (not "newest") for
+    // forecast-heavy configs, this fallback still assumed "newest" was
+    // always a safe stand-in for "current" — if dedup ever drops exactly
+    // the displayed "now" frame, that would silently jump playback to
+    // the newest/farthest-future frame instead of staying near "now".
+    vi.setSystemTime(1000 * 1000); // "now" lines up with frame 0's time
+
+    const p = makePlayer() as any;
+    const layers = [fakeLayer(), fakeLayer(), fakeLayer(), fakeLayer()];
+    p._radarImage = [...layers];
+    p._radarTime = layers.map((_, i) => ({ date: 'a', time: String(i) }));
+    p._radarPaths = frames(1000, 1600, 2200, 2800);
+    p._frameSnapshot = layers.map(() => new Float32Array(4));
+    p._frameSnapshotNz = [100, 200, 300, 300]; // frame 3 duplicates frame 2 -> dropped
+    p._frameMotion = [null, null, null, null];
+    p._loadedSlots = [0, 1, 2, 3];
+    p._currentSlot = 3; // displaying frame 3 — the one about to be deduped away
+    p._prev1Slot = 3;
+
+    p._dedupFrames();
+
+    expect(p._radarPaths.map((f: RadarFrame) => f.time)).toEqual([1000, 1600, 2200]);
+    // Falls back to the frame nearest "now" (index 0, time 1000) — not
+    // the newest surviving frame (index 2, time 2200).
+    expect(p._currentSlot).toBe(0);
+    expect(p._prev1Slot).toBe(0);
+  });
+});
+
 // ── 4. Single update chain ───────────────────────────────────────────────
 
 describe('_scheduleUpdate single-chain invariant', () => {
