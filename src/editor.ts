@@ -185,6 +185,8 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
                   { value: 'Dark', label: localize('editor.map.style_dark') },
                   { value: 'Satellite', label: localize('editor.map.style_satellite') },
                   { value: 'OSM', label: localize('editor.map.style_osm') },
+                  { value: 'Grey', label: localize('editor.map.style_grey') },
+                  { value: 'GreyDark', label: localize('editor.map.style_grey_dark') },
                 ],
               },
             }}
@@ -215,6 +217,28 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             @value-changed=${this._handleSelectorNumberChanged}
           ></ha-selector>
         </div>
+        ${(() => {
+          // CARTO key only does anything for the CARTO-backed styles
+          // (Light/Voyager/Dark/Satellite's label overlay) — hide it for
+          // OSM/Grey/GreyDark where it would be a no-op. Auto counts as
+          // "show it": Auto usually resolves to a CARTO-backed style, so
+          // hiding the field there would be wrong more often than not.
+          const style = (config.map_style || 'Auto').toLowerCase();
+          const cartoApplies = !['osm', 'grey', 'greydark'].includes(style);
+          return cartoApplies ? html`
+            <ha-input
+              label=${localize('editor.map.carto_api_key')}
+              type="password"
+              .value=${config.carto_api_key || ''}
+              .configValue=${'carto_api_key'}
+              @input=${this._valueChangedString}
+            ></ha-input>
+            <div class="section-description">
+              ${localize('editor.map.carto_api_key_helper')}
+              <a href="https://carto.com/basemaps/apikey/" target="_blank" rel="noopener noreferrer">${localize('editor.map.carto_api_key_link')}</a>
+            </div>
+          ` : '';
+        })()}
 
         <!-- LOCATION -->
         <h3 class="section-header">${localize('editor.section.location')}</h3>

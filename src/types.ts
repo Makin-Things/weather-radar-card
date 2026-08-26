@@ -146,6 +146,17 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   type: string;
   name?: string;
   map_style?: string;
+  /**
+   * Free CARTO API key (no account needed — carto.com/basemaps/apikey),
+   * appended as `?key=<value>` to CARTO basemap tile requests (the
+   * Light/Dark/Voyager base + label tiles, and Satellite's label
+   * overlay). CARTO's anonymous access still serves tiles without one,
+   * just stamped with a visible "API key required" watermark. Leaving
+   * this unset preserves that (watermarked but working) default — never
+   * a hard error. No effect for `map_style: OSM`, `Grey`, or `GreyDark`,
+   * none of which use CARTO tiles.
+   */
+  carto_api_key?: string;
   data_source?: string;
   /** DWD-only: ISO timestamp to anchor frames at instead of "now" — for testing with historical rain. */
   dwd_time_override?: string;

@@ -37,6 +37,13 @@ describe('createMarkerIconForMarker', () => {
     expect(result.iconUrl).toContain('home-circle-light.svg');
   });
 
+  it('uses light SVG on greydark map style, dark SVG on grey', () => {
+    const dark = createMarkerIconForMarker({ icon: 'default' }, mockHass(), 'greydark') as any;
+    expect(dark.iconUrl).toContain('home-circle-light.svg');
+    const grey = createMarkerIconForMarker({ icon: 'default' }, mockHass(), 'grey') as any;
+    expect(grey.iconUrl).toContain('home-circle-dark.svg');
+  });
+
   it('returns entity_picture icon when entity has a picture URL', () => {
     const hass = mockHass({
       states: {

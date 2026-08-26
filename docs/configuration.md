@@ -29,6 +29,7 @@ All options can be configured using the GUI editor — there is no need to edit 
 | center_latitude               | number / string | **Optional**   | Initial map center latitude — number or entity ID                                                                                                                                                                                                                                                                                                                      | HA instance location                  |
 | center_longitude              | number / string | **Optional**   | Initial map center longitude — number or entity ID                                                                                                                                                                                                                                                                                                                     | HA instance location                  |
 | map_style                     | string          | **Optional**   | Map style (see [Map Style](#map-style))                                                                                                                                                                                                                                                                                                                                | `'Auto'` (follows OS dark/light mode) |
+| carto_api_key                 | string          | **Optional**   | Free CARTO API key (no account needed — see [Map Style](#map-style)) appended to CARTO basemap tile requests. Removes the "API key required" watermark on Light/Voyager/Dark/Satellite tiles. No effect for OSM/Grey/GreyDark.                                                                                                                                         | unset (watermarked anonymous tiles)   |
 | markers                       | list            | **Optional**   | List of map markers (see [Markers](markers.md))                                                                                                                                                                                                                                                                                                                        | none                                  |
 | cluster_markers               | boolean         | **Optional**   | Cluster nearby markers into a badge; tap/click the badge to spiderfy (fan out) individual markers. The tracked marker always renders outside the cluster. Clusters containing a home marker render the home icon with a small superscript count badge.                                                                                                                 | `true`                                |
 | show_snow                     | boolean         | **Optional**   | Include snow in the precipitation display (RainViewer only)                                                                                                                                                                                                                                                                                                            | `false`                               |
@@ -81,18 +82,24 @@ All options can be configured using the GUI editor — there is no need to edit 
 
 ## Map Style
 
-Specifies the base map style. All CARTO-based styles render labels in English only. Use OpenStreetMap for localized labels.
+Specifies the base map style. All CARTO- and Esri-based styles render labels in English only. Use OpenStreetMap for localized labels.
 
-| Value       | Description                                                                                      |
-|-------------|--------------------------------------------------------------------------------------------------|
-| `Auto`      | Follows OS dark/light mode — Dark when system is dark, Light (English) or OSM (other) when light |
-| `Light`     | CARTO Light — English only                                                                       |
-| `Dark`      | CARTO Dark — English only                                                                        |
-| `Voyager`   | CARTO Voyager — English only                                                                     |
-| `Satellite` | ESRI World Imagery — English only                                                                |
-| `OSM`       | OpenStreetMap — labels rendered in local language                                                |
+| Value        | Description                                                                                      |
+|--------------|--------------------------------------------------------------------------------------------------|
+| `Auto`       | Follows OS dark/light mode — Dark when system is dark, Light (English) or OSM (other) when light |
+| `Light`      | CARTO Light — English only                                                                       |
+| `Dark`       | CARTO Dark — English only                                                                        |
+| `Voyager`    | CARTO Voyager — English only                                                                     |
+| `Satellite`  | ESRI World Imagery — English only                                                                |
+| `OSM`        | OpenStreetMap — labels rendered in local language                                                |
+| `Grey`       | Esri Light Grey Canvas — English only, no CARTO key needed, free without signup                  |
+| `GreyDark`   | Esri Dark Grey Canvas — English only, no CARTO key needed, free without signup                   |
 
 When `map_style` is not set or set to `Auto`, the card picks Dark when the OS is in dark mode, `Light` for English-language instances in light mode, and `OSM` for all other languages in light mode. The map updates automatically if the OS theme changes.
+
+### CARTO API key
+
+CARTO's Light/Dark/Voyager tiles, and Satellite's label overlay, now stamp a visible "API key required" watermark on tiles fetched without a key — the tiles still load, just watermarked. A free key (no CARTO account needed — see [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/), 5 million tile requests/month free) removes it. Set it in the editor's Map section, or via `carto_api_key` in YAML. Leaving it unset keeps today's watermarked-but-working tiles — never a hard error. Has no effect for `OSM`, `Grey`, or `GreyDark`, none of which use CARTO tiles.
 
 > **OpenStreetMap note:** OSM tiles are provided by the OpenStreetMap community. For high-traffic deployments please consider the [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
 

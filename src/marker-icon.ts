@@ -2,6 +2,7 @@ import * as L from 'leaflet';
 import { HomeAssistant } from 'custom-card-helpers';
 import { Marker } from './types';
 import { escapeHtml } from './string-utils';
+import { isDarkBasemapStyle } from './basemap-styles';
 
 const ICON_BASE = '/local/community/weather-radar-card/';
 
@@ -70,7 +71,7 @@ export function createMarkerIconForMarker(
   mapStyle: string,
 ): L.Icon | L.DivIcon {
   const iconType = markerCfg.icon || 'default';
-  const isDarkMap = mapStyle === 'dark' || mapStyle === 'satellite';
+  const isDarkMap = isDarkBasemapStyle(mapStyle);
   const svgFile = isDarkMap ? 'home-circle-light.svg' : 'home-circle-dark.svg';
   const defaultColour = isDarkMap ? '#EEEEEE' : '#333333';
   const colour = markerCfg.color ?? defaultColour;

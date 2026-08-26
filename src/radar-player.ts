@@ -5,6 +5,7 @@ import { WeatherRadarCardConfig } from './types';
 import { Z_RADAR_BASE } from './const';
 import { RateLimiter } from './rate-limiter';
 import { FetchTileLayer, FetchWmsTileLayer, layerSettled } from './fetch-tile-layer';
+import { isDarkBasemapStyle } from './basemap-styles';
 import { RadarToolbar } from './radar-toolbar';
 import { localize } from './localize/localize';
 import { getEffectiveTimeRange } from './source-caps';
@@ -1639,8 +1640,7 @@ export class RadarPlayer {
       const override = isCurrent ? cfg.progress_bar_active_color : cfg.progress_bar_background_color;
       if (override) return override;
     }
-    const mapStyle = cfg.map_style?.toLowerCase() ?? '';
-    const dark = mapStyle === 'dark' || mapStyle === 'satellite';
+    const dark = isDarkBasemapStyle(cfg.map_style);
     const map = dark
       ? { empty: '#444', loading: '#aa7700', loaded: 'steelblue', failed: '#aa1111',
           cur_empty: '#666', cur_loading: '#cc9900', cur_loaded: '#6baed6', cur_failed: '#cc3333' }
