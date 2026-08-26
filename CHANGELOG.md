@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.9.0] - 2026-08-26
 
-> **Stable release.** CARTO began requiring an API key to avoid a watermark on their free basemap tiles (Light/Voyager/Dark/Satellite) — this release adds a `carto_api_key` option to remove it, plus two new basemap styles that never need a key at all. Drop-in upgrade from 3.8.0 — no config changes required for existing setups.
+> **Stable release.** CARTO began requiring an API key to avoid a watermark on their free basemap tiles (Light/Voyager/Dark/Satellite) — this release adds a `carto_api_key` option to remove it, plus two new basemap styles that never need a key at all. Upgrading alone doesn't fix an existing watermark: if you're on `map_style: Light/Voyager/Dark/Satellite`, set `carto_api_key` (free, no account) or switch to the new `Grey`/`GreyDark` to clear it.
 
 ### Added
 
