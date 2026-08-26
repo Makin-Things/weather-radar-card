@@ -45,7 +45,8 @@ editor" (toggle in the top-right of the card editor) -> copy everything
 and paste it below, between the ```yaml and ``` lines (this is what
 makes it render as a readable code block instead of one long line).
 Please redact your exact location — trimming the last digit or two off
-your latitude/longitude is enough.
+your latitude/longitude is enough — and remove any carto_api_key value
+before posting.
 -->
 
 ```yaml
