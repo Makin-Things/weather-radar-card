@@ -102,9 +102,8 @@ describe('RadarPlayer with start_paused (run = false before init)', () => {
     // Simulate the second (older) frame loading via the real insertion +
     // bootstrap logic _initRadarBody uses, rather than hand-copying it —
     // a hand-copy here can't catch a regression in the real methods.
-    const prevSlotCount = p._loadedSlots.length;
     const insertPos = insertSorted(p._loadedSlots, 0);
-    p._afterFrameInserted(prevSlotCount, insertPos);
+    p._afterFrameInserted(insertPos);
 
     expect(p._startLoop).toHaveBeenCalledWith(1);
   });

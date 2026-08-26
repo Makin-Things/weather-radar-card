@@ -350,17 +350,37 @@ longer than the visible-refresh interval.
 
 ## Frame loading sequence
 
-Frames are loaded newest-first. As each frame settles
-(`layerSettled`):
+Frames load starting at "now" (`buildLoadOrder`), fanning forward
+through any forecast frames and then backward through any past
+frames — not always newest-first. For a past-only config `_nowFrameIndex`
+is already the newest frame, so this degenerates to the old
+newest-first order; it's forecast-heavy configs (little/no
+`past_minutes`) where "now" sits near index 0 that this differs, so
+"now" always loads (and is shown) first regardless of the past/forecast
+split (issue #246).
+
+As each frame settles (`layerSettled`):
 
 1. Its outer container starts at `opacity: 0`.
-2. The very first frame to load is shown as a static preview
-   (`opacity: _activeOpacity`) while older frames load in the background.
-3. Once two frames are loaded, `_startLoop(n-1)` starts the animation
-   at the newest slot so the preview continues without a flash.
-4. Each subsequent older frame that loads causes `_currentSlot++` to
-   keep the index pointing at the same frame (since `unshift` shifts
-   all indices up by 1).
+2. The very first frame to load — always "now", per the load order
+   above — is shown as a static preview (`opacity: _activeOpacity`)
+   while the rest load in the background.
+3. Loaded frames are inserted into `_loadedSlots` at their sorted
+   position (`insertSorted`), not blindly prepended — arrival order is
+   no longer strictly descending. Once two frames are loaded,
+   `_startLoop(indexOf(_nowFrameIndex))` starts the animation at "now"
+   so the preview continues without a flash.
+4. Each subsequent frame that loads shifts `_currentSlot`/`_prev1Slot`
+   only if its insertion position is at or before their current
+   position (`_afterFrameInserted`) — inserting after them leaves them
+   untouched, since only positions at-or-after the insertion point
+   actually move.
+5. A load failure aborts the whole sequence and marks every
+   not-yet-attempted frame in the load order as failed
+   (`_markRemainingFailed`) — "not yet attempted" is no longer a
+   contiguous index range once loading walks outward from "now", so
+   this walks the remaining load-order entries rather than counting
+   down from the failed index.
 
 ---
 
@@ -399,7 +419,14 @@ per-source cap table.
 2. `_updateOpacity` (overridden) sets inner tile and tile-container
    opacities to `1` but never touches the outer container.
 3. `_currentSlot` is always a valid index into `_loadedSlots`
-   (`_showSlot` bounds-checks and returns early if not).
+   (`_showSlot` bounds-checks and returns early if not) — maintained
+   across mutations by `_afterFrameInserted`'s insert-position-aware
+   shift during the init loop (`insertSorted` can land a new frame
+   anywhere, not just the front) and by `_updateRadar`'s `droppedOldest`
+   shift, which decrements `_currentSlot`/`_prev1Slot` when a periodic
+   refresh evicts the oldest frame — and which also stops the loop
+   first, so an already-armed animation tick can't fire mid-shift
+   against a temporarily-resized array (issue #249).
 4. `_frameGeneration` is checked after every `await` in `_initRadar`
    and `_updateRadar` to abort stale async chains after teardown.
 5. `_loopGen` is checked at the top of every `_scheduleNext` callback

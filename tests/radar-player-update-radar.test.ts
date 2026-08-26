@@ -91,24 +91,24 @@ const NOW_SEC = 1_800_000_000;
 const FRAME_COUNT = 13;
 const STRIDE_SEC = 5 * 60;
 
-function seedSteadyState(p: any) {
-  const mkFrames = (endSec: number) => Array.from({ length: FRAME_COUNT }, (_, i) => ({
-    time: endSec + (i - (FRAME_COUNT - 1)) * STRIDE_SEC,
+function seedSteadyState(p: any, frameCount: number = FRAME_COUNT) {
+  const mkFrames = (endSec: number) => Array.from({ length: frameCount }, (_, i) => ({
+    time: endSec + (i - (frameCount - 1)) * STRIDE_SEC,
     path: '',
   }));
   p._radarPaths = mkFrames(NOW_SEC);
-  p._radarImage = Array.from({ length: FRAME_COUNT }, (_, i) => fakeLayer(`init-${i}`));
-  p._radarTime = Array.from({ length: FRAME_COUNT }, (_, i) => ({ date: 'd', time: `frame-${i}` }));
-  p._frameStatuses = Array.from({ length: FRAME_COUNT }, () => 'loaded');
-  p._loadedSlots = Array.from({ length: FRAME_COUNT }, (_, i) => i);
-  p._configFrameCount = FRAME_COUNT;
+  p._radarImage = Array.from({ length: frameCount }, (_, i) => fakeLayer(`init-${i}`));
+  p._radarTime = Array.from({ length: frameCount }, (_, i) => ({ date: 'd', time: `frame-${i}` }));
+  p._frameStatuses = Array.from({ length: frameCount }, () => 'loaded');
+  p._loadedSlots = Array.from({ length: frameCount }, (_, i) => i);
+  p._configFrameCount = frameCount;
   p._radarReady = true;
-  p._nowFrameIndex = FRAME_COUNT - 1;
-  p._currentSlot = FRAME_COUNT - 1;
-  p._prev1Slot = FRAME_COUNT - 1;
-  p._frameSnapshot = new Array(FRAME_COUNT).fill(null);
-  p._frameSnapshotNz = new Array(FRAME_COUNT).fill(0);
-  p._frameMotion = new Array(FRAME_COUNT).fill(null);
+  p._nowFrameIndex = frameCount - 1;
+  p._currentSlot = frameCount - 1;
+  p._prev1Slot = frameCount - 1;
+  p._frameSnapshot = new Array(frameCount).fill(null);
+  p._frameSnapshotNz = new Array(frameCount).fill(0);
+  p._frameMotion = new Array(frameCount).fill(null);
   p.navPaused = false;
   p.viewPaused = false;
   return mkFrames;
@@ -204,5 +204,32 @@ describe('_updateRadar — animation-loop race (issue #249)', () => {
     // Previous frame relative to the shifted "now" position, never a
     // no-op wrap back to the last position.
     expect(p._currentSlot).toBe(FRAME_COUNT - 3);
+  });
+
+  it('never sets _currentSlot to -1 even if the newest frame fails to load for several consecutive cycles', async () => {
+    // Every cycle drops the oldest frame regardless of whether the new
+    // one succeeds (droppedOldest doesn't know in advance) — if the
+    // newest frame specifically keeps failing while nothing is ever
+    // pushed back, _loadedSlots can drain to empty. The load-recovery
+    // callback must not then compute _currentSlot = length - 1 = -1.
+    const SMALL_COUNT = 3;
+    const p = makePlayer() as any;
+    const mkFrames = seedSteadyState(p, SMALL_COUNT);
+    p.run = false;
+
+    for (let cycle = 1; cycle <= SMALL_COUNT; cycle++) {
+      p._fetchPaths = vi.fn().mockResolvedValue(mkFrames(NOW_SEC + cycle * STRIDE_SEC));
+      let layer: any = null;
+      p._createLayer = vi.fn(() => { layer = fakeLayer(`fail-${cycle}`); layer._tileFailed = 1; return layer; });
+      p._setLayerZ = vi.fn();
+
+      const updatePromise = p._updateRadar();
+      await vi.advanceTimersByTimeAsync(0);
+      layer._fireLoad(); // tiles "load" but are marked failed
+      await updatePromise;
+    }
+
+    expect(p._loadedSlots.length).toBe(0);
+    expect(p._currentSlot).toBeGreaterThanOrEqual(0);
   });
 });

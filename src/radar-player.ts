@@ -1036,7 +1036,12 @@ export class RadarPlayer {
     // Remap _currentSlot / _prev1Slot to the new fi positions so
     // playback resumes on the same content.
     const newCurrent = keptFi.indexOf(currentFi);
-    this._currentSlot = newCurrent >= 0 ? newCurrent : (keptFi.length - 1);
+    // Fall back to nearest-to-now, not "newest" — for a forecast-heavy
+    // config (issue #246) "current" is normally "now", nowhere near the
+    // newest/farthest-future frame, so falling back to newest here would
+    // silently jump playback across the whole forecast window if the
+    // displayed frame happens to be the one deduped away.
+    this._currentSlot = newCurrent >= 0 ? newCurrent : nearestFrameIndex(this._radarPaths, Date.now() / 1000);
     if (prev1Fi >= 0) {
       const newPrev1 = keptFi.indexOf(prev1Fi);
       this._prev1Slot = newPrev1 >= 0 ? newPrev1 : this._currentSlot;
@@ -2402,7 +2407,6 @@ export class RadarPlayer {
       this._setSegment(fi, status);
 
       if (status === 'loaded') {
-        const prevSlotCount = this._loadedSlots.length;
         const insertPos = insertSorted(this._loadedSlots, fi);
 
         // Motion-comp prep: snapshot this frame, then compute the motion
@@ -2454,7 +2458,7 @@ export class RadarPlayer {
           this._prev1Slot = this._loadedSlots.indexOf(fi);
         }
 
-        this._afterFrameInserted(prevSlotCount, insertPos);
+        this._afterFrameInserted(insertPos);
       } else {
         this._markRemainingFailed(order, idx + 1);
         break;
@@ -2501,9 +2505,13 @@ export class RadarPlayer {
   // newest-to-oldest order (see buildLoadOrder), so a new frame can
   // land at any position, not just the front — inserting at `insertPos`
   // only shifts existing positions >= insertPos up by one.
-  private _afterFrameInserted(prevSlotCount: number, insertPos: number): void {
+  private _afterFrameInserted(insertPos: number): void {
     if (this._loadedSlots.length < 2) return;
     this._radarReady = true;
+    // The insert above already happened, so length-1 is the count
+    // before it — i.e. whether this is the 2nd frame ever (bootstrap
+    // the loop) or a later one (shift the existing positions).
+    const prevSlotCount = this._loadedSlots.length - 1;
     if (prevSlotCount >= 2) {
       if (insertPos <= this._currentSlot) this._currentSlot++;
       if (this._prev1Slot >= 0 && insertPos <= this._prev1Slot) this._prev1Slot++;
@@ -2718,9 +2726,17 @@ export class RadarPlayer {
           });
         }
       }
-      // Restart loop at newest frame so new data shows immediately
-      this._currentSlot = this._loadedSlots.length - 1;
-      this._startLoop();
+      // Restart loop at newest frame so new data shows immediately.
+      // Guarded on length: if the newest frame has now failed to load
+      // for enough consecutive refresh cycles that _loadedSlots (which
+      // drops one frame every cycle regardless, via droppedOldest above)
+      // has drained to empty, there's nothing to show — leave state as
+      // is and let the next successful refresh repopulate it, rather
+      // than setting _currentSlot to -1.
+      if (this._loadedSlots.length > 0) {
+        this._currentSlot = this._loadedSlots.length - 1;
+        this._startLoop();
+      }
     });
 
     this._doRadarUpdate = false;
